@@ -1,5 +1,11 @@
-// API Types - Single source of truth for frontend and backend contracts
+/**
+ * @recon/shared - Shared TypeScript types for Recon API contracts.
+ *
+ * This package defines the contract between the frontend and backend.
+ * The Go API must produce JSON that conforms to these types exactly.
+ *
+ * @packageDocumentation
+ */
 
-export * from './types/stock';
-export * from './types/signal';
-export * from './types/api';
+export * from './stock';
+export * from './search';
