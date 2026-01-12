@@ -20,11 +20,11 @@ export function SignalsSection({ data }: SignalsSectionProps) {
   const getSignalIcon = (type: string) => {
     switch (type) {
       case 'bullish':
-        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+        return <CheckCircle2 className="h-4 w-4 text-success" />;
       case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-amber-600" />;
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
       case 'bearish':
-        return <TrendingDown className="h-4 w-4 text-red-600" />;
+        return <TrendingDown className="h-4 w-4 text-destructive" />;
       default:
         return null;
     }
@@ -33,13 +33,13 @@ export function SignalsSection({ data }: SignalsSectionProps) {
   return (
     <SectionCard title="Key Signals">
       <div className="flex gap-4 mb-4">
-        <Badge variant="outline" className="text-green-600 border-green-600/30 bg-green-600/5">
+        <Badge variant="outline" className="text-success border-success/30 bg-success/5">
           Bullish ({bullish.length})
         </Badge>
-        <Badge variant="outline" className="text-red-600 border-red-600/30 bg-red-600/5">
+        <Badge variant="outline" className="text-destructive border-destructive/30 bg-destructive/5">
           Bearish ({bearish.length})
         </Badge>
-        <Badge variant="outline" className="text-amber-600 border-amber-600/30 bg-amber-600/5">
+        <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/5">
           Warning ({warning.length})
         </Badge>
       </div>
@@ -51,13 +51,13 @@ export function SignalsSection({ data }: SignalsSectionProps) {
           topSignals.map((signal, idx) => (
             <div
               key={idx}
-              className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+              className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/30 hover:bg-muted/50 transition-all duration-200"
             >
               <div className="mt-0.5">{getSignalIcon(signal.type)}</div>
               <div className="flex-1">
                 <p className="text-sm">{signal.message}</p>
               </div>
-              <Badge variant="secondary" className="text-xs uppercase">
+              <Badge variant="secondary" className="text-xs uppercase tracking-wider">
                 {signal.category}
               </Badge>
             </div>

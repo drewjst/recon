@@ -17,9 +17,9 @@ interface MetricBoxProps {
 
 function MetricBox({ title, value, subtitle, positive }: MetricBoxProps) {
   return (
-    <Card className="p-4 hover:shadow-sm transition-shadow">
-      <div className="text-xs text-muted-foreground mb-1">{title}</div>
-      <div className={`text-lg font-semibold ${positive !== undefined ? (positive ? 'text-green-600' : 'text-red-600') : ''}`}>
+    <Card className="p-4 transition-all duration-300">
+      <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{title}</div>
+      <div className={`text-lg font-semibold font-mono ${positive !== undefined ? (positive ? 'text-success' : 'text-destructive') : ''}`}>
         {value}
       </div>
       {subtitle && <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>}

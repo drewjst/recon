@@ -24,16 +24,16 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
     <SectionCard title="Smart Money">
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div>
-          <div className="text-sm text-muted-foreground mb-1">Institutional Ownership</div>
-          <div className="text-2xl font-bold">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Institutional Ownership</div>
+          <div className="text-2xl font-bold font-mono">
             {holdings.totalInstitutionalOwnership > 0
               ? `${(holdings.totalInstitutionalOwnership * 100).toFixed(1)}%`
               : 'N/A'}
           </div>
         </div>
         <div>
-          <div className="text-sm text-muted-foreground mb-1">Net Change (Qtrs)</div>
-          <div className={`text-2xl font-bold ${holdings.netChangeShares >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Net Change (Qtrs)</div>
+          <div className={`text-2xl font-bold font-mono ${holdings.netChangeShares >= 0 ? 'text-success' : 'text-destructive'}`}>
             {holdings.netChangeShares !== 0 ? (
               <>
                 {holdings.netChangeShares >= 0 ? '+' : ''}
@@ -51,18 +51,20 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
           <div className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Top Holders</div>
           <div className="space-y-2">
             {holdings.topInstitutional.slice(0, 3).map((holder) => (
-              <div key={holder.fundCik} className="flex items-center justify-between p-2 rounded bg-muted/30">
+              <div key={holder.fundCik} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border border-border/30">
                 <span className="text-sm truncate max-w-[200px]">{holder.fundName}</span>
                 <div className="flex items-center gap-4">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm font-mono text-muted-foreground">
                     {(holder.shares / 1e6).toFixed(1)}M shares
                   </span>
                   <Badge
                     variant="outline"
-                    className={holder.changePercent >= 0 ? 'text-green-600 border-green-600/30' : 'text-red-600 border-red-600/30'}
+                    className={holder.changePercent >= 0 ? 'text-success border-success/30' : 'text-destructive border-destructive/30'}
                   >
-                    {holder.changePercent >= 0 ? '+' : ''}
-                    {holder.changePercent.toFixed(1)}%
+                    <span className="font-mono">
+                      {holder.changePercent >= 0 ? '+' : ''}
+                      {holder.changePercent.toFixed(1)}%
+                    </span>
                   </Badge>
                 </div>
               </div>
@@ -71,25 +73,25 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
         </div>
       )}
 
-      <div className="border-t border-dashed pt-4">
+      <div className="border-t border-border/30 pt-4">
         <div className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Insider Activity (90d)</div>
         {hasInsiderActivity ? (
           <>
             <div className="flex flex-wrap gap-4 md:gap-6 mb-4">
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-green-500" />
-                <span className="text-sm">
+                <div className="h-3 w-3 rounded-full bg-success" />
+                <span className="text-sm font-mono">
                   {insiderActivity.buyCount90d} buys
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-red-500" />
-                <span className="text-sm">
+                <div className="h-3 w-3 rounded-full bg-destructive" />
+                <span className="text-sm font-mono">
                   {insiderActivity.sellCount90d} sells
                 </span>
               </div>
               <div className="ml-auto">
-                <span className={`text-sm font-medium ${insiderActivity.netValue90d >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <span className={`text-sm font-medium font-mono ${insiderActivity.netValue90d >= 0 ? 'text-success' : 'text-destructive'}`}>
                   Net: {insiderActivity.netValue90d >= 0 ? '+' : ''}{formatValue(insiderActivity.netValue90d)}
                 </span>
               </div>
@@ -97,9 +99,9 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
             {insiderActivity.trades.length > 0 && (
               <div className="space-y-2">
                 {insiderActivity.trades.slice(0, 5).map((trade, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm py-1 border-t border-muted/50 first:border-t-0">
+                  <div key={i} className="flex items-center justify-between text-sm py-1 border-t border-border/30 first:border-t-0">
                     <span className="truncate max-w-[150px] md:max-w-[200px]">{trade.insiderName}</span>
-                    <span className={trade.tradeType === 'buy' ? 'text-green-600' : 'text-red-600'}>
+                    <span className={`font-mono ${trade.tradeType === 'buy' ? 'text-success' : 'text-destructive'}`}>
                       {trade.tradeType === 'buy' ? 'Buy' : 'Sell'} {formatValue(trade.value)}
                     </span>
                   </div>

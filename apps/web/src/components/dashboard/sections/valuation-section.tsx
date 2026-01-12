@@ -35,31 +35,31 @@ export function ValuationSection({ data }: ValuationSectionProps) {
       ) : (
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[150px]">Metric</TableHead>
-              <TableHead className="text-right">Current</TableHead>
-              <TableHead className="text-right">Sector</TableHead>
-              <TableHead className="text-right">vs Sector</TableHead>
+            <TableRow className="border-border/50 hover:bg-transparent">
+              <TableHead className="w-[150px] text-muted-foreground">Metric</TableHead>
+              <TableHead className="text-right text-muted-foreground">Current</TableHead>
+              <TableHead className="text-right text-muted-foreground">Sector</TableHead>
+              <TableHead className="text-right text-muted-foreground">vs Sector</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {validRows.map((row) => {
               const diff = row.sector ? ((row.current! - row.sector) / row.sector) * 100 : null;
               return (
-                <TableRow key={row.metric}>
+                <TableRow key={row.metric} className="border-border/30 hover:bg-secondary/30">
                   <TableCell className="font-medium">{row.metric}</TableCell>
-                  <TableCell className="text-right">{row.current?.toFixed(1) ?? '-'}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">
+                  <TableCell className="text-right font-mono">{row.current?.toFixed(1) ?? '-'}</TableCell>
+                  <TableCell className="text-right font-mono text-muted-foreground">
                     {row.sector?.toFixed(1) ?? '-'}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right font-mono">
                     {diff !== null ? (
                       <span
                         className={
                           diff > 10
-                            ? 'text-red-600'
+                            ? 'text-destructive'
                             : diff < -10
-                            ? 'text-green-600'
+                            ? 'text-success'
                             : 'text-muted-foreground'
                         }
                       >

@@ -17,15 +17,21 @@ interface ScoreBoxProps {
 
 function ScoreBox({ label, value, description, status }: ScoreBoxProps) {
   const statusColors = {
-    positive: 'border-green-500/50 bg-green-500/5',
-    neutral: 'border-border',
-    negative: 'border-red-500/50 bg-red-500/5',
+    positive: 'border-success/30 bg-success/5',
+    neutral: 'border-border/50',
+    negative: 'border-destructive/30 bg-destructive/5',
+  };
+
+  const valueColors = {
+    positive: 'text-success',
+    neutral: 'text-foreground',
+    negative: 'text-destructive',
   };
 
   return (
-    <Card className={`p-4 text-center hover:shadow-sm transition-shadow ${statusColors[status]}`}>
-      <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">{label}</div>
-      <div className="text-2xl font-bold mb-1">{value}</div>
+    <Card className={`p-4 text-center transition-all duration-300 ${statusColors[status]}`}>
+      <div className="text-xs text-muted-foreground uppercase tracking-widest mb-2">{label}</div>
+      <div className={`text-2xl font-bold font-mono mb-1 ${valueColors[status]}`}>{value}</div>
       <div className="text-xs text-muted-foreground">{description}</div>
     </Card>
   );

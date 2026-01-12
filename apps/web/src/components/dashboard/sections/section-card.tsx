@@ -11,9 +11,9 @@ interface SectionCardProps {
 
 export function SectionCard({ title, children, className }: SectionCardProps) {
   return (
-    <Card className={cn('hover:shadow-md transition-shadow cursor-default', className)}>
+    <Card className={cn('bg-card/50 backdrop-blur-sm', className)}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
+        <CardTitle className="text-xs uppercase text-primary font-semibold tracking-widest">
           {title}
         </CardTitle>
       </CardHeader>
@@ -26,7 +26,7 @@ export function DashboardDivider() {
   return (
     <div className="relative py-4">
       <div
-        className="absolute left-1/2 -translate-x-1/2 w-screen border-t border-dashed border-border"
+        className="absolute left-1/2 -translate-x-1/2 w-screen border-t border-border/30"
         style={{ maxWidth: 'calc(100vw - 2px)' }}
       />
     </div>

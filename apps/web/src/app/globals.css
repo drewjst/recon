@@ -4,56 +4,45 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71% 4%;
-    --card: 0 0% 100%;
+    /* Light theme - off-white background, white cards */
+    --background: 220 14% 96%; /* #f4f4f6 - off-white */
+    --foreground: 224 71% 4%; /* near black */
+
+    --card: 0 0% 100%; /* pure white */
     --card-foreground: 224 71% 4%;
+
     --popover: 0 0% 100%;
     --popover-foreground: 224 71% 4%;
-    --primary: 24 95% 53%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 224 71% 4%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 24 95% 53%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 24 95% 53%;
-    --radius: 0.5rem;
-  }
 
-  .dark {
-    --background: 224 71% 4%;
-    --foreground: 210 20% 98%;
-    --card: 224 71% 4%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71% 4%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 24 95% 53%;
+    --primary: 166 84% 37%; /* teal accent */
     --primary-foreground: 0 0% 100%;
-    --secondary: 215 28% 17%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 28% 17%;
-    --muted-foreground: 217 10% 65%;
-    --accent: 24 95% 53%;
+
+    --secondary: 220 14% 92%; /* light gray */
+    --secondary-foreground: 224 71% 4%;
+
+    --muted: 220 14% 92%;
+    --muted-foreground: 220 9% 46%; /* medium gray */
+
+    --accent: 166 84% 37%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 20% 98%;
-    --success: 142 71% 45%;
+
+    --destructive: 0 72% 51%; /* red */
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%; /* green */
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+
+    --warning: 38 92% 50%; /* amber */
     --warning-foreground: 0 0% 100%;
-    --border: 215 28% 17%;
-    --input: 215 28% 17%;
-    --ring: 24 95% 53%;
+
+    --border: 220 13% 91%; /* subtle border */
+    --input: 220 13% 91%;
+    --ring: 166 84% 37%;
+
+    --radius: 0.75rem;
+
+    /* Custom properties for effects */
+    --glow-color: 166 84% 37%;
   }
 }
 
@@ -61,7 +50,96 @@
   * {
     @apply border-border;
   }
+
+  html {
+    @apply scroll-smooth;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* Monospace for numbers */
+  .font-mono {
+    font-feature-settings: "tnum" 1, "zero" 1;
+  }
+}
+
+@layer utilities {
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-cyan-400;
+  }
+
+  /* Subtle glow effect */
+  .glow {
+    box-shadow: 0 0 20px -5px hsl(var(--glow-color) / 0.3);
+  }
+
+  .glow-sm {
+    box-shadow: 0 0 10px -3px hsl(var(--glow-color) / 0.2);
+  }
+
+  /* Gradient border */
+  .gradient-border {
+    position: relative;
+    background: hsl(var(--card));
+    border-radius: var(--radius);
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary) / 0.3),
+      hsl(var(--border)),
+      hsl(240 100% 70% / 0.2)
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-card/80 backdrop-blur-xl;
+  }
+
+  /* Smooth transitions */
+  .transition-default {
+    @apply transition-all duration-300 ease-out;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Selection color */
+::selection {
+  background: hsl(var(--primary) / 0.3);
+  color: hsl(var(--foreground));
 }

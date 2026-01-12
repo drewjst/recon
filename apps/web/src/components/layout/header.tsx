@@ -21,13 +21,13 @@ function HeaderSearch() {
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <BarChart3 className="h-5 w-5 text-white" />
+        <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary transition-all duration-300 group-hover:shadow-glow">
+            <BarChart3 className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-semibold text-xl text-foreground">Recon</span>
+          <span className="font-semibold text-xl text-foreground tracking-tight">Recon</span>
         </Link>
 
         <Suspense fallback={null}>
