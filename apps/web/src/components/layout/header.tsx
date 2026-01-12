@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { BarChart3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
 
 export function Header() {
   return (
@@ -12,31 +12,6 @@ export function Header() {
           </div>
           <span className="font-semibold text-xl text-foreground">Recon</span>
         </Link>
-
-        <nav className="hidden md:flex items-center gap-8">
-          <Link
-            href="/#features"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Features
-          </Link>
-          <Link
-            href="/#how-it-works"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            How It Works
-          </Link>
-          <Link
-            href="/stock/AAPL"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Demo
-          </Link>
-        </nav>
-
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/stock/AAPL">Try Demo</Link>
-        </Button>
       </div>
     </header>
   );

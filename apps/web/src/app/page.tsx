@@ -1,29 +1,89 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Search, TrendingUp, Calculator, Users, Zap } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Search, TrendingUp, Calculator, Users, Zap, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { StockDashboard } from '@/components/dashboard/stock-dashboard';
 
-export default function Home() {
+// Wrapper to handle Suspense for useSearchParams
+function HomeContent() {
   const router = useRouter();
-  const [ticker, setTicker] = useState('');
+  const searchParams = useSearchParams();
+  const tickerParam = searchParams.get('ticker');
+  const [localTicker, setLocalTicker] = useState('');
+
+  // Update local input when param changes, but only if empty to avoid fighting user
+  useEffect(() => {
+    if (tickerParam && !localTicker) {
+      setLocalTicker(tickerParam);
+    }
+  }, [tickerParam]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const normalizedTicker = ticker.trim().toUpperCase();
+    const normalizedTicker = localTicker.trim().toUpperCase();
     if (normalizedTicker) {
-      router.push(`/stock/${normalizedTicker}`);
+      router.push(`/?ticker=${normalizedTicker}`);
+    } else {
+      router.push('/');
     }
   };
 
+  const clearSearch = () => {
+    setLocalTicker('');
+    router.push('/');
+  };
+
+  // If a ticker is selected, we show the dashboard view (condensed header + dashboard)
+  if (tickerParam) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        {/* Condensed Header / Search Bar */}
+        <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-16 z-40">
+           <div className="container py-4">
+             <form onSubmit={handleSubmit} className="flex max-w-lg gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search ticker..."
+                    className="pl-9 h-10"
+                    value={localTicker}
+                    onChange={(e) => setLocalTicker(e.target.value)}
+                  />
+                  {localTicker && (
+                    <button
+                      type="button"
+                      onClick={() => setLocalTicker('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <Button type="submit" size="sm">Search</Button>
+                <Button type="button" variant="ghost" size="sm" onClick={clearSearch}>Clear</Button>
+             </form>
+           </div>
+        </div>
+
+        {/* Dashboard Content */}
+        <div className="container py-8 flex-1">
+          <StockDashboard ticker={tickerParam} />
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise, show the original Landing Page
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="container flex flex-col items-center justify-center py-24 md:py-32">
-        <div className="mx-auto max-w-3xl text-center space-y-8">
+      <section className="flex flex-col items-center justify-center py-24 md:py-14">
+        <div className="mx-auto max-w-3xl text-center space-y-8 px-4">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
             Stock research,{' '}
             <span className="text-primary">distilled</span>
@@ -33,90 +93,107 @@ export default function Home() {
           </p>
 
           {/* Search Box */}
-          <form onSubmit={handleSubmit} className="flex w-full max-w-lg mx-auto gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Enter ticker symbol (e.g., AAPL)"
-                className="pl-10 h-12 text-base"
-                value={ticker}
-                onChange={(e) => setTicker(e.target.value)}
-              />
-            </div>
-            <Button type="submit" size="lg" className="h-12 px-8">
-              Distill
-            </Button>
-          </form>
+          <div className="w-full max-w-lg mx-auto space-y-2">
+            <form onSubmit={handleSubmit} className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Enter ticker symbol (e.g., AAPL)"
+                  className="pl-10 h-12 text-base"
+                  value={localTicker}
+                  onChange={(e) => setLocalTicker(e.target.value)}
+                />
+              </div>
+              <Button type="submit" size="lg" className="h-12 px-8">
+                Distill
+              </Button>
+            </form>
 
-          <p className="text-sm text-muted-foreground">
-            Try:{' '}
-            <Link href="/stock/AAPL" className="text-primary hover:underline font-medium">
-              AAPL
-            </Link>
-            {' · '}
-            <Link href="/stock/MSFT" className="text-primary hover:underline font-medium">
-              MSFT
-            </Link>
-            {' · '}
-            <Link href="/stock/GOOGL" className="text-primary hover:underline font-medium">
-              GOOGL
-            </Link>
-            {' · '}
-            <Link href="/stock/NVDA" className="text-primary hover:underline font-medium">
-              NVDA
-            </Link>
-          </p>
+            <p className="text-sm text-muted-foreground text-left px-1">
+              Try:{' '}
+              <button onClick={() => router.push('/?ticker=AAPL')} className="text-primary hover:underline font-medium">
+                AAPL
+              </button>
+              {' · '}
+              <button onClick={() => router.push('/?ticker=MSFT')} className="text-primary hover:underline font-medium">
+                MSFT
+              </button>
+              {' · '}
+              <button onClick={() => router.push('/?ticker=GOOGL')} className="text-primary hover:underline font-medium">
+                GOOGL
+              </button>
+              {' · '}
+              <button onClick={() => router.push('/?ticker=NVDA')} className="text-primary hover:underline font-medium">
+                NVDA
+              </button>
+            </p>
+          </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="container py-16 md:py-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <FeatureCard
-            icon={<Calculator className="h-5 w-5" />}
-            title="Piotroski F-Score"
-            description="9-point fundamental strength score that identifies financially sound companies with strong balance sheets."
-          />
-          <FeatureCard
-            icon={<TrendingUp className="h-5 w-5" />}
-            title="Rule of 40"
-            description="Growth + profitability metric for evaluating sustainable business performance and efficiency."
-          />
-          <FeatureCard
-            icon={<Users className="h-5 w-5" />}
-            title="Smart Money Tracking"
-            description="Track institutional holdings and insider transactions to follow professional investor sentiment."
-          />
-          <FeatureCard
-            icon={<Zap className="h-5 w-5" />}
-            title="Signal Detection"
-            description="Automated analysis that surfaces bullish and bearish signals from fundamental data patterns."
-          />
+      <section id="features" className="py-16 md:py-24 border-t border-border/50">
+        <div className="px-4 md:px-6"> 
+          {/* Note: using px-4 instead of container to allow border to control width if needed, but keeping simple for now */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <FeatureCard
+              icon={<Calculator className="h-5 w-5" />}
+              title="Piotroski F-Score"
+              description="9-point fundamental strength score that identifies financially sound companies with strong balance sheets."
+            />
+            <FeatureCard
+              icon={<TrendingUp className="h-5 w-5" />}
+              title="Rule of 40"
+              description="Growth + profitability metric for evaluating sustainable business performance and efficiency."
+            />
+            <FeatureCard
+              icon={<Users className="h-5 w-5" />}
+              title="Smart Money Tracking"
+              description="Track institutional holdings and insider transactions to follow professional investor sentiment."
+            />
+            <FeatureCard
+              icon={<Zap className="h-5 w-5" />}
+              title="Signal Detection"
+              description="Automated analysis that surfaces bullish and bearish signals from fundamental data patterns."
+            />
+          </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="container py-16 md:py-24">
-        <div className="rounded-2xl bg-gradient-to-br from-secondary to-muted p-8 md:p-12 lg:p-16">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Ready to get started?
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Stop drowning in financial data. Recon distills what matters so you can make informed decisions faster.
-            </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-4">
-              <Button size="lg" asChild>
-                <Link href="/stock/AAPL">Try the Demo</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="#features">Learn More</Link>
-              </Button>
+      <section className="py-16 md:py-24">
+        <div className="px-4">
+          <div className="rounded-2xl bg-gradient-to-br from-secondary to-muted p-8 md:p-12 lg:p-16">
+            <div className="max-w-2xl">
+              <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+                Ready to get started?
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Stop drowning in financial data. Recon distills what matters so you can make informed decisions faster.
+              </p>
+              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                <Button size="lg" onClick={() => router.push('/?ticker=AAPL')}>
+                  Try the Demo
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="#features">Learn More</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <div className="min-h-screen border-x border-border max-w-7xl mx-auto bg-background/50 shadow-sm">
+      <Suspense fallback={<div className="min-h-screen" />}>
+        <HomeContent />
+      </Suspense>
     </div>
   );
 }
