@@ -214,13 +214,13 @@ func (r *Repository) GetValuation(ctx context.Context, ticker string) (*stock.Va
 	if len(ratios) > 0 {
 		ratio := ratios[0]
 
-		if ratio.PriceEarningsRatio != 0 {
-			pe := ratio.PriceEarningsRatio
+		if ratio.PriceToEarningsRatio != 0 {
+			pe := ratio.PriceToEarningsRatio
 			valuation.PE = stock.ValuationMetric{Value: &pe}
 		}
 
-		if ratio.PriceEarningsToGrowthRatio != 0 {
-			peg := ratio.PriceEarningsToGrowthRatio
+		if ratio.PriceToEarningsGrowthRatio != 0 {
+			peg := ratio.PriceToEarningsGrowthRatio
 			valuation.PEG = stock.ValuationMetric{Value: &peg}
 		}
 
@@ -229,8 +229,8 @@ func (r *Repository) GetValuation(ctx context.Context, ticker string) (*stock.Va
 			valuation.EVToEBITDA = stock.ValuationMetric{Value: &evEbitda}
 		}
 
-		if ratio.PriceToFreeCashFlowsRatio != 0 {
-			priceFcf := ratio.PriceToFreeCashFlowsRatio
+		if ratio.PriceToFreeCashFlowRatio != 0 {
+			priceFcf := ratio.PriceToFreeCashFlowRatio
 			valuation.PriceToFCF = stock.ValuationMetric{Value: &priceFcf}
 		}
 
