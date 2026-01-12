@@ -172,6 +172,30 @@ func (c *Client) GetInsiderTrades(ctx context.Context, ticker string, limit int)
 	return trades, nil
 }
 
+// GetRatiosTTM retrieves trailing twelve month financial ratios.
+func (c *Client) GetRatiosTTM(ctx context.Context, ticker string) ([]RatiosTTM, error) {
+	url := fmt.Sprintf("%s/ratios-ttm?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+
+	var ratios []RatiosTTM
+	if err := c.get(ctx, url, &ratios); err != nil {
+		return nil, fmt.Errorf("fetching TTM ratios: %w", err)
+	}
+
+	return ratios, nil
+}
+
+// GetKeyMetricsTTM retrieves trailing twelve month key metrics.
+func (c *Client) GetKeyMetricsTTM(ctx context.Context, ticker string) ([]KeyMetricsTTM, error) {
+	url := fmt.Sprintf("%s/key-metrics-ttm?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+
+	var metrics []KeyMetricsTTM
+	if err := c.get(ctx, url, &metrics); err != nil {
+		return nil, fmt.Errorf("fetching TTM key metrics: %w", err)
+	}
+
+	return metrics, nil
+}
+
 // get makes an HTTP GET request and unmarshals the response.
 func (c *Client) get(ctx context.Context, url string, dest any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)

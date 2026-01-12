@@ -20,7 +20,7 @@ export function ValuationSection({ data }: ValuationSectionProps) {
 
   const rows = [
     { metric: 'P/E Ratio', current: valuation.pe.value, sector: valuation.pe.sectorMedian },
-    { metric: 'Forward P/E', current: valuation.forwardPe.value, sector: valuation.forwardPe.sectorMedian },
+    { metric: 'PEG Ratio', current: valuation.peg.value, sector: valuation.peg.sectorMedian },
     { metric: 'EV/EBITDA', current: valuation.evToEbitda.value, sector: valuation.evToEbitda.sectorMedian },
     { metric: 'Price/FCF', current: valuation.priceToFcf.value, sector: valuation.priceToFcf.sectorMedian },
     { metric: 'Price/Book', current: valuation.priceToBook.value, sector: valuation.priceToBook.sectorMedian },

@@ -199,14 +199,33 @@ type HistoricalPrice struct {
 
 // InsiderTrade represents an insider trading transaction.
 type InsiderTrade struct {
-	Symbol          string  `json:"symbol"`
-	FilingDate      string  `json:"filingDate"`
-	TransactionDate string  `json:"transactionDate"`
-	ReportingName   string  `json:"reportingName"`
-	TypeOfOwner     string  `json:"typeOfOwner"`
-	TransactionType string  `json:"acquistionOrDisposition"`
-	SecuritiesOwned int64   `json:"securitiesOwned"`
-	SecuritiesTransacted int64 `json:"securitiesTransacted"`
-	Price           float64 `json:"price"`
-	Value           float64 `json:"value"`
+	Symbol               string  `json:"symbol"`
+	FilingDate           string  `json:"filingDate"`
+	TransactionDate      string  `json:"transactionDate"`
+	ReportingName        string  `json:"reportingName"`
+	TypeOfOwner          string  `json:"typeOfOwner"`
+	TransactionType      string  `json:"acquistionOrDisposition"`
+	SecuritiesOwned      int64   `json:"securitiesOwned"`
+	SecuritiesTransacted int64   `json:"securitiesTransacted"`
+	Price                float64 `json:"price"`
+	Value                float64 `json:"value"`
+}
+
+// RatiosTTM represents trailing twelve month ratios from FMP API.
+type RatiosTTM struct {
+	Symbol                        string  `json:"symbol"`
+	PriceToEarningsRatioTTM       float64 `json:"priceToEarningsRatioTTM"`
+	PriceToEarningsGrowthRatioTTM float64 `json:"priceToEarningsGrowthRatioTTM"`
+	PriceToBookRatioTTM           float64 `json:"priceToBookRatioTTM"`
+	PriceToSalesRatioTTM          float64 `json:"priceToSalesRatioTTM"`
+	PriceToFreeCashFlowRatioTTM   float64 `json:"priceToFreeCashFlowRatioTTM"`
+	DividendYieldTTM              float64 `json:"dividendYieldTTM"`
+}
+
+// KeyMetricsTTM represents trailing twelve month key metrics from FMP API.
+type KeyMetricsTTM struct {
+	Symbol        string  `json:"symbol"`
+	EVToEBITDATTM float64 `json:"evToEBITDATTM"`
+	EVToSalesTTM  float64 `json:"evToSalesTTM"`
+	MarketCap     float64 `json:"marketCap"`
 }

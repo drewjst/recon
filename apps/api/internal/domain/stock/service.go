@@ -19,7 +19,7 @@ type Repository interface {
 	GetQuote(ctx context.Context, ticker string) (*Quote, error)
 	GetFinancials(ctx context.Context, ticker string) (*Financials, error)
 	GetFinancialData(ctx context.Context, ticker string, periods int) ([]scores.FinancialData, error)
-	GetValuation(ctx context.Context, ticker string) (*Valuation, error)
+	GetValuation(ctx context.Context, ticker string, sector string) (*Valuation, error)
 	GetHoldings(ctx context.Context, ticker string) (*Holdings, error)
 	GetInsiderTrades(ctx context.Context, ticker string, limit int) ([]InsiderTrade, error)
 	GetPerformance(ctx context.Context, ticker string, currentPrice, yearHigh float64) (*Performance, error)
@@ -91,7 +91,7 @@ func (s *Service) GetStockDetail(ctx context.Context, ticker string) (*StockDeta
 		return nil, fmt.Errorf("fetching financials for %s: %w", ticker, err)
 	}
 
-	valuation, err := s.repo.GetValuation(ctx, ticker)
+	valuation, err := s.repo.GetValuation(ctx, ticker, company.Sector)
 	if err != nil {
 		return nil, fmt.Errorf("fetching valuation for %s: %w", ticker, err)
 	}
@@ -101,9 +101,10 @@ func (s *Service) GetStockDetail(ctx context.Context, ticker string) (*StockDeta
 		return nil, fmt.Errorf("fetching holdings for %s: %w", ticker, err)
 	}
 
+	// Get insider trades (non-fatal if unavailable on free tier)
 	insiderTrades, err := s.repo.GetInsiderTrades(ctx, ticker, 10)
 	if err != nil {
-		return nil, fmt.Errorf("fetching insider trades for %s: %w", ticker, err)
+		insiderTrades = []InsiderTrade{} // Continue without insider data
 	}
 
 	// Get performance metrics from historical prices
@@ -112,10 +113,10 @@ func (s *Service) GetStockDetail(ctx context.Context, ticker string) (*StockDeta
 		return nil, fmt.Errorf("fetching performance for %s: %w", ticker, err)
 	}
 
-	// Get aggregated insider activity
+	// Get aggregated insider activity (non-fatal if unavailable on free tier)
 	insiderActivity, err := s.repo.GetInsiderActivity(ctx, ticker)
 	if err != nil {
-		return nil, fmt.Errorf("fetching insider activity for %s: %w", ticker, err)
+		insiderActivity = &InsiderActivity{Trades: []InsiderTrade{}}
 	}
 
 	// Get financial data for score calculations (current + previous year)

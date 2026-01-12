@@ -202,41 +202,93 @@ func (r *Repository) GetFinancialData(ctx context.Context, ticker string, period
 	return result, nil
 }
 
-// GetValuation retrieves valuation metrics.
-func (r *Repository) GetValuation(ctx context.Context, ticker string) (*stock.Valuation, error) {
-	ratios, err := r.client.GetRatios(ctx, ticker, 1)
+// sectorMedians contains typical valuation medians by sector.
+// These are approximate values based on historical averages.
+var sectorMedians = map[string]struct {
+	PE         float64
+	PEG        float64
+	EVToEBITDA float64
+	PriceToFCF float64
+	PriceToBook float64
+}{
+	"Technology":             {PE: 28.0, PEG: 1.8, EVToEBITDA: 18.0, PriceToFCF: 25.0, PriceToBook: 6.0},
+	"Healthcare":             {PE: 22.0, PEG: 1.6, EVToEBITDA: 14.0, PriceToFCF: 20.0, PriceToBook: 4.0},
+	"Financial Services":     {PE: 14.0, PEG: 1.2, EVToEBITDA: 10.0, PriceToFCF: 12.0, PriceToBook: 1.5},
+	"Consumer Cyclical":      {PE: 18.0, PEG: 1.4, EVToEBITDA: 12.0, PriceToFCF: 18.0, PriceToBook: 4.0},
+	"Consumer Defensive":     {PE: 20.0, PEG: 2.2, EVToEBITDA: 14.0, PriceToFCF: 22.0, PriceToBook: 5.0},
+	"Industrials":            {PE: 20.0, PEG: 1.5, EVToEBITDA: 12.0, PriceToFCF: 18.0, PriceToBook: 3.5},
+	"Energy":                 {PE: 12.0, PEG: 1.0, EVToEBITDA: 6.0, PriceToFCF: 10.0, PriceToBook: 1.8},
+	"Basic Materials":        {PE: 14.0, PEG: 1.2, EVToEBITDA: 8.0, PriceToFCF: 12.0, PriceToBook: 2.0},
+	"Utilities":              {PE: 18.0, PEG: 2.5, EVToEBITDA: 12.0, PriceToFCF: 15.0, PriceToBook: 2.0},
+	"Real Estate":            {PE: 35.0, PEG: 2.0, EVToEBITDA: 18.0, PriceToFCF: 25.0, PriceToBook: 2.5},
+	"Communication Services": {PE: 18.0, PEG: 1.3, EVToEBITDA: 10.0, PriceToFCF: 15.0, PriceToBook: 3.0},
+}
+
+// GetValuation retrieves valuation metrics using TTM data.
+func (r *Repository) GetValuation(ctx context.Context, ticker string, sector string) (*stock.Valuation, error) {
+	// Fetch TTM ratios
+	ratiosTTM, err := r.client.GetRatiosTTM(ctx, ticker)
 	if err != nil {
-		return nil, fmt.Errorf("fetching ratios: %w", err)
+		return nil, fmt.Errorf("fetching TTM ratios: %w", err)
+	}
+
+	// Fetch TTM key metrics for EV/EBITDA
+	metricsTTM, err := r.client.GetKeyMetricsTTM(ctx, ticker)
+	if err != nil {
+		return nil, fmt.Errorf("fetching TTM key metrics: %w", err)
 	}
 
 	valuation := &stock.Valuation{}
 
-	if len(ratios) > 0 {
-		ratio := ratios[0]
+	// Get sector medians (with fallback to Technology)
+	medians, ok := sectorMedians[sector]
+	if !ok {
+		medians = sectorMedians["Technology"]
+	}
 
-		if ratio.PriceToEarningsRatio != 0 {
-			pe := ratio.PriceToEarningsRatio
-			valuation.PE = stock.ValuationMetric{Value: &pe}
+	// Helper to create a pointer
+	ptr := func(v float64) *float64 { return &v }
+
+	if len(ratiosTTM) > 0 {
+		ratio := ratiosTTM[0]
+
+		if ratio.PriceToEarningsRatioTTM > 0 {
+			valuation.PE = stock.ValuationMetric{
+				Value:        ptr(ratio.PriceToEarningsRatioTTM),
+				SectorMedian: ptr(medians.PE),
+			}
 		}
 
-		if ratio.PriceToEarningsGrowthRatio != 0 {
-			peg := ratio.PriceToEarningsGrowthRatio
-			valuation.PEG = stock.ValuationMetric{Value: &peg}
+		if ratio.PriceToEarningsGrowthRatioTTM > 0 {
+			valuation.PEG = stock.ValuationMetric{
+				Value:        ptr(ratio.PriceToEarningsGrowthRatioTTM),
+				SectorMedian: ptr(medians.PEG),
+			}
 		}
 
-		if ratio.EnterpriseValueMultiple != 0 {
-			evEbitda := ratio.EnterpriseValueMultiple
-			valuation.EVToEBITDA = stock.ValuationMetric{Value: &evEbitda}
+		if ratio.PriceToFreeCashFlowRatioTTM > 0 {
+			valuation.PriceToFCF = stock.ValuationMetric{
+				Value:        ptr(ratio.PriceToFreeCashFlowRatioTTM),
+				SectorMedian: ptr(medians.PriceToFCF),
+			}
 		}
 
-		if ratio.PriceToFreeCashFlowRatio != 0 {
-			priceFcf := ratio.PriceToFreeCashFlowRatio
-			valuation.PriceToFCF = stock.ValuationMetric{Value: &priceFcf}
+		if ratio.PriceToBookRatioTTM > 0 {
+			valuation.PriceToBook = stock.ValuationMetric{
+				Value:        ptr(ratio.PriceToBookRatioTTM),
+				SectorMedian: ptr(medians.PriceToBook),
+			}
 		}
+	}
 
-		if ratio.PriceToBookRatio != 0 {
-			priceBook := ratio.PriceToBookRatio
-			valuation.PriceToBook = stock.ValuationMetric{Value: &priceBook}
+	if len(metricsTTM) > 0 {
+		metrics := metricsTTM[0]
+
+		if metrics.EVToEBITDATTM > 0 {
+			valuation.EVToEBITDA = stock.ValuationMetric{
+				Value:        ptr(metrics.EVToEBITDATTM),
+				SectorMedian: ptr(medians.EVToEBITDA),
+			}
 		}
 	}
 
