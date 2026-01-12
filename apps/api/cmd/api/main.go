@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/drewjst/recon/apps/api/internal/api"
 	"github.com/drewjst/recon/apps/api/internal/config"
+	"github.com/drewjst/recon/apps/api/internal/domain/search"
 	"github.com/drewjst/recon/apps/api/internal/domain/stock"
 	"github.com/drewjst/recon/apps/api/internal/infrastructure/external/fmp"
 )
@@ -50,9 +52,17 @@ func run() error {
 	// Initialize stock service (no cache for MVP)
 	stockService := stock.NewService(repo, nil)
 
+	// Initialize search index with embedded ticker data
+	searchIndex, err := search.NewIndex()
+	if err != nil {
+		return fmt.Errorf("initializing search index: %w", err)
+	}
+	slog.Info("search index initialized")
+
 	// Initialize router
 	router := api.NewRouter(api.RouterDeps{
 		StockService:   stockService,
+		SearchIndex:    searchIndex,
 		AllowedOrigins: []string{"*"}, // Allow all origins for MVP
 	})
 

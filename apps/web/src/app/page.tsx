@@ -7,6 +7,7 @@ import { Search, TrendingUp, Calculator, Users, Zap, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StockDashboard } from '@/components/dashboard/stock-dashboard';
+import { TickerSearch } from '@/components/search/ticker-search';
 
 // Wrapper to handle Suspense for useSearchParams
 function HomeContent() {
@@ -43,30 +44,11 @@ function HomeContent() {
       <div className="flex flex-col min-h-screen">
         {/* Condensed Header / Search Bar */}
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-16 z-40">
-           <div className="container py-4">
-             <form onSubmit={handleSubmit} className="flex max-w-lg gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search ticker..."
-                    className="pl-9 h-10"
-                    value={localTicker}
-                    onChange={(e) => setLocalTicker(e.target.value)}
-                  />
-                  {localTicker && (
-                    <button
-                      type="button"
-                      onClick={() => setLocalTicker('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-                <Button type="submit" size="sm">Search</Button>
-                <Button type="button" variant="ghost" size="sm" onClick={clearSearch}>Clear</Button>
-             </form>
+           <div className="container py-4 flex items-center gap-4">
+             <div className="max-w-lg flex-1">
+               <TickerSearch />
+             </div>
+             <Button type="button" variant="ghost" size="sm" onClick={clearSearch}>Clear</Button>
            </div>
         </div>
 
@@ -94,21 +76,7 @@ function HomeContent() {
 
           {/* Search Box */}
           <div className="w-full max-w-lg mx-auto space-y-2">
-            <form onSubmit={handleSubmit} className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Enter ticker symbol (e.g., AAPL)"
-                  className="pl-10 h-12 text-base"
-                  value={localTicker}
-                  onChange={(e) => setLocalTicker(e.target.value)}
-                />
-              </div>
-              <Button type="submit" size="lg" className="h-12 px-8">
-                Distill
-              </Button>
-            </form>
+            <TickerSearch size="lg" autoFocus />
 
             <p className="text-sm text-muted-foreground text-left px-1">
               Try:{' '}

@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"log/slog"
 	"net/http"
 	"strconv"
 
-	"github.com/drewjst/recon/apps/api/internal/api/middleware"
-	"github.com/drewjst/recon/apps/api/internal/domain/stock"
+	"github.com/drewjst/recon/apps/api/internal/domain/search"
 )
 
 const (
@@ -16,26 +14,23 @@ const (
 
 // SearchHandler handles ticker search requests.
 type SearchHandler struct {
-	service *stock.Service
+	index *search.Index
 }
 
-// NewSearchHandler creates a new search handler with the given service.
-func NewSearchHandler(service *stock.Service) *SearchHandler {
-	return &SearchHandler{service: service}
+// NewSearchHandler creates a new search handler with the given search index.
+func NewSearchHandler(index *search.Index) *SearchHandler {
+	return &SearchHandler{index: index}
 }
 
 // SearchResponse represents the search API response.
 type SearchResponse struct {
-	Results []stock.SearchResult `json:"results"`
-	Query   string               `json:"query"`
+	Results []search.Result `json:"results"`
+	Query   string          `json:"query"`
 }
 
 // Search handles GET /api/search?q={query} requests.
 // Returns matching tickers for autocomplete functionality.
 func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	requestID := middleware.GetRequestID(ctx)
-
 	query := r.URL.Query().Get("q")
 	if query == "" {
 		writeError(w, http.StatusBadRequest, ErrCodeBadRequest, "Query parameter 'q' is required")
@@ -44,16 +39,7 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 
 	limit := parseLimit(r.URL.Query().Get("limit"))
 
-	results, err := h.service.Search(ctx, query, limit)
-	if err != nil {
-		slog.Error("search failed",
-			"error", err,
-			"query", query,
-			"request_id", requestID,
-		)
-		writeError(w, http.StatusInternalServerError, ErrCodeInternalError, "Search failed")
-		return
-	}
+	results := h.index.Search(query, limit)
 
 	writeJSON(w, http.StatusOK, SearchResponse{
 		Results: results,

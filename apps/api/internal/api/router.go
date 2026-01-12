@@ -6,12 +6,14 @@ import (
 
 	"github.com/drewjst/recon/apps/api/internal/api/handlers"
 	"github.com/drewjst/recon/apps/api/internal/api/middleware"
+	"github.com/drewjst/recon/apps/api/internal/domain/search"
 	"github.com/drewjst/recon/apps/api/internal/domain/stock"
 )
 
 // RouterDeps contains all dependencies needed by the router.
 type RouterDeps struct {
-	StockService *stock.Service
+	StockService   *stock.Service
+	SearchIndex    *search.Index
 	AllowedOrigins []string
 }
 
@@ -33,7 +35,7 @@ func NewRouter(deps RouterDeps) *chi.Mux {
 	// API routes
 	r.Route("/api", func(r chi.Router) {
 		stockHandler := handlers.NewStockHandler(deps.StockService)
-		searchHandler := handlers.NewSearchHandler(deps.StockService)
+		searchHandler := handlers.NewSearchHandler(deps.SearchIndex)
 
 		r.Get("/stock/{ticker}", stockHandler.GetStock)
 		r.Get("/search", searchHandler.Search)

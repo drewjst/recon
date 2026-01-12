@@ -27,7 +27,7 @@ export function TickerSearch({ size = 'default', autoFocus = false, className }:
     (ticker?: string) => {
       const target = ticker || query;
       if (target.trim()) {
-        router.push(`/stock/${target.toUpperCase()}`);
+        router.push(`/?ticker=${target.toUpperCase()}`);
         setIsOpen(false);
         setQuery('');
       }
