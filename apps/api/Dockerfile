@@ -7,11 +7,11 @@ WORKDIR /app
 RUN apk add --no-cache git ca-certificates
 
 # Copy go mod files first for layer caching
-COPY go.mod go.sum ./
+COPY apps/api/go.mod apps/api/go.sum ./
 RUN go mod download
 
 # Copy source code
-COPY . .
+COPY apps/api/ .
 
 # Build the binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /bin/api ./cmd/api
@@ -30,7 +30,7 @@ RUN addgroup -S recon && adduser -S recon -G recon
 # Copy binary from builder
 COPY --from=builder /bin/api /app/api
 
-# Copy migrations
+# Copy migrations if they exist
 COPY --from=builder /app/migrations ./migrations
 
 # Switch to non-root user
