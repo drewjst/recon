@@ -18,6 +18,11 @@ COPY apps/web ./apps/web
 
 # Build web app
 WORKDIR /app/apps/web
+
+# Accept build-time env var for API URL
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN npm run build
 
 # Run stage
