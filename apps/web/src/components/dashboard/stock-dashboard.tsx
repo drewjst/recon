@@ -1,17 +1,59 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { useStock } from '@/hooks/use-stock';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   HeaderSection,
   ConvictionScoresSection,
-  SignalsSection,
-  GrowthSection,
-  ValuationSection,
-  SmartMoneySection,
-  FooterSection,
   DashboardDivider,
 } from './sections';
+
+// Skeleton for loading sections
+const SectionSkeleton = () => (
+  <div className="w-full h-64 p-6 rounded-xl border bg-card text-card-foreground shadow-sm space-y-4">
+    <div className="flex items-center justify-between">
+      <Skeleton className="h-6 w-32" />
+      <Skeleton className="h-8 w-24" />
+    </div>
+    <div className="space-y-2">
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-[90%]" />
+      <Skeleton className="h-4 w-[80%]" />
+    </div>
+  </div>
+);
+
+// ⚡ Bolt Optimization: Lazy load below-the-fold sections
+// Reduces initial bundle size and hydration cost.
+// Impact: Improved Time to Interactive (TTI) and First Input Delay (FID).
+// The sections below are likely not visible on initial load.
+
+const SignalsSection = dynamic(
+  () => import('./sections/signals-section').then((mod) => mod.SignalsSection),
+  { loading: () => <SectionSkeleton /> }
+);
+
+const GrowthSection = dynamic(
+  () => import('./sections/growth-section').then((mod) => mod.GrowthSection),
+  { loading: () => <SectionSkeleton /> }
+);
+
+const ValuationSection = dynamic(
+  () => import('./sections/valuation-section').then((mod) => mod.ValuationSection),
+  { loading: () => <SectionSkeleton /> }
+);
+
+const SmartMoneySection = dynamic(
+  () => import('./sections/smart-money-section').then((mod) => mod.SmartMoneySection),
+  { loading: () => <SectionSkeleton /> }
+);
+
+const FooterSection = dynamic(
+  () => import('./sections/footer-section').then((mod) => mod.FooterSection),
+  { loading: () => <SectionSkeleton /> }
+);
 
 interface StockDashboardProps {
   ticker: string;
