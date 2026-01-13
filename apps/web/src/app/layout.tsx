@@ -24,10 +24,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-zinc-50`}>
         <Providers>
           <TooltipProvider>
-            <div className="relative flex min-h-screen flex-col">
+            <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col border-x border-border bg-background shadow-sm">
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />
