@@ -1,6 +1,7 @@
 'use client';
 
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowUp, ArrowDown, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { MiniChart } from './mini-chart';
 import type { StockDetailResponse } from '@recon/shared';
@@ -32,72 +33,86 @@ export function HeaderSection({ data }: HeaderSectionProps) {
     <Card className="border-none shadow-none bg-transparent">
       <CardContent className="p-0">
         <div className="flex flex-col lg:flex-row lg:items-start lg:gap-6">
-          {/* Left side: Company info */}
-          <div className="flex-1 space-y-3">
-            <div className="flex items-baseline gap-3">
-              <span className="font-bold text-2xl tracking-tight">{company.ticker}</span>
-              <span className="text-muted-foreground text-lg truncate">{company.name}</span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold font-mono tracking-tight">
-                ${quote.price.toFixed(2)}
-              </span>
-              <span className={`flex items-center gap-1 text-lg font-mono ${isPositive ? 'text-success' : 'text-destructive'}`}>
-                {isPositive ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
-                ${Math.abs(quote.change).toFixed(2)} ({Math.abs(quote.changePercent).toFixed(2)}%)
-              </span>
-            </div>
-
-            <div className="text-sm text-muted-foreground flex flex-wrap gap-x-2">
-              <span>{company.sector}</span>
-              <span className="text-border">•</span>
-              <span>{company.industry}</span>
-              <span className="text-border">•</span>
-              <span className="font-mono">{formatMarketCap(quote.marketCap)}</span>
-            </div>
-
-            {/* Condensed performance metrics */}
-            <div className="flex items-center gap-1 pt-1">
-              {performanceMetrics.map(({ label, value }, index) => (
-                <div key={label} className="flex items-center">
-                  {index > 0 && <span className="text-border mx-1.5">|</span>}
-                  <span className="text-xs text-muted-foreground mr-1">{label}</span>
-                  <span className={`text-xs font-medium font-mono ${value >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    {value > 0 ? '+' : ''}{value.toFixed(1)}%
-                  </span>
+          {/* Left side: Company info - clickable to overview */}
+          <Link
+            href={`/stock/${company.ticker}/overview`}
+            className="flex-1 group"
+          >
+            <div className="space-y-3 p-4 -m-4 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div className="flex items-baseline gap-3">
+                  <span className="font-bold text-2xl tracking-tight">{company.ticker}</span>
+                  <span className="text-muted-foreground text-lg truncate">{company.name}</span>
                 </div>
-              ))}
-            </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity lg:hidden" />
+              </div>
 
-            {/* 52-week range - compact version */}
-            <div className="pt-1">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="font-mono">${quote.fiftyTwoWeekLow.toFixed(0)}</span>
-                <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-500"
-                    style={{
-                      width: `${Math.max(5, Math.min(100, ((quote.price - quote.fiftyTwoWeekLow) / (quote.fiftyTwoWeekHigh - quote.fiftyTwoWeekLow)) * 100))}%`
-                    }}
-                  />
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-bold font-mono tracking-tight">
+                  ${quote.price.toFixed(2)}
+                </span>
+                <span className={`flex items-center gap-1 text-lg font-mono ${isPositive ? 'text-success' : 'text-destructive'}`}>
+                  {isPositive ? <ArrowUp className="h-5 w-5" /> : <ArrowDown className="h-5 w-5" />}
+                  ${Math.abs(quote.change).toFixed(2)} ({Math.abs(quote.changePercent).toFixed(2)}%)
+                </span>
+              </div>
+
+              <div className="text-sm text-muted-foreground flex flex-wrap gap-x-2">
+                <span>{company.sector}</span>
+                <span className="text-border">•</span>
+                <span>{company.industry}</span>
+                <span className="text-border">•</span>
+                <span className="font-mono">{formatMarketCap(quote.marketCap)}</span>
+              </div>
+
+              {/* Condensed performance metrics */}
+              <div className="flex items-center gap-1 pt-1">
+                {performanceMetrics.map(({ label, value }, index) => (
+                  <div key={label} className="flex items-center">
+                    {index > 0 && <span className="text-border mx-1.5">|</span>}
+                    <span className="text-xs text-muted-foreground mr-1">{label}</span>
+                    <span className={`text-xs font-medium font-mono ${value >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {value > 0 ? '+' : ''}{value.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 52-week range - compact version */}
+              <div className="pt-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="font-mono">${quote.fiftyTwoWeekLow.toFixed(0)}</span>
+                  <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.max(5, Math.min(100, ((quote.price - quote.fiftyTwoWeekLow) / (quote.fiftyTwoWeekHigh - quote.fiftyTwoWeekLow)) * 100))}%`
+                      }}
+                    />
+                  </div>
+                  <span className="font-mono">${quote.fiftyTwoWeekHigh.toFixed(0)}</span>
+                  <span className="text-muted-foreground/60">52W</span>
                 </div>
-                <span className="font-mono">${quote.fiftyTwoWeekHigh.toFixed(0)}</span>
-                <span className="text-muted-foreground/60">52W</span>
               </div>
             </div>
-          </div>
+          </Link>
 
-          {/* Right side: Mini chart - responsive for all screen sizes */}
-          <div className="mt-4 lg:mt-0 w-full lg:w-[380px] h-[220px] rounded-xl border border-border/30 bg-card">
-            <MiniChart
-              symbol={company.ticker}
-              exchange={company.exchange}
-              height={220}
-              dateRange="12M"
-              colorTheme="light"
-            />
-          </div>
+          {/* Right side: Mini chart */}
+          <Link
+            href={`/stock/${company.ticker}/overview`}
+            className="block group mt-4 lg:mt-0"
+          >
+            <div className="w-full lg:w-[380px] h-[220px] rounded-xl border border-border/30 bg-card hover:border-primary/30 transition-colors relative">
+              <MiniChart
+                symbol={company.ticker}
+                exchange={company.exchange}
+                height={220}
+                dateRange="12M"
+                colorTheme="light"
+              />
+              <ChevronRight className="absolute top-3 right-3 w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </Link>
         </div>
       </CardContent>
     </Card>
