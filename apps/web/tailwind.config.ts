@@ -90,6 +90,14 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        'collapsible-down': {
+          from: { height: '0', opacity: '0' },
+          to: { height: 'var(--radix-collapsible-content-height)', opacity: '1' },
+        },
+        'collapsible-up': {
+          from: { height: 'var(--radix-collapsible-content-height)', opacity: '1' },
+          to: { height: '0', opacity: '0' },
+        },
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
@@ -102,6 +110,8 @@ const config: Config = {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'collapsible-down': 'collapsible-down 0.2s ease-out',
+        'collapsible-up': 'collapsible-up 0.2s ease-out',
         shimmer: 'shimmer 2s linear infinite',
         'pulse-slow': 'pulse 3s ease-in-out infinite',
       },

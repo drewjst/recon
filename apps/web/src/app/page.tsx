@@ -114,7 +114,7 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <div className="min-h-screen border-x border-border max-w-7xl mx-auto bg-background/50 shadow-sm">
+    <div className="min-h-screen border-x border-border max-w-7xl mx-auto bg-background/50 shadow-sm px-4 sm:px-6 lg:px-8">
       <Suspense fallback={<div className="min-h-screen" />}>
         <HomeContent />
       </Suspense>
