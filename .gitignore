@@ -52,3 +52,6 @@ apps/api/api
 tmp/
 temp/
 .cache/
+
+# Package managers
+pnpm-lock.yaml

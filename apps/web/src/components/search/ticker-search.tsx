@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -83,6 +83,20 @@ export function TickerSearch({ size = 'default', autoFocus = false, className }:
     }
   }, [query]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === '/' &&
+        !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)
+      ) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const isLarge = size === 'lg';
 
   return (
@@ -108,21 +122,25 @@ export function TickerSearch({ size = 'default', autoFocus = false, className }:
             isLarge && 'h-14 text-lg'
           )}
         />
-        <Button
-          type="button"
-          onClick={() => handleSubmit()}
-          disabled={!query.trim()}
-          className={cn(
-            'absolute right-1',
-            isLarge ? 'h-12 px-6' : 'h-8 px-4'
+        <div className="absolute right-1 flex items-center gap-2">
+          {!query && (
+            <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+              <span className="text-xs">/</span>
+            </kbd>
           )}
-        >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            'Distill'
-          )}
-        </Button>
+          <Button
+            type="button"
+            onClick={() => handleSubmit()}
+            disabled={!query.trim()}
+            className={cn(isLarge ? 'h-12 px-6' : 'h-8 px-4')}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              'Distill'
+            )}
+          </Button>
+        </div>
       </div>
 
       {isOpen && results.length > 0 && (
