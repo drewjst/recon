@@ -84,8 +84,12 @@ function MiniChartComponent({
   }, [symbol, exchange, colorTheme, dateRange, width, height, chartOnly]);
 
   return (
-    <div className="tradingview-widget-container" ref={containerRef}>
-      <div className="tradingview-widget-container__widget" />
+    <div
+      className="tradingview-widget-container w-full h-full"
+      ref={containerRef}
+      style={{ minHeight: height }}
+    >
+      <div className="tradingview-widget-container__widget w-full h-full" />
     </div>
   );
 }

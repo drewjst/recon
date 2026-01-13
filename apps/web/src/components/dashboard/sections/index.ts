@@ -5,5 +5,6 @@ export { ConvictionScoresSection } from './conviction-scores-section';
 export { SignalsSection } from './signals-section';
 export { GrowthSection } from './growth-section';
 export { ValuationSection } from './valuation-section';
+export { EfficiencySection } from './efficiency-section';
 export { SmartMoneySection } from './smart-money-section';
 export { FooterSection } from './footer-section';

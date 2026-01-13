@@ -45,6 +45,11 @@ const ValuationSection = dynamic(
   { loading: () => <SectionSkeleton /> }
 );
 
+const EfficiencySection = dynamic(
+  () => import('./sections/efficiency-section').then((mod) => mod.EfficiencySection),
+  { loading: () => <SectionSkeleton /> }
+);
+
 const SmartMoneySection = dynamic(
   () => import('./sections/smart-money-section').then((mod) => mod.SmartMoneySection),
   { loading: () => <SectionSkeleton /> }
@@ -98,6 +103,9 @@ export function StockDashboard({ ticker }: StockDashboardProps) {
 
       <DashboardDivider />
       <ValuationSection data={data} />
+
+      <DashboardDivider />
+      <EfficiencySection data={data} />
 
       <DashboardDivider />
       <SmartMoneySection data={data} />

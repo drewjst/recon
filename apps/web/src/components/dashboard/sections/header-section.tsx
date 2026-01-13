@@ -88,12 +88,12 @@ export function HeaderSection({ data }: HeaderSectionProps) {
             </div>
           </div>
 
-          {/* Right side: Mini chart - hidden on mobile to reduce clutter */}
-          <div className="hidden lg:block lg:w-[350px] h-[180px] rounded-xl overflow-hidden border border-border/30">
+          {/* Right side: Mini chart - responsive for all screen sizes */}
+          <div className="mt-4 lg:mt-0 w-full lg:w-[350px] h-[200px] rounded-xl overflow-hidden border border-border/30">
             <MiniChart
               symbol={company.ticker}
               exchange={company.exchange}
-              height={180}
+              height={200}
               dateRange="12M"
               colorTheme="light"
               chartOnly
