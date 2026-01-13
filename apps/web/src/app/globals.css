@@ -5,25 +5,25 @@
 @layer base {
   :root {
     /* Light theme - off-white background, white cards */
-    --background: 220 14% 96%; /* #f4f4f6 - off-white */
-    --foreground: 224 71% 4%; /* near black */
+    --background: 0 0% 100%; /* pure white */
+    --foreground: 222 47% 11%; /* softer dark slate - slate-900 */
 
     --card: 0 0% 100%; /* pure white */
-    --card-foreground: 224 71% 4%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 166 84% 37%; /* teal accent */
+    --primary: 168 85% 28%; /* teal accent - slightly deeper/richer */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 92%; /* light gray */
-    --secondary-foreground: 224 71% 4%;
+    --secondary: 210 40% 96.1%; /* soft cool gray - slate-50 */
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 14% 92%;
-    --muted-foreground: 220 9% 46%; /* medium gray */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%; /* slate-500 */
 
-    --accent: 166 84% 37%;
+    --accent: 168 85% 28%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%; /* red */
