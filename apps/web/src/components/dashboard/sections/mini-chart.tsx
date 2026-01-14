@@ -62,6 +62,8 @@ function MiniChartComponent({
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
     script.type = 'text/javascript';
     script.async = true;
+    // Note: TradingView widget auto-appends ?tvwidgetsymbol=SYMBOL to largeChartUrl
+    // So we just provide the base URL without symbol parameter
     script.innerHTML = JSON.stringify({
       symbol: formattedSymbol,
       width: '100%',
@@ -71,7 +73,7 @@ function MiniChartComponent({
       colorTheme: colorTheme,
       isTransparent: false,
       autosize: false,
-      largeChartUrl: `https://www.tradingview.com/chart/?symbol=${formattedSymbol}`,
+      largeChartUrl: 'https://www.tradingview.com/chart/',
       noTimeScale: false,
       chartOnly: chartOnly,
     });

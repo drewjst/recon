@@ -14,7 +14,7 @@ interface SignalsSectionProps {
 interface TechnicalIndicator {
   name: string;
   value: string;
-  signal: 'bullish' | 'bearish' | 'neutral';
+  signal: 'bullish' | 'bearish' | 'neutral' | 'warning';
   description: string;
 }
 
@@ -80,17 +80,18 @@ function calculateTrendPosition(quote: StockDetailResponse['quote']): TechnicalI
 
 function calculateVolatility(quote: StockDetailResponse['quote']): TechnicalIndicator {
   // Volatility: 52-week range as % of current price (normalized)
+  // High volatility is a warning, not bearish - it's a risk indicator
   const range = quote.fiftyTwoWeekHigh - quote.fiftyTwoWeekLow;
   const volatility = quote.price > 0 ? (range / quote.price) * 100 : 0;
 
-  let signal: 'bullish' | 'bearish' | 'neutral';
+  let signal: 'bullish' | 'warning' | 'neutral';
   let description: string;
 
   if (volatility < 25) {
     signal = 'bullish';
     description = 'Low volatility';
   } else if (volatility > 60) {
-    signal = 'bearish';
+    signal = 'warning';
     description = 'High volatility';
   } else {
     signal = 'neutral';
@@ -141,18 +142,21 @@ function TechnicalIndicatorCard({ indicator }: { indicator: TechnicalIndicator }
   const colors = {
     bullish: 'border-success/30 bg-success/5',
     bearish: 'border-destructive/30 bg-destructive/5',
+    warning: 'border-amber-500/30 bg-amber-500/5',
     neutral: 'border-border/50 bg-muted/30',
   };
 
   const iconColors = {
     bullish: 'text-success',
     bearish: 'text-destructive',
+    warning: 'text-amber-500',
     neutral: 'text-muted-foreground',
   };
 
   const icons = {
     bullish: <TrendingUp className="h-3.5 w-3.5" />,
     bearish: <TrendingDown className="h-3.5 w-3.5" />,
+    warning: <AlertTriangle className="h-3.5 w-3.5" />,
     neutral: <Activity className="h-3.5 w-3.5" />,
   };
 
@@ -185,17 +189,30 @@ const getSignalIcon = (type: string) => {
 
 function SignalsSectionComponent({ data }: SignalsSectionProps) {
   const { signals, performance, quote } = data;
-  const bullish = signals.filter((s) => s.type === 'bullish');
-  const bearish = signals.filter((s) => s.type === 'bearish');
-  const warning = signals.filter((s) => s.type === 'warning');
-
-  const topSignals = [...bullish, ...warning, ...bearish].slice(0, 4);
 
   // Calculate technical indicators
   const momentum = calculateMomentum(performance);
   const trend = calculateTrendPosition(quote);
   const volatility = calculateVolatility(quote);
   const strength = calculateRelativeStrength(performance);
+
+  // Count fundamental signals from API
+  const fundamentalBullish = signals.filter((s) => s.type === 'bullish').length;
+  const fundamentalBearish = signals.filter((s) => s.type === 'bearish').length;
+  const fundamentalWarning = signals.filter((s) => s.type === 'warning').length;
+
+  // Count technical signals (volatility warning counts separately)
+  const technicalIndicators = [momentum, trend, strength]; // Volatility excluded - it's warning only
+  const technicalBullish = technicalIndicators.filter((i) => i.signal === 'bullish').length;
+  const technicalBearish = technicalIndicators.filter((i) => i.signal === 'bearish').length;
+  const volatilityWarning = volatility.signal === 'warning' ? 1 : 0;
+
+  // Combined counts
+  const totalBullish = fundamentalBullish + technicalBullish;
+  const totalBearish = fundamentalBearish + technicalBearish;
+  const totalWarning = fundamentalWarning + volatilityWarning;
+
+  const topSignals = [...signals.filter((s) => s.type === 'bullish'), ...signals.filter((s) => s.type === 'warning'), ...signals.filter((s) => s.type === 'bearish')].slice(0, 4);
 
   return (
     <SectionCard title="Key Signals">
@@ -210,13 +227,13 @@ function SignalsSectionComponent({ data }: SignalsSectionProps) {
       {/* Signal Summary Badges */}
       <div className="flex gap-3 mb-4">
         <Badge variant="outline" className="text-success border-success/30 bg-success/5">
-          Bullish ({bullish.length})
+          Bullish ({totalBullish})
         </Badge>
         <Badge variant="outline" className="text-destructive border-destructive/30 bg-destructive/5">
-          Bearish ({bearish.length})
+          Bearish ({totalBearish})
         </Badge>
         <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/5">
-          Warning ({warning.length})
+          Warning ({totalWarning})
         </Badge>
       </div>
 

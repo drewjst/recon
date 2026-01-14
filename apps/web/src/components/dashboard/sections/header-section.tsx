@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ExternalLink } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { MiniChart } from './mini-chart';
 import type { StockDetailResponse } from '@recon/shared';
@@ -22,9 +22,9 @@ export function HeaderSection({ data }: HeaderSectionProps) {
   ];
 
   const formatMarketCap = (cap: number) => {
-    if (cap >= 1e12) return `$${(cap / 1e12).toFixed(2)}T`;
-    if (cap >= 1e9) return `$${(cap / 1e9).toFixed(2)}B`;
-    if (cap >= 1e6) return `$${(cap / 1e6).toFixed(2)}M`;
+    if (cap >= 1e12) return `$${(cap / 1e12).toFixed(1)}T`;
+    if (cap >= 1e9) return `$${(cap / 1e9).toFixed(0)}B`;
+    if (cap >= 1e6) return `$${(cap / 1e6).toFixed(0)}M`;
     return `$${cap.toFixed(0)}`;
   };
 
@@ -36,27 +36,33 @@ export function HeaderSection({ data }: HeaderSectionProps) {
   return (
     <Link href={`/stock/${company.ticker}/overview`} className="block group">
       <Card className="border border-border bg-card shadow-card hover:border-accent/50 hover:shadow-md transition-all duration-200 cursor-pointer relative">
-        {/* Clickable indicator */}
-        <div className="absolute top-4 right-4 flex items-center gap-1.5 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-          <span>View Details</span>
-          <ExternalLink className="h-3.5 w-3.5" />
-        </div>
-
-        <CardContent className="p-6">
-          {/* Row 1: Ticker, Name, Market Cap, Sector, Industry - all on one line */}
-          <div className="flex items-center gap-2 text-sm mb-4 flex-wrap">
-            <span className="font-semibold text-lg tracking-tight">{company.ticker}</span>
-            <span className="text-muted-foreground">{company.name}</span>
-            <span className="text-muted-foreground/50">|</span>
-            <span className="font-mono text-muted-foreground">{formatMarketCap(quote.marketCap)}</span>
-            <span className="text-muted-foreground/50">•</span>
-            <span className="text-muted-foreground">{company.sector}</span>
-            <span className="text-muted-foreground/50">•</span>
-            <span className="text-muted-foreground">{company.industry}</span>
+        <CardContent className="p-4 sm:p-6">
+          {/* Header Row - stacks on mobile */}
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="min-w-0 flex-1">
+              {/* Ticker & Name */}
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="font-semibold text-lg tracking-tight">{company.ticker}</span>
+                <span className="text-muted-foreground text-sm truncate">{company.name}</span>
+              </div>
+              {/* Meta info - wraps naturally on mobile */}
+              <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                <span className="font-mono">{formatMarketCap(quote.marketCap)}</span>
+                <span className="text-muted-foreground/50">•</span>
+                <span>{company.sector}</span>
+                <span className="text-muted-foreground/50">•</span>
+                <span className="truncate">{company.industry}</span>
+              </div>
+            </div>
+            {/* Clickable indicator - always visible on mobile */}
+            <div className="flex items-center gap-1 text-xs text-muted-foreground sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
+              <span className="hidden sm:inline">Details</span>
+              <ChevronRight className="h-4 w-4" />
+            </div>
           </div>
 
-          {/* Row 2: TradingView Chart - wider */}
-          <div className="w-full h-[200px] rounded-lg border border-border bg-card overflow-hidden mb-4">
+          {/* TradingView Chart */}
+          <div className="w-full h-[160px] sm:h-[200px] rounded-lg border border-border bg-card overflow-hidden mb-3">
             <MiniChart
               symbol={company.ticker}
               exchange={company.exchange}
@@ -66,12 +72,12 @@ export function HeaderSection({ data }: HeaderSectionProps) {
             />
           </div>
 
-          {/* Row 3: Performance Metrics */}
-          <div className="flex items-center gap-1 mb-4">
+          {/* Performance Metrics - grid on mobile, flex on desktop */}
+          <div className="grid grid-cols-5 gap-1 sm:flex sm:items-center sm:gap-0 mb-3">
             {performanceMetrics.map(({ label, value }, index) => (
-              <div key={label} className="flex items-center">
-                {index > 0 && <span className="text-muted-foreground/40 mx-2">|</span>}
-                <span className="text-xs text-muted-foreground mr-1">{label}</span>
+              <div key={label} className="flex flex-col sm:flex-row items-center text-center sm:text-left">
+                {index > 0 && <span className="hidden sm:inline text-muted-foreground/40 mx-2">|</span>}
+                <span className="text-[10px] sm:text-xs text-muted-foreground sm:mr-1">{label}</span>
                 <span className={`text-xs font-medium font-mono ${value >= 0 ? 'text-success' : 'text-destructive'}`}>
                   {value > 0 ? '+' : ''}{value.toFixed(1)}%
                 </span>
@@ -79,29 +85,25 @@ export function HeaderSection({ data }: HeaderSectionProps) {
             ))}
           </div>
 
-          {/* Row 4: 52-Week Range Slider */}
+          {/* 52-Week Range Slider */}
           <div>
-            <div className="text-xs text-muted-foreground mb-2">52-Week Range</div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-mono text-muted-foreground w-14">
+            <div className="text-[10px] sm:text-xs text-muted-foreground mb-1.5">52-Week Range</div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-10 sm:w-14">
                 ${quote.fiftyTwoWeekLow.toFixed(0)}
               </span>
-              {/* Custom slider track */}
               <div className="flex-1 relative h-1.5">
-                {/* Track background */}
                 <div className="absolute inset-0 bg-muted rounded-full" />
-                {/* Filled portion up to marker */}
                 <div
                   className="absolute left-0 top-0 h-full bg-accent/30 rounded-full"
                   style={{ width: `${rangePosition}%` }}
                 />
-                {/* Current price marker */}
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-accent rounded-full shadow-sm transition-all duration-300"
-                  style={{ left: `calc(${rangePosition}% - 6px)` }}
+                  className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-accent rounded-full shadow-sm"
+                  style={{ left: `calc(${rangePosition}% - 5px)` }}
                 />
               </div>
-              <span className="text-xs font-mono text-muted-foreground w-14 text-right">
+              <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-10 sm:w-14 text-right">
                 ${quote.fiftyTwoWeekHigh.toFixed(0)}
               </span>
             </div>
