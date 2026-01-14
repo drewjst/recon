@@ -87,7 +87,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-card/95 backdrop-blur-xl supports-[backdrop-filter]:bg-card/90">
-      <div className="mx-auto max-w-[1440px] flex h-14 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] flex h-14 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent transition-all duration-300 group-hover:shadow-glow">

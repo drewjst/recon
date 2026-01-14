@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {/* Header spans full width */}
             <Header />
             {/* Content container with max-width and borders */}
-            <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col bg-card border-x border-border/40 shadow-sm">
+            <div className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col bg-card md:border-x border-border/60 md:shadow-2xl">
               <main className="flex-1">{children}</main>
               <Footer />
             </div>
