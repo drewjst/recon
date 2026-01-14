@@ -72,9 +72,9 @@ const config: Config = {
         '2xl': 'calc(var(--radius) + 8px)',
       },
       boxShadow: {
-        glow: '0 0 20px -5px hsl(var(--primary) / 0.3)',
-        'glow-sm': '0 0 10px -3px hsl(var(--primary) / 0.2)',
-        'glow-lg': '0 0 30px -5px hsl(var(--primary) / 0.4)',
+        glow: '0 0 20px -5px hsl(var(--accent) / 0.4)',
+        'glow-sm': '0 0 10px -3px hsl(var(--accent) / 0.3)',
+        'glow-lg': '0 0 30px -5px hsl(var(--accent) / 0.5)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

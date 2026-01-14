@@ -32,7 +32,7 @@ function HomeContent() {
         <div className="mx-auto max-w-3xl text-center space-y-8 px-4">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
             Stock research,{' '}
-            <span className="text-primary">distilled</span>
+            <span className="text-accent">distilled</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Enter a ticker. Get the crux in 30 seconds.
@@ -44,19 +44,19 @@ function HomeContent() {
 
             <p className="text-sm text-muted-foreground text-left px-1">
               Try:{' '}
-              <button onClick={() => router.push('/?ticker=AAPL')} className="text-primary hover:underline font-medium">
+              <button onClick={() => router.push('/?ticker=AAPL')} className="text-accent hover:underline font-medium">
                 AAPL
               </button>
               {' · '}
-              <button onClick={() => router.push('/?ticker=MSFT')} className="text-primary hover:underline font-medium">
+              <button onClick={() => router.push('/?ticker=MSFT')} className="text-accent hover:underline font-medium">
                 MSFT
               </button>
               {' · '}
-              <button onClick={() => router.push('/?ticker=GOOGL')} className="text-primary hover:underline font-medium">
+              <button onClick={() => router.push('/?ticker=GOOGL')} className="text-accent hover:underline font-medium">
                 GOOGL
               </button>
               {' · '}
-              <button onClick={() => router.push('/?ticker=NVDA')} className="text-primary hover:underline font-medium">
+              <button onClick={() => router.push('/?ticker=NVDA')} className="text-accent hover:underline font-medium">
                 NVDA
               </button>
             </p>
@@ -131,12 +131,12 @@ interface FeatureCardProps {
 function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
     <div className="group relative rounded-lg border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
-      {/* Orange accent border on left */}
-      <div className="absolute left-0 top-4 bottom-4 w-1 rounded-full bg-primary" />
+      {/* Bitcoin orange accent border on left */}
+      <div className="absolute left-0 top-4 bottom-4 w-1 rounded-full bg-accent" />
 
       <div className="pl-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="text-primary">{icon}</div>
+          <div className="text-accent">{icon}</div>
           <h3 className="font-semibold text-foreground">{title}</h3>
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed">

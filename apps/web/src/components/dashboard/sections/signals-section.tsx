@@ -78,31 +78,93 @@ function calculateTrendPosition(quote: StockDetailResponse['quote']): TechnicalI
   };
 }
 
+function calculateVolatility(quote: StockDetailResponse['quote']): TechnicalIndicator {
+  // Volatility: 52-week range as % of current price (normalized)
+  const range = quote.fiftyTwoWeekHigh - quote.fiftyTwoWeekLow;
+  const volatility = quote.price > 0 ? (range / quote.price) * 100 : 0;
+
+  let signal: 'bullish' | 'bearish' | 'neutral';
+  let description: string;
+
+  if (volatility < 25) {
+    signal = 'bullish';
+    description = 'Low volatility';
+  } else if (volatility > 60) {
+    signal = 'bearish';
+    description = 'High volatility';
+  } else {
+    signal = 'neutral';
+    description = 'Normal range';
+  }
+
+  return {
+    name: 'Volatility',
+    value: `${volatility.toFixed(0)}%`,
+    signal,
+    description,
+  };
+}
+
+function calculateRelativeStrength(performance: StockDetailResponse['performance']): TechnicalIndicator {
+  // Relative Strength: Based on YTD performance
+  const ytd = performance.ytdChange;
+
+  let signal: 'bullish' | 'bearish' | 'neutral';
+  let description: string;
+
+  if (ytd > 20) {
+    signal = 'bullish';
+    description = 'Strong outperformer';
+  } else if (ytd > 5) {
+    signal = 'bullish';
+    description = 'Outperforming';
+  } else if (ytd < -20) {
+    signal = 'bearish';
+    description = 'Significant weakness';
+  } else if (ytd < -5) {
+    signal = 'bearish';
+    description = 'Underperforming';
+  } else {
+    signal = 'neutral';
+    description = 'Market pace';
+  }
+
+  return {
+    name: 'Strength',
+    value: ytd >= 0 ? `+${ytd.toFixed(1)}%` : `${ytd.toFixed(1)}%`,
+    signal,
+    description,
+  };
+}
+
 function TechnicalIndicatorCard({ indicator }: { indicator: TechnicalIndicator }) {
   const colors = {
-    bullish: 'border-success/30 bg-success/5 text-success',
-    bearish: 'border-destructive/30 bg-destructive/5 text-destructive',
-    neutral: 'border-border/50 bg-muted/30 text-muted-foreground',
+    bullish: 'border-success/30 bg-success/5',
+    bearish: 'border-destructive/30 bg-destructive/5',
+    neutral: 'border-border/50 bg-muted/30',
+  };
+
+  const iconColors = {
+    bullish: 'text-success',
+    bearish: 'text-destructive',
+    neutral: 'text-muted-foreground',
   };
 
   const icons = {
-    bullish: <TrendingUp className="h-4 w-4" />,
-    bearish: <TrendingDown className="h-4 w-4" />,
-    neutral: <Activity className="h-4 w-4" />,
+    bullish: <TrendingUp className="h-3.5 w-3.5" />,
+    bearish: <TrendingDown className="h-3.5 w-3.5" />,
+    neutral: <Activity className="h-3.5 w-3.5" />,
   };
 
   return (
-    <Card className={`p-3 ${colors[indicator.signal]}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {icons[indicator.signal]}
-          <span className="text-sm font-medium text-foreground">{indicator.name}</span>
-        </div>
-        <Badge variant="secondary" className="text-xs">Technical</Badge>
+    <Card className={`p-2.5 ${colors[indicator.signal]}`}>
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className={iconColors[indicator.signal]}>{icons[indicator.signal]}</span>
+        <span className="text-xs font-medium text-foreground">{indicator.name}</span>
       </div>
-      <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-xl font-bold font-mono">{indicator.value}</span>
-        <span className="text-xs text-muted-foreground">{indicator.description}</span>
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-lg font-bold font-mono">{indicator.value}</span>
+        <span className="text-[10px] text-muted-foreground truncate">{indicator.description}</span>
       </div>
     </Card>
   );
@@ -132,13 +194,17 @@ function SignalsSectionComponent({ data }: SignalsSectionProps) {
   // Calculate technical indicators
   const momentum = calculateMomentum(performance);
   const trend = calculateTrendPosition(quote);
+  const volatility = calculateVolatility(quote);
+  const strength = calculateRelativeStrength(performance);
 
   return (
     <SectionCard title="Key Signals">
-      {/* Technical Indicators */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      {/* Technical Indicators - 4 on same line */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <TechnicalIndicatorCard indicator={momentum} />
         <TechnicalIndicatorCard indicator={trend} />
+        <TechnicalIndicatorCard indicator={volatility} />
+        <TechnicalIndicatorCard indicator={strength} />
       </div>
 
       {/* Signal Summary Badges */}

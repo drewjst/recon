@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* Modern Fintech Theme - Light gray background, white cards */
-    --background: 220 14% 97%; /* soft cool gray background - slightly lighter */
+    --background: 220 14% 97%; /* soft cool gray background */
     --foreground: 220 13% 18%; /* dark slate for text */
 
     --card: 0 0% 100%; /* pure white cards */
@@ -23,14 +23,15 @@
     --muted: 220 14% 92%; /* slightly darker than background */
     --muted-foreground: 220 9% 46%; /* medium gray for secondary text */
 
-    --accent: 220 14% 92%;
-    --accent-foreground: 220 13% 18%;
+    /* Bitcoin orange accent - #F7931A */
+    --accent: 33 94% 53%;
+    --accent-foreground: 0 0% 100%;
 
     /* Fintech-style status colors - softer, more modern */
     --destructive: 0 84% 60%; /* coral red - softer than pure red */
     --destructive-foreground: 0 0% 100%;
 
-    --success: 158 64% 40%; /* mint/teal green - like the screenshot */
+    --success: 158 64% 40%; /* mint/teal green */
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%; /* amber */
@@ -38,12 +39,12 @@
 
     --border: 220 13% 90%; /* subtle border */
     --input: 220 13% 90%;
-    --ring: 220 13% 18%;
+    --ring: 33 94% 53%; /* bitcoin orange ring */
 
     --radius: 0.625rem; /* slightly smaller radius for modern look */
 
     /* Custom properties */
-    --glow-color: 220 13% 18%;
+    --glow-color: 33 94% 53%; /* bitcoin orange glow */
   }
 }
 

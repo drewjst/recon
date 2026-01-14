@@ -90,8 +90,8 @@ export function Header() {
       <div className="mx-auto max-w-[1440px] flex h-14 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary transition-all duration-300 group-hover:shadow-glow">
-            <BarChart3 className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent transition-all duration-300 group-hover:shadow-glow">
+            <BarChart3 className="h-5 w-5 text-accent-foreground" />
           </div>
           <span className="font-semibold text-xl text-foreground tracking-tight">Recon</span>
         </Link>
