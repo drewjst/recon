@@ -108,7 +108,7 @@ export function PrivacyContent() {
         <ul className="list-disc list-inside space-y-1">
           <li><strong className="text-foreground">Financial Modeling Prep:</strong> Stock data provider</li>
           <li><strong className="text-foreground">TradingView:</strong> Chart widgets</li>
-          <li><strong className="text-foreground">Railway:</strong> Hosting infrastructure</li>
+          <li><strong className="text-foreground">Google Cloud:</strong> Hosting infrastructure</li>
         </ul>
       </div>
 
