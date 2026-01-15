@@ -8,7 +8,7 @@ Recon synthesizes financial data into three conviction scores and actionable sig
 
 | Category | What You Get |
 |----------|--------------|
-| **Conviction Scores** | Piotroski F-Score (0-9), Rule of 40, Altman Z-Score, Overall Grade (A-F) |
+| **Financial Health Scores** | Piotroski F-Score (0-9), Rule of 40, Altman Z-Score, DCF Valuation |
 | **Performance** | 1D, 1W, 1M, YTD, 1Y returns with 52-week range visualization |
 | **Valuation** | P/E, Forward P/E, PEG, EV/EBITDA, P/FCF, P/B—all with sector percentiles |
 | **Financials** | Revenue growth, margins (gross/operating/net/FCF), ROE, ROIC, leverage |
@@ -211,7 +211,12 @@ Returns comprehensive stock analysis including scores, signals, and financials.
       "zone": "safe",
       "components": { ... }
     },
-    "overallGrade": "A"
+    "dcfValuation": {
+      "intrinsicValue": 215.50,
+      "currentPrice": 192.53,
+      "differencePercent": 11.9,
+      "assessment": "Fairly Valued"
+    }
   },
   "signals": [
     {
@@ -514,6 +519,22 @@ flowchart LR
 ## Contributing
 
 See [CLAUDE.md](./CLAUDE.md) for coding standards, conventions, and guidelines.
+
+### Git Workflow
+
+This repository requires **linear history**. All PRs must be rebased before merging.
+
+```bash
+# Before pushing your PR, rebase on main
+git fetch origin
+git rebase origin/main
+
+# If you have conflicts, resolve them and continue
+git rebase --continue
+
+# Force push your rebased branch
+git push --force-with-lease
+```
 
 ### Key Principles
 
