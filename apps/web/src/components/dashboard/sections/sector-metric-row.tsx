@@ -1,12 +1,7 @@
 'use client';
 
 import { Info, ExternalLink } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { SectorMetric } from '@recon/shared';
 
 type Assessment = 'Excellent' | 'Good' | 'Average' | 'Below Avg' | 'Caution';
@@ -113,27 +108,31 @@ export function SectorMetricRow({
         <div className="flex items-center gap-1.5">
           <span className="font-medium text-sm">{label}</span>
           {info && (
-            <TooltipProvider>
-              <Tooltip delayDuration={200}>
-                <TooltipTrigger asChild>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
-                  <p className="text-xs">{info}</p>
-                  {learnMoreUrl && (
-                    <a
-                      href={learnMoreUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium mt-1"
-                    >
-                      Learn more
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-full p-1 hover:bg-muted/50 active:bg-muted focus:outline-none focus-visible:ring-1 focus-visible:ring-ring touch-manipulation"
+                  aria-label={`Info about ${label}`}
+                >
+                  <Info className="h-3.5 w-3.5 text-muted-foreground/60" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="top" align="center" className="w-64 p-3">
+                <p className="text-xs text-muted-foreground leading-relaxed mb-2">{info}</p>
+                {learnMoreUrl && (
+                  <a
+                    href={learnMoreUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-accent hover:underline font-medium"
+                  >
+                    Learn more
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </PopoverContent>
+            </Popover>
           )}
         </div>
         <div className="flex items-center gap-3">

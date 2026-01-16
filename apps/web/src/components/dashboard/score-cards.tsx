@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Info, ExternalLink } from 'lucide-react';
 import type { Scores } from '@recon/shared';
 
@@ -16,14 +16,12 @@ export function ScoreCards({ scores, isLoading }: ScoreCardsProps) {
   }
 
   return (
-    <TooltipProvider>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <PiotroskiCard score={scores.piotroski} />
-        <RuleOf40Card score={scores.ruleOf40} />
-        <AltmanZCard score={scores.altmanZ} />
-        <DCFCard dcf={scores.dcfValuation} />
-      </div>
-    </TooltipProvider>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <PiotroskiCard score={scores.piotroski} />
+      <RuleOf40Card score={scores.ruleOf40} />
+      <AltmanZCard score={scores.altmanZ} />
+      <DCFCard dcf={scores.dcfValuation} />
+    </div>
   );
 }
 
@@ -54,14 +52,29 @@ function PiotroskiCard({ score }: { score: Scores['piotroski'] }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
           Piotroski F-Score
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-3.5 w-3.5 cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p>9-point fundamental strength score. 7+ is strong, 4-6 is moderate, below 4 is weak.</p>
-            </TooltipContent>
-          </Tooltip>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-full p-1 hover:bg-muted/50 active:bg-muted focus:outline-none focus-visible:ring-1 focus-visible:ring-ring touch-manipulation"
+                aria-label="Info about Piotroski F-Score"
+              >
+                <Info className="h-3.5 w-3.5 text-muted-foreground/60" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="center" className="w-64 p-3">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-2">9-point fundamental strength score. 7+ is strong, 4-6 is moderate, below 4 is weak.</p>
+              <a
+                href="https://www.investopedia.com/terms/p/piotroski-score.asp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-accent hover:underline font-medium"
+              >
+                Learn more
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </PopoverContent>
+          </Popover>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -83,14 +96,29 @@ function RuleOf40Card({ score }: { score: Scores['ruleOf40'] }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
           Rule of 40
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-3.5 w-3.5 cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p>Revenue growth + profit margin should exceed 40%. A SaaS health metric.</p>
-            </TooltipContent>
-          </Tooltip>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-full p-1 hover:bg-muted/50 active:bg-muted focus:outline-none focus-visible:ring-1 focus-visible:ring-ring touch-manipulation"
+                aria-label="Info about Rule of 40"
+              >
+                <Info className="h-3.5 w-3.5 text-muted-foreground/60" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="center" className="w-64 p-3">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-2">Revenue growth + profit margin should exceed 40%. A SaaS health metric.</p>
+              <a
+                href="https://www.investopedia.com/terms/r/ruleof40.asp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-accent hover:underline font-medium"
+              >
+                Learn more
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </PopoverContent>
+          </Popover>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -113,14 +141,29 @@ function AltmanZCard({ score }: { score: Scores['altmanZ'] }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
           Altman Z-Score
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-3.5 w-3.5 cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p>Bankruptcy risk predictor. Above 2.99 is safe, 1.81-2.99 is gray zone, below 1.81 is distress.</p>
-            </TooltipContent>
-          </Tooltip>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-full p-1 hover:bg-muted/50 active:bg-muted focus:outline-none focus-visible:ring-1 focus-visible:ring-ring touch-manipulation"
+                aria-label="Info about Altman Z-Score"
+              >
+                <Info className="h-3.5 w-3.5 text-muted-foreground/60" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="center" className="w-64 p-3">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-2">Bankruptcy risk predictor. Above 2.99 is safe, 1.81-2.99 is gray zone, below 1.81 is distress.</p>
+              <a
+                href="https://www.investopedia.com/terms/a/altman.asp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-accent hover:underline font-medium"
+              >
+                Learn more
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </PopoverContent>
+          </Popover>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -157,12 +200,18 @@ function DCFCard({ dcf }: { dcf: Scores['dcfValuation'] }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
           DCF Valuation
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-3.5 w-3.5 cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p className="mb-2">Discounted Cash Flow intrinsic value vs current price. Undervalued if DCF is 15%+ above price, Overvalued if 15%+ below.</p>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-full p-1 hover:bg-muted/50 active:bg-muted focus:outline-none focus-visible:ring-1 focus-visible:ring-ring touch-manipulation"
+                aria-label="Info about DCF Valuation"
+              >
+                <Info className="h-3.5 w-3.5 text-muted-foreground/60" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="center" className="w-64 p-3">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-2">Discounted Cash Flow intrinsic value vs current price. Undervalued if DCF is 15%+ above price, Overvalued if 15%+ below.</p>
               <a
                 href="https://www.investopedia.com/terms/d/dcf.asp"
                 target="_blank"
@@ -172,8 +221,8 @@ function DCFCard({ dcf }: { dcf: Scores['dcfValuation'] }) {
                 Learn more
                 <ExternalLink className="h-3 w-3" />
               </a>
-            </TooltipContent>
-          </Tooltip>
+            </PopoverContent>
+          </Popover>
         </CardTitle>
       </CardHeader>
       <CardContent>
