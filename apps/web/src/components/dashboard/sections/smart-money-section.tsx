@@ -56,7 +56,7 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
         <div className="mb-6">
           <div className="text-xs text-muted-foreground uppercase tracking-wider mb-3">Top Holders</div>
           <div className="space-y-2">
-            {holdings.topInstitutional.slice(0, 3).map((holder) => (
+            {holdings.topInstitutional.slice(0, 5).map((holder) => (
               <div key={holder.fundCik} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border border-border/30">
                 <span className="text-sm truncate max-w-[200px]">{holder.fundName}</span>
                 <div className="flex items-center gap-4">

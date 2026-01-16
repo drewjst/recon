@@ -278,3 +278,21 @@ type ETFSectorWeighting struct {
 	Sector           string `json:"sector"`
 	WeightPercentage string `json:"weightPercentage"`
 }
+
+// InstitutionalOwnershipHolder represents an institutional holder's position from 13F filings.
+type InstitutionalOwnershipHolder struct {
+	InvestorName     string  `json:"investorName"`
+	CIK              string  `json:"cik"`
+	Shares           int64   `json:"shares"`
+	Value            int64   `json:"value"`
+	Weight           float64 `json:"weight"` // Portfolio weight percentage
+	SharesChange     int64   `json:"sharesChange"`
+	ChangePercentage float64 `json:"changePercentage"`
+	Date             string  `json:"date"`
+	// Additional fields that FMP may include
+	TotalHoldings      int     `json:"totalHoldings,omitempty"`
+	IsNewPosition      bool    `json:"isNewPosition,omitempty"`
+	IsSoldOut          bool    `json:"isSoldOut,omitempty"`
+	OwnershipPercent   float64 `json:"ownershipPercent,omitempty"`
+	LastOwnershipRatio float64 `json:"lastOwnershipRatio,omitempty"`
+}

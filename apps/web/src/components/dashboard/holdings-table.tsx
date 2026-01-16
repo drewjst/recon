@@ -48,7 +48,7 @@ export function HoldingsTable({ holdings, isLoading }: HoldingsTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {holdings.topInstitutional.slice(0, 10).map((holder, index) => (
+              {holdings.topInstitutional.slice(0, 5).map((holder, index) => (
                 <TableRow key={index}>
                   <TableCell className="font-medium max-w-[200px] truncate">
                     {holder.fundName}

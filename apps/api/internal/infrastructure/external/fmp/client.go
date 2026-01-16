@@ -264,6 +264,20 @@ func (c *Client) GetETFSectorWeightings(ctx context.Context, ticker string) ([]E
 	return sectors, nil
 }
 
+// GetInstitutionalHolders retrieves top institutional holders for a stock.
+// Uses the institutional-ownership extract-analytics/holder endpoint with most recent quarter.
+func (c *Client) GetInstitutionalHolders(ctx context.Context, ticker string, year int, quarter int, limit int) ([]InstitutionalOwnershipHolder, error) {
+	url := fmt.Sprintf("%s/institutional-ownership/extract-analytics/holder?symbol=%s&year=%d&quarter=%d&page=0&limit=%d&apikey=%s",
+		c.baseURL, ticker, year, quarter, limit, c.apiKey)
+
+	var holders []InstitutionalOwnershipHolder
+	if err := c.get(ctx, url, &holders); err != nil {
+		return nil, fmt.Errorf("fetching institutional holders: %w", err)
+	}
+
+	return holders, nil
+}
+
 // get makes an HTTP GET request and unmarshals the response.
 func (c *Client) get(ctx context.Context, url string, dest any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)

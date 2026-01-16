@@ -623,12 +623,106 @@ func (r *Repository) GetEarningsQuality(ctx context.Context, ticker string, sect
 	}, nil
 }
 
+// getMostRecentFilingQuarter returns the most recent quarter with complete 13F filings.
+// 13F filings are due 45 days after quarter end, so we look back accordingly.
+func getMostRecentFilingQuarter() (year int, quarter int) {
+	now := time.Now()
+
+	// Subtract 45 days to account for filing delay
+	filingDeadline := now.AddDate(0, 0, -45)
+
+	year = filingDeadline.Year()
+	month := int(filingDeadline.Month())
+
+	// Determine quarter based on month
+	switch {
+	case month >= 10:
+		quarter = 3 // Q3 ends Sep 30
+	case month >= 7:
+		quarter = 2 // Q2 ends Jun 30
+	case month >= 4:
+		quarter = 1 // Q1 ends Mar 31
+	default:
+		quarter = 4 // Q4 ends Dec 31
+		year-- // Previous year's Q4
+	}
+
+	return year, quarter
+}
+
 // GetHoldings retrieves institutional holdings data.
 func (r *Repository) GetHoldings(ctx context.Context, ticker string) (*stock.Holdings, error) {
-	// For MVP, return empty holdings - would need FMP premium for this
-	return &stock.Holdings{
-		TopInstitutional: []stock.InstitutionalHolder{},
-	}, nil
+	const topHoldersLimit = 5
+
+	year, quarter := getMostRecentFilingQuarter()
+
+	// Fetch more than we need to handle filtering
+	holders, err := r.client.GetInstitutionalHolders(ctx, ticker, year, quarter, 10)
+	if err != nil {
+		// Log the error but return empty holdings (non-fatal)
+		slog.Warn("failed to fetch institutional holders, returning empty",
+			"ticker", ticker,
+			"year", year,
+			"quarter", quarter,
+			"error", err,
+		)
+		return &stock.Holdings{
+			TopInstitutional: []stock.InstitutionalHolder{},
+		}, nil
+	}
+
+	if len(holders) == 0 {
+		// Try previous quarter if current has no data
+		prevYear, prevQuarter := year, quarter-1
+		if prevQuarter == 0 {
+			prevQuarter = 4
+			prevYear--
+		}
+
+		holders, err = r.client.GetInstitutionalHolders(ctx, ticker, prevYear, prevQuarter, 10)
+		if err != nil || len(holders) == 0 {
+			return &stock.Holdings{
+				TopInstitutional: []stock.InstitutionalHolder{},
+			}, nil
+		}
+		year, quarter = prevYear, prevQuarter
+	}
+
+	// Map to domain type and limit to top 5
+	result := &stock.Holdings{
+		TopInstitutional: make([]stock.InstitutionalHolder, 0, topHoldersLimit),
+	}
+
+	for i, h := range holders {
+		if i >= topHoldersLimit {
+			break
+		}
+
+		quarterDate := fmt.Sprintf("%d-Q%d", year, quarter)
+
+		result.TopInstitutional = append(result.TopInstitutional, stock.InstitutionalHolder{
+			FundName:         h.InvestorName,
+			FundCIK:          h.CIK,
+			Shares:           h.Shares,
+			Value:            h.Value,
+			PortfolioPercent: h.Weight,
+			ChangeShares:     h.SharesChange,
+			ChangePercent:    h.ChangePercentage,
+			QuarterDate:      quarterDate,
+		})
+	}
+
+	// Calculate total institutional ownership if available
+	// FMP may provide this directly, but we can estimate from holdings if needed
+	var totalOwnership float64
+	for _, h := range holders {
+		if h.OwnershipPercent > 0 {
+			totalOwnership += h.OwnershipPercent
+		}
+	}
+	result.TotalInstitutionalOwner = totalOwnership / 100 // Convert to decimal
+
+	return result, nil
 }
 
 // GetInsiderTrades retrieves insider trading data.
