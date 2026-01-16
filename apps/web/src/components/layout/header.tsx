@@ -79,6 +79,13 @@ function Navigation({ className, onLinkClick }: { className?: string; onLinkClic
       >
         Compare
       </Link>
+      <Link
+        href="/crypto"
+        onClick={onLinkClick}
+        className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+      >
+        Crypto
+      </Link>
       <NavLink href="/options" disabled>
         Options
       </NavLink>
