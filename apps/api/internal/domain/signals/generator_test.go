@@ -10,11 +10,7 @@ func TestGenerator_HighPiotroskiScore(t *testing.T) {
 	gen := NewGenerator()
 
 	signals := gen.GenerateAll(
-		nil, // company
-		nil, // quote
-		nil, // financials
-		nil, // holdings
-		nil, // insiderTrades
+		&StockData{},
 		scores.PiotroskiResult{Score: 8},
 		scores.AltmanZResult{Zone: "safe", Score: 3.5},
 	)
@@ -38,7 +34,7 @@ func TestGenerator_LowPiotroskiScore(t *testing.T) {
 	gen := NewGenerator()
 
 	signals := gen.GenerateAll(
-		nil, nil, nil, nil, nil,
+		&StockData{},
 		scores.PiotroskiResult{Score: 2},
 		scores.AltmanZResult{Zone: "gray", Score: 2.0},
 	)
@@ -62,7 +58,7 @@ func TestGenerator_AltmanDistress(t *testing.T) {
 	gen := NewGenerator()
 
 	signals := gen.GenerateAll(
-		nil, nil, nil, nil, nil,
+		&StockData{},
 		scores.PiotroskiResult{Score: 5},
 		scores.AltmanZResult{Zone: "distress", Score: 1.2},
 	)
@@ -85,8 +81,8 @@ func TestGenerator_SignalPrioritySorting(t *testing.T) {
 
 	// Create context that will generate multiple signals
 	signals := gen.GenerateAll(
-		nil, nil, nil, nil, nil,
-		scores.PiotroskiResult{Score: 8}, // High score (priority 4)
+		&StockData{},
+		scores.PiotroskiResult{Score: 8},         // High score (priority 4)
 		scores.AltmanZResult{Zone: "safe", Score: 4.5}, // Safe zone (priority 3)
 	)
 
@@ -96,5 +92,71 @@ func TestGenerator_SignalPrioritySorting(t *testing.T) {
 			t.Errorf("signals not sorted by priority: signal %d has priority %d, signal %d has priority %d",
 				i-1, signals[i-1].Priority, i, signals[i].Priority)
 		}
+	}
+}
+
+func TestGenerator_FinancialsSignals(t *testing.T) {
+	gen := NewGenerator()
+
+	// Test high growth signal
+	signals := gen.GenerateAll(
+		&StockData{
+			Financials: &FinancialsData{
+				RevenueGrowthYoY: 25.0,
+				OperatingMargin:  15.0,
+				DebtToEquity:     0.5,
+				ROIC:             25.0,
+			},
+		},
+		scores.PiotroskiResult{Score: 5},
+		scores.AltmanZResult{Zone: "safe", Score: 3.0},
+	)
+
+	// Should have high growth and strong ROIC signals
+	hasGrowth := false
+	hasROIC := false
+	for _, s := range signals {
+		if s.Data["growth"] == 25.0 {
+			hasGrowth = true
+		}
+		if s.Data["roic"] == 25.0 {
+			hasROIC = true
+		}
+	}
+
+	if !hasGrowth {
+		t.Error("expected growth signal for 25% revenue growth")
+	}
+	if !hasROIC {
+		t.Error("expected ROIC signal for 25% ROIC")
+	}
+}
+
+func TestGenerator_InsiderActivity(t *testing.T) {
+	gen := NewGenerator()
+
+	// Test insider buying signal
+	signals := gen.GenerateAll(
+		&StockData{
+			InsiderActivity: &InsiderActivityData{
+				BuyCount90d:  5,
+				SellCount90d: 1,
+				NetValue90d:  200000,
+			},
+		},
+		scores.PiotroskiResult{Score: 5},
+		scores.AltmanZResult{Zone: "safe", Score: 3.0},
+	)
+
+	found := false
+	for _, s := range signals {
+		if s.Category == CategoryInsider && s.Type == SignalBullish {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Error("expected bullish signal for insider buying")
 	}
 }

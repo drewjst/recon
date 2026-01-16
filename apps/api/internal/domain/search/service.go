@@ -32,11 +32,12 @@ type Index struct {
 }
 
 type tickerEntry struct {
-	Ticker    string
-	Name      string
-	Exchange  string
-	Type      string
-	SearchKey string // lowercase ticker + name for matching
+	Ticker       string
+	TickerLower  string // pre-computed lowercase ticker for matching
+	Name         string
+	Exchange     string
+	Type         string
+	SearchKey    string // lowercase ticker + name for matching
 }
 
 // NewIndex creates a new search index from embedded ticker data.
@@ -56,12 +57,14 @@ func NewIndex() (*Index, error) {
 		if tickerType == "" {
 			tickerType = "stock"
 		}
+		tickerLower := strings.ToLower(t.Symbol)
 		entries[i] = tickerEntry{
-			Ticker:    t.Symbol,
-			Name:      t.Name,
-			Exchange:  exchange,
-			Type:      tickerType,
-			SearchKey: strings.ToLower(t.Symbol + " " + t.Name),
+			Ticker:      t.Symbol,
+			TickerLower: tickerLower,
+			Name:        t.Name,
+			Exchange:    exchange,
+			Type:        tickerType,
+			SearchKey:   tickerLower + " " + strings.ToLower(t.Name),
 		}
 	}
 
@@ -69,6 +72,7 @@ func NewIndex() (*Index, error) {
 }
 
 // Search finds tickers matching the query.
+// Uses a single pass with a map for O(n) complexity instead of O(n²).
 func (idx *Index) Search(query string, limit int) []Result {
 	if query == "" {
 		return []Result{}
@@ -79,44 +83,81 @@ func (idx *Index) Search(query string, limit int) []Result {
 		limit = 10
 	}
 
-	var results []Result
+	// Use a map to track seen tickers - O(1) lookup instead of O(n)
+	seen := make(map[string]bool)
 
-	// First pass: exact ticker match (highest priority)
+	// Collect results in priority buckets
+	var exactMatches []Result
+	var prefixMatches []Result
+	var containsMatches []Result
+
+	// Single pass through all tickers
 	for _, t := range idx.tickers {
-		if strings.ToLower(t.Ticker) == query {
-			results = append(results, Result{Ticker: t.Ticker, Name: t.Name, Exchange: t.Exchange, Type: t.Type})
-			break
+		// Check exact match (highest priority)
+		if t.TickerLower == query {
+			if !seen[t.Ticker] {
+				seen[t.Ticker] = true
+				exactMatches = append(exactMatches, Result{
+					Ticker:   t.Ticker,
+					Name:     t.Name,
+					Exchange: t.Exchange,
+					Type:     t.Type,
+				})
+			}
+			continue
+		}
+
+		// Check prefix match (medium priority)
+		if strings.HasPrefix(t.TickerLower, query) {
+			if !seen[t.Ticker] {
+				seen[t.Ticker] = true
+				prefixMatches = append(prefixMatches, Result{
+					Ticker:   t.Ticker,
+					Name:     t.Name,
+					Exchange: t.Exchange,
+					Type:     t.Type,
+				})
+			}
+			continue
+		}
+
+		// Check contains match in search key (lowest priority)
+		if strings.Contains(t.SearchKey, query) {
+			if !seen[t.Ticker] {
+				seen[t.Ticker] = true
+				containsMatches = append(containsMatches, Result{
+					Ticker:   t.Ticker,
+					Name:     t.Name,
+					Exchange: t.Exchange,
+					Type:     t.Type,
+				})
+			}
 		}
 	}
 
-	// Second pass: prefix matches on ticker
-	for _, t := range idx.tickers {
+	// Combine results in priority order up to limit
+	results := make([]Result, 0, limit)
+
+	for _, r := range exactMatches {
 		if len(results) >= limit {
-			break
+			return results
 		}
-		if strings.HasPrefix(strings.ToLower(t.Ticker), query) && !containsTicker(results, t.Ticker) {
-			results = append(results, Result{Ticker: t.Ticker, Name: t.Name, Exchange: t.Exchange, Type: t.Type})
-		}
+		results = append(results, r)
 	}
 
-	// Third pass: contains match on name
-	for _, t := range idx.tickers {
+	for _, r := range prefixMatches {
 		if len(results) >= limit {
-			break
+			return results
 		}
-		if strings.Contains(t.SearchKey, query) && !containsTicker(results, t.Ticker) {
-			results = append(results, Result{Ticker: t.Ticker, Name: t.Name, Exchange: t.Exchange, Type: t.Type})
+		results = append(results, r)
+	}
+
+	for _, r := range containsMatches {
+		if len(results) >= limit {
+			return results
 		}
+		results = append(results, r)
 	}
 
 	return results
-}
-
-func containsTicker(results []Result, ticker string) bool {
-	for _, r := range results {
-		if r.Ticker == ticker {
-			return true
-		}
-	}
-	return false
 }

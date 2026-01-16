@@ -2,7 +2,6 @@ package signals
 
 import (
 	"fmt"
-	"reflect"
 )
 
 // defaultRules returns the standard set of signal generation rules.
@@ -87,89 +86,6 @@ func (r *AltmanSafeRule) Evaluate(ctx *RuleContext) *Signal {
 	return nil
 }
 
-// financialsData is a helper struct for financials.
-type financialsData struct {
-	RevenueGrowthYoY float64
-	OperatingMargin  float64
-	DebtToEquity     float64
-	ROIC             float64
-}
-
-// getFloat64Field extracts a float64 field from a struct using reflection.
-func getFloat64Field(v reflect.Value, name string) float64 {
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-	if v.Kind() != reflect.Struct {
-		return 0
-	}
-	field := v.FieldByName(name)
-	if !field.IsValid() || field.Kind() != reflect.Float64 {
-		return 0
-	}
-	return field.Float()
-}
-
-// getIntField extracts an int field from a struct using reflection.
-func getIntField(v reflect.Value, name string) int {
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-	if v.Kind() != reflect.Struct {
-		return 0
-	}
-	field := v.FieldByName(name)
-	if !field.IsValid() || field.Kind() != reflect.Int {
-		return 0
-	}
-	return int(field.Int())
-}
-
-func getFinancialsData(f interface{}) *financialsData {
-	if f == nil {
-		return nil
-	}
-	v := reflect.ValueOf(f)
-	if v.Kind() == reflect.Ptr && v.IsNil() {
-		return nil
-	}
-	return &financialsData{
-		RevenueGrowthYoY: getFloat64Field(v, "RevenueGrowthYoY"),
-		OperatingMargin:  getFloat64Field(v, "OperatingMargin"),
-		DebtToEquity:     getFloat64Field(v, "DebtToEquity"),
-		ROIC:             getFloat64Field(v, "ROIC"),
-	}
-}
-
-// insiderActivityData is a helper struct for insider activity.
-type insiderActivityData struct {
-	BuyCount90d  int
-	SellCount90d int
-	NetValue90d  float64
-}
-
-func getInsiderActivityData(i interface{}) *insiderActivityData {
-	if i == nil {
-		return nil
-	}
-	v := reflect.ValueOf(i)
-	if v.Kind() == reflect.Ptr && v.IsNil() {
-		return nil
-	}
-	buyCount := getIntField(v, "BuyCount90d")
-	sellCount := getIntField(v, "SellCount90d")
-	netValue := getFloat64Field(v, "NetValue90d")
-	// Only return if we got at least some data
-	if buyCount == 0 && sellCount == 0 && netValue == 0 {
-		return nil
-	}
-	return &insiderActivityData{
-		BuyCount90d:  buyCount,
-		SellCount90d: sellCount,
-		NetValue90d:  netValue,
-	}
-}
-
 // InstitutionalAccumulationRule detects institutional buying patterns.
 type InstitutionalAccumulationRule struct{}
 
@@ -190,18 +106,17 @@ func (r *InstitutionalDistributionRule) Evaluate(ctx *RuleContext) *Signal {
 type InsiderBuyingRule struct{}
 
 func (r *InsiderBuyingRule) Evaluate(ctx *RuleContext) *Signal {
-	data := getInsiderActivityData(ctx.InsiderTrades)
-	if data == nil {
+	if ctx.InsiderActivity == nil {
 		return nil
 	}
 	// Bullish if net buying and multiple buys
-	if data.BuyCount90d >= 3 && data.NetValue90d > 100000 {
+	if ctx.InsiderActivity.BuyCount90d >= 3 && ctx.InsiderActivity.NetValue90d > 100000 {
 		return &Signal{
 			Type:     SignalBullish,
 			Category: CategoryInsider,
-			Message:  fmt.Sprintf("Strong insider buying: %d buys totaling $%.0fK net in 90 days", data.BuyCount90d, data.NetValue90d/1000),
+			Message:  fmt.Sprintf("Strong insider buying: %d buys totaling $%.0fK net in 90 days", ctx.InsiderActivity.BuyCount90d, ctx.InsiderActivity.NetValue90d/1000),
 			Priority: 4,
-			Data:     map[string]interface{}{"buyCount": data.BuyCount90d, "netValue": data.NetValue90d},
+			Data:     map[string]interface{}{"buyCount": ctx.InsiderActivity.BuyCount90d, "netValue": ctx.InsiderActivity.NetValue90d},
 		}
 	}
 	return nil
@@ -211,18 +126,17 @@ func (r *InsiderBuyingRule) Evaluate(ctx *RuleContext) *Signal {
 type InsiderSellingRule struct{}
 
 func (r *InsiderSellingRule) Evaluate(ctx *RuleContext) *Signal {
-	data := getInsiderActivityData(ctx.InsiderTrades)
-	if data == nil {
+	if ctx.InsiderActivity == nil {
 		return nil
 	}
 	// Warning if heavy selling
-	if data.SellCount90d >= 5 && data.NetValue90d < -500000 {
+	if ctx.InsiderActivity.SellCount90d >= 5 && ctx.InsiderActivity.NetValue90d < -500000 {
 		return &Signal{
 			Type:     SignalWarning,
 			Category: CategoryInsider,
-			Message:  fmt.Sprintf("Heavy insider selling: %d sells totaling $%.0fM net in 90 days", data.SellCount90d, data.NetValue90d/1000000),
+			Message:  fmt.Sprintf("Heavy insider selling: %d sells totaling $%.0fM net in 90 days", ctx.InsiderActivity.SellCount90d, ctx.InsiderActivity.NetValue90d/1000000),
 			Priority: 3,
-			Data:     map[string]interface{}{"sellCount": data.SellCount90d, "netValue": data.NetValue90d},
+			Data:     map[string]interface{}{"sellCount": ctx.InsiderActivity.SellCount90d, "netValue": ctx.InsiderActivity.NetValue90d},
 		}
 	}
 	return nil
@@ -232,18 +146,17 @@ func (r *InsiderSellingRule) Evaluate(ctx *RuleContext) *Signal {
 type HighGrowthRule struct{}
 
 func (r *HighGrowthRule) Evaluate(ctx *RuleContext) *Signal {
-	data := getFinancialsData(ctx.Financials)
-	if data == nil {
+	if ctx.Financials == nil {
 		return nil
 	}
 	// Strong growth > 20% YoY
-	if data.RevenueGrowthYoY > 20 {
+	if ctx.Financials.RevenueGrowthYoY > 20 {
 		return &Signal{
 			Type:     SignalBullish,
 			Category: CategoryFundamental,
-			Message:  fmt.Sprintf("Strong revenue growth of %.1f%% YoY", data.RevenueGrowthYoY),
+			Message:  fmt.Sprintf("Strong revenue growth of %.1f%% YoY", ctx.Financials.RevenueGrowthYoY),
 			Priority: 3,
-			Data:     map[string]interface{}{"growth": data.RevenueGrowthYoY},
+			Data:     map[string]interface{}{"growth": ctx.Financials.RevenueGrowthYoY},
 		}
 	}
 	return nil
@@ -253,18 +166,17 @@ func (r *HighGrowthRule) Evaluate(ctx *RuleContext) *Signal {
 type NegativeMarginsRule struct{}
 
 func (r *NegativeMarginsRule) Evaluate(ctx *RuleContext) *Signal {
-	data := getFinancialsData(ctx.Financials)
-	if data == nil {
+	if ctx.Financials == nil {
 		return nil
 	}
 	// Warning if operating margin is negative
-	if data.OperatingMargin < 0 {
+	if ctx.Financials.OperatingMargin < 0 {
 		return &Signal{
 			Type:     SignalWarning,
 			Category: CategoryFundamental,
-			Message:  fmt.Sprintf("Negative operating margin of %.1f%% indicates unprofitable operations", data.OperatingMargin),
+			Message:  fmt.Sprintf("Negative operating margin of %.1f%% indicates unprofitable operations", ctx.Financials.OperatingMargin),
 			Priority: 4,
-			Data:     map[string]interface{}{"margin": data.OperatingMargin},
+			Data:     map[string]interface{}{"margin": ctx.Financials.OperatingMargin},
 		}
 	}
 	return nil
@@ -274,18 +186,17 @@ func (r *NegativeMarginsRule) Evaluate(ctx *RuleContext) *Signal {
 type HighDebtRule struct{}
 
 func (r *HighDebtRule) Evaluate(ctx *RuleContext) *Signal {
-	data := getFinancialsData(ctx.Financials)
-	if data == nil {
+	if ctx.Financials == nil {
 		return nil
 	}
 	// Warning if D/E > 2.0 (high leverage)
-	if data.DebtToEquity > 2.0 {
+	if ctx.Financials.DebtToEquity > 2.0 {
 		return &Signal{
 			Type:     SignalWarning,
 			Category: CategoryFundamental,
-			Message:  fmt.Sprintf("High debt-to-equity ratio of %.2f indicates elevated leverage", data.DebtToEquity),
+			Message:  fmt.Sprintf("High debt-to-equity ratio of %.2f indicates elevated leverage", ctx.Financials.DebtToEquity),
 			Priority: 3,
-			Data:     map[string]interface{}{"debtToEquity": data.DebtToEquity},
+			Data:     map[string]interface{}{"debtToEquity": ctx.Financials.DebtToEquity},
 		}
 	}
 	return nil
@@ -295,18 +206,17 @@ func (r *HighDebtRule) Evaluate(ctx *RuleContext) *Signal {
 type StrongROICRule struct{}
 
 func (r *StrongROICRule) Evaluate(ctx *RuleContext) *Signal {
-	data := getFinancialsData(ctx.Financials)
-	if data == nil {
+	if ctx.Financials == nil {
 		return nil
 	}
 	// Bullish if ROIC > 20% (strong capital efficiency)
-	if data.ROIC > 20 {
+	if ctx.Financials.ROIC > 20 {
 		return &Signal{
 			Type:     SignalBullish,
 			Category: CategoryFundamental,
-			Message:  fmt.Sprintf("Excellent ROIC of %.1f%% shows strong capital efficiency", data.ROIC),
+			Message:  fmt.Sprintf("Excellent ROIC of %.1f%% shows strong capital efficiency", ctx.Financials.ROIC),
 			Priority: 3,
-			Data:     map[string]interface{}{"roic": data.ROIC},
+			Data:     map[string]interface{}{"roic": ctx.Financials.ROIC},
 		}
 	}
 	return nil

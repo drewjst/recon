@@ -18,53 +18,38 @@ func NewGenerator() *Generator {
 	}
 }
 
-// Company is a minimal interface for company data needed by signals.
-type Company interface {
-	GetTicker() string
+// FinancialsData contains the financial metrics needed for signal generation.
+type FinancialsData struct {
+	RevenueGrowthYoY float64
+	OperatingMargin  float64
+	DebtToEquity     float64
+	ROIC             float64
 }
 
-// Quote is a minimal interface for quote data needed by signals.
-type Quote interface{}
-
-// Financials is a minimal interface for financials data needed by signals.
-type Financials interface {
-	GetRevenueGrowthYoY() float64
-	GetOperatingMargin() float64
-	GetDebtToEquity() float64
-	GetROIC() float64
+// InsiderActivityData contains insider trading metrics for signal generation.
+type InsiderActivityData struct {
+	BuyCount90d  int
+	SellCount90d int
+	NetValue90d  float64
 }
 
-// Holdings is a minimal interface for holdings data needed by signals.
-type Holdings interface {
-	GetNetChangeQuarters() int
-	GetNetChangeShares() int64
-}
-
-// InsiderTrade is a minimal interface for insider trade data needed by signals.
-type InsiderTrade interface {
-	GetTradeType() string
-	GetValue() int64
+// StockData contains all data needed for signal generation.
+type StockData struct {
+	Financials      *FinancialsData
+	InsiderActivity *InsiderActivityData
 }
 
 // GenerateAll generates signals from all available data sources.
-// Uses interface{} to avoid circular imports with stock package.
 func (g *Generator) GenerateAll(
-	company interface{},
-	quote interface{},
-	financials interface{},
-	holdings interface{},
-	insiderTrades interface{},
+	data *StockData,
 	piotroski scores.PiotroskiResult,
 	altmanZ scores.AltmanZResult,
 ) []Signal {
 	ctx := &RuleContext{
-		Company:       company,
-		Quote:         quote,
-		Financials:    financials,
-		Holdings:      holdings,
-		InsiderTrades: insiderTrades,
-		Piotroski:     piotroski,
-		AltmanZ:       altmanZ,
+		Financials:      data.Financials,
+		InsiderActivity: data.InsiderActivity,
+		Piotroski:       piotroski,
+		AltmanZ:         altmanZ,
 	}
 
 	var signals []Signal
@@ -84,13 +69,10 @@ func (g *Generator) GenerateAll(
 
 // RuleContext contains all data available for signal generation.
 type RuleContext struct {
-	Company       interface{}
-	Quote         interface{}
-	Financials    interface{}
-	Holdings      interface{}
-	InsiderTrades interface{}
-	Piotroski     scores.PiotroskiResult
-	AltmanZ       scores.AltmanZResult
+	Financials      *FinancialsData
+	InsiderActivity *InsiderActivityData
+	Piotroski       scores.PiotroskiResult
+	AltmanZ         scores.AltmanZResult
 }
 
 // Rule defines the interface for signal generation rules.

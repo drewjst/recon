@@ -3,6 +3,7 @@ package fmp
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -750,7 +751,8 @@ func min(a, b, c int) int {
 func (r *Repository) IsETF(ctx context.Context, ticker string) (bool, error) {
 	info, err := r.client.GetETFInfo(ctx, ticker)
 	if err != nil {
-		return false, nil // Treat errors as "not an ETF"
+		// Return the error so caller can decide how to handle it
+		return false, fmt.Errorf("checking if %s is ETF: %w", ticker, err)
 	}
 	return info != nil && info.ExpenseRatio > 0, nil
 }
@@ -766,10 +768,22 @@ func (r *Repository) GetETFData(ctx context.Context, ticker string) (*stock.ETFD
 	}
 
 	// Fetch holdings (non-fatal if fails)
-	holdings, _ := r.client.GetETFHoldings(ctx, ticker)
+	holdings, err := r.client.GetETFHoldings(ctx, ticker)
+	if err != nil {
+		slog.Warn("failed to fetch ETF holdings, continuing without",
+			"ticker", ticker,
+			"error", err,
+		)
+	}
 
 	// Fetch sector weightings (non-fatal if fails)
-	sectors, _ := r.client.GetETFSectorWeightings(ctx, ticker)
+	sectors, err := r.client.GetETFSectorWeightings(ctx, ticker)
+	if err != nil {
+		slog.Warn("failed to fetch ETF sector weightings, continuing without",
+			"ticker", ticker,
+			"error", err,
+		)
+	}
 
 	return &stock.ETFData{
 		ExpenseRatio:  info.ExpenseRatio,

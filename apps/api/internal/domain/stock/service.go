@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/drewjst/recon/apps/api/internal/domain/scores"
 	"github.com/drewjst/recon/apps/api/internal/domain/signals"
@@ -78,10 +81,31 @@ type Scores struct {
 	DCFValuation DCFValuation           `json:"dcfValuation"`
 }
 
+// stockData holds all fetched data for building a response.
+type stockData struct {
+	company         *Company
+	quote           *Quote
+	financials      *Financials
+	valuation       *Valuation
+	efficiency      *Efficiency
+	holdings        *Holdings
+	insiderTrades   []InsiderTrade
+	performance     *Performance
+	insiderActivity *InsiderActivity
+	financialData   []scores.FinancialData
+	dcfValuation    *DCFValuation
+}
+
 // GetStockDetail retrieves comprehensive stock data for a ticker.
 func (s *Service) GetStockDetail(ctx context.Context, ticker string) (*StockDetailResponse, error) {
-	// Check if ticker is an ETF
-	isETF, _ := s.repo.IsETF(ctx, ticker)
+	// Check if ticker is an ETF - log errors but don't fail
+	isETF, err := s.repo.IsETF(ctx, ticker)
+	if err != nil {
+		slog.Warn("failed to check if ticker is ETF, assuming stock",
+			"ticker", ticker,
+			"error", err,
+		)
+	}
 	if isETF {
 		return s.getETFDetail(ctx, ticker)
 	}
@@ -133,101 +157,200 @@ func (s *Service) getETFDetail(ctx context.Context, ticker string) (*StockDetail
 
 // getStockDetail retrieves comprehensive stock data for a ticker.
 func (s *Service) getStockDetail(ctx context.Context, ticker string) (*StockDetailResponse, error) {
-	company, err := s.repo.GetCompany(ctx, ticker)
+	// Fetch all data in parallel
+	data, err := s.fetchAllStockData(ctx, ticker)
 	if err != nil {
-		return nil, fmt.Errorf("fetching company for %s: %w", ticker, err)
-	}
-	if company == nil {
-		return nil, ErrTickerNotFound
+		return nil, err
 	}
 
-	quote, err := s.repo.GetQuote(ctx, ticker)
-	if err != nil {
-		return nil, fmt.Errorf("fetching quote for %s: %w", ticker, err)
+	// Calculate scores and generate signals
+	stockScores, signalList := s.analyzeStock(data)
+
+	// Build and return the response
+	return s.buildStockResponse(data, stockScores, signalList), nil
+}
+
+// fetchAllStockData fetches all required data for a stock in parallel.
+func (s *Service) fetchAllStockData(ctx context.Context, ticker string) (*stockData, error) {
+	data := &stockData{}
+
+	// Phase 1: Fetch company and quote first (needed for dependent calls)
+	g1, ctx1 := errgroup.WithContext(ctx)
+
+	g1.Go(func() error {
+		company, err := s.repo.GetCompany(ctx1, ticker)
+		if err != nil {
+			return fmt.Errorf("fetching company for %s: %w", ticker, err)
+		}
+		if company == nil {
+			return ErrTickerNotFound
+		}
+		data.company = company
+		return nil
+	})
+
+	g1.Go(func() error {
+		quote, err := s.repo.GetQuote(ctx1, ticker)
+		if err != nil {
+			return fmt.Errorf("fetching quote for %s: %w", ticker, err)
+		}
+		data.quote = quote
+		return nil
+	})
+
+	// Also fetch independent data in phase 1
+	g1.Go(func() error {
+		holdings, err := s.repo.GetHoldings(ctx1, ticker)
+		if err != nil {
+			return fmt.Errorf("fetching holdings for %s: %w", ticker, err)
+		}
+		data.holdings = holdings
+		return nil
+	})
+
+	g1.Go(func() error {
+		financialData, err := s.repo.GetFinancialData(ctx1, ticker, 2)
+		if err != nil {
+			return fmt.Errorf("fetching financial data for %s: %w", ticker, err)
+		}
+		data.financialData = financialData
+		return nil
+	})
+
+	// Non-fatal fetches in phase 1
+	g1.Go(func() error {
+		insiderTrades, err := s.repo.GetInsiderTrades(ctx1, ticker, 10)
+		if err != nil {
+			slog.Warn("failed to fetch insider trades, continuing without",
+				"ticker", ticker,
+				"error", err,
+			)
+			data.insiderTrades = []InsiderTrade{}
+		} else {
+			data.insiderTrades = insiderTrades
+		}
+		return nil
+	})
+
+	g1.Go(func() error {
+		insiderActivity, err := s.repo.GetInsiderActivity(ctx1, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch insider activity, continuing without",
+				"ticker", ticker,
+				"error", err,
+			)
+			data.insiderActivity = &InsiderActivity{Trades: []InsiderTrade{}}
+		} else {
+			data.insiderActivity = insiderActivity
+		}
+		return nil
+	})
+
+	g1.Go(func() error {
+		dcfValuation, err := s.repo.GetDCF(ctx1, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch DCF valuation, continuing without",
+				"ticker", ticker,
+				"error", err,
+			)
+			data.dcfValuation = &DCFValuation{}
+		} else {
+			data.dcfValuation = dcfValuation
+		}
+		return nil
+	})
+
+	if err := g1.Wait(); err != nil {
+		return nil, err
 	}
 
-	financials, err := s.repo.GetFinancials(ctx, ticker)
-	if err != nil {
-		return nil, fmt.Errorf("fetching financials for %s: %w", ticker, err)
+	// Phase 2: Fetch data that depends on company/quote
+	g2, ctx2 := errgroup.WithContext(ctx)
+
+	g2.Go(func() error {
+		financials, err := s.repo.GetFinancials(ctx2, ticker)
+		if err != nil {
+			return fmt.Errorf("fetching financials for %s: %w", ticker, err)
+		}
+		data.financials = financials
+		return nil
+	})
+
+	g2.Go(func() error {
+		valuation, err := s.repo.GetValuation(ctx2, ticker, data.company.Sector)
+		if err != nil {
+			return fmt.Errorf("fetching valuation for %s: %w", ticker, err)
+		}
+		data.valuation = valuation
+		return nil
+	})
+
+	g2.Go(func() error {
+		performance, err := s.repo.GetPerformance(ctx2, ticker, data.quote.Price, data.quote.FiftyTwoWeekHigh)
+		if err != nil {
+			return fmt.Errorf("fetching performance for %s: %w", ticker, err)
+		}
+		data.performance = performance
+		return nil
+	})
+
+	if err := g2.Wait(); err != nil {
+		return nil, err
 	}
 
-	valuation, err := s.repo.GetValuation(ctx, ticker, company.Sector)
-	if err != nil {
-		return nil, fmt.Errorf("fetching valuation for %s: %w", ticker, err)
-	}
-
-	efficiency, err := s.repo.GetEfficiency(ctx, ticker, company.Sector, financials, valuation)
+	// Phase 3: Fetch efficiency (depends on financials and valuation)
+	efficiency, err := s.repo.GetEfficiency(ctx, ticker, data.company.Sector, data.financials, data.valuation)
 	if err != nil {
 		return nil, fmt.Errorf("fetching efficiency for %s: %w", ticker, err)
 	}
+	data.efficiency = efficiency
 
-	holdings, err := s.repo.GetHoldings(ctx, ticker)
-	if err != nil {
-		return nil, fmt.Errorf("fetching holdings for %s: %w", ticker, err)
+	return data, nil
+}
+
+// analyzeStock calculates scores and generates signals from fetched data.
+func (s *Service) analyzeStock(data *stockData) (Scores, []signals.Signal) {
+	stockScores := s.calculateScores(data.financialData, data.dcfValuation)
+
+	// Convert to signal-compatible types
+	signalData := &signals.StockData{
+		Financials:      convertFinancials(data.financials),
+		InsiderActivity: convertInsiderActivity(data.insiderActivity),
 	}
 
-	// Get insider trades (non-fatal if unavailable on free tier)
-	insiderTrades, err := s.repo.GetInsiderTrades(ctx, ticker, 10)
-	if err != nil {
-		insiderTrades = []InsiderTrade{} // Continue without insider data
-	}
+	generator := signals.NewGenerator()
+	signalList := generator.GenerateAll(signalData, stockScores.Piotroski, stockScores.AltmanZ)
 
-	// Get performance metrics from historical prices
-	performance, err := s.repo.GetPerformance(ctx, ticker, quote.Price, quote.FiftyTwoWeekHigh)
-	if err != nil {
-		return nil, fmt.Errorf("fetching performance for %s: %w", ticker, err)
-	}
+	return stockScores, signalList
+}
 
-	// Get aggregated insider activity (non-fatal if unavailable on free tier)
-	insiderActivity, err := s.repo.GetInsiderActivity(ctx, ticker)
-	if err != nil {
-		insiderActivity = &InsiderActivity{Trades: []InsiderTrade{}}
-	}
-
-	// Get financial data for score calculations (current + previous year)
-	financialData, err := s.repo.GetFinancialData(ctx, ticker, 2)
-	if err != nil {
-		return nil, fmt.Errorf("fetching financial data for %s: %w", ticker, err)
-	}
-
-	// Get DCF valuation (non-fatal if unavailable)
-	dcfValuation, err := s.repo.GetDCF(ctx, ticker)
-	if err != nil {
-		dcfValuation = &DCFValuation{}
-	}
-
-	// Calculate scores
-	stockScores := s.calculateScores(financialData, dcfValuation)
-
-	// Generate signals
-	signalList := s.generateSignals(company, quote, financials, holdings, insiderTrades, stockScores)
-
-	// Determine fundamentals date from financial data
+// buildStockResponse constructs the API response from analyzed data.
+func (s *Service) buildStockResponse(data *stockData, stockScores Scores, signalList []signals.Signal) *StockDetailResponse {
 	fundamentalsDate := "N/A"
-	if len(financialData) > 0 && financialData[0].FiscalYear > 0 {
-		fundamentalsDate = fmt.Sprintf("%d", financialData[0].FiscalYear)
+	if len(data.financialData) > 0 && data.financialData[0].FiscalYear > 0 {
+		fundamentalsDate = fmt.Sprintf("%d", data.financialData[0].FiscalYear)
 	}
 
 	return &StockDetailResponse{
 		AssetType:       AssetTypeStock,
-		Company:         *company,
-		Quote:           *quote,
-		Performance:     *performance,
+		Company:         *data.company,
+		Quote:           *data.quote,
+		Performance:     *data.performance,
 		Scores:          &stockScores,
 		Signals:         signalList,
-		Valuation:       valuation,
-		Holdings:        holdings,
-		InsiderTrades:   insiderTrades,
-		InsiderActivity: insiderActivity,
-		Financials:      financials,
-		Efficiency:      efficiency,
+		Valuation:       data.valuation,
+		Holdings:        data.holdings,
+		InsiderTrades:   data.insiderTrades,
+		InsiderActivity: data.insiderActivity,
+		Financials:      data.financials,
+		Efficiency:      data.efficiency,
 		Meta: DataMeta{
 			FundamentalsAsOf: fundamentalsDate,
 			HoldingsAsOf:     "N/A",
-			PriceAsOf:        quote.AsOf.Format(time.RFC3339),
+			PriceAsOf:        data.quote.AsOf.Format(time.RFC3339),
 			GeneratedAt:      time.Now().UTC(),
 		},
-	}, nil
+	}
 }
 
 // calculateScores computes all financial scores from raw data.
@@ -261,17 +384,29 @@ func (s *Service) calculateScores(data []scores.FinancialData, dcf *DCFValuation
 	}
 }
 
-// generateSignals creates actionable signals from all available data.
-func (s *Service) generateSignals(
-	company *Company,
-	quote *Quote,
-	financials *Financials,
-	holdings *Holdings,
-	insiderTrades []InsiderTrade,
-	stockScores Scores,
-) []signals.Signal {
-	generator := signals.NewGenerator()
-	return generator.GenerateAll(company, quote, financials, holdings, insiderTrades, stockScores.Piotroski, stockScores.AltmanZ)
+// convertFinancials converts stock.Financials to signals.FinancialsData.
+func convertFinancials(f *Financials) *signals.FinancialsData {
+	if f == nil {
+		return nil
+	}
+	return &signals.FinancialsData{
+		RevenueGrowthYoY: f.RevenueGrowthYoY,
+		OperatingMargin:  f.OperatingMargin,
+		DebtToEquity:     f.DebtToEquity,
+		ROIC:             f.ROIC,
+	}
+}
+
+// convertInsiderActivity converts stock.InsiderActivity to signals.InsiderActivityData.
+func convertInsiderActivity(i *InsiderActivity) *signals.InsiderActivityData {
+	if i == nil {
+		return nil
+	}
+	return &signals.InsiderActivityData{
+		BuyCount90d:  i.BuyCount90d,
+		SellCount90d: i.SellCount90d,
+		NetValue90d:  i.NetValue90d,
+	}
 }
 
 // Search finds tickers matching the query.
