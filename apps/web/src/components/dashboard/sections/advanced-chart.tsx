@@ -1,65 +1,13 @@
 'use client';
 
 import { useEffect, useRef, memo } from 'react';
+import { formatTradingViewSymbol } from '@/lib/tradingview';
 
 interface AdvancedChartProps {
   symbol: string;
   exchange?: string;
   colorTheme?: 'light' | 'dark';
   height?: number;
-}
-
-/**
- * Formats a ticker symbol for TradingView.
- * TradingView expects format like "NASDAQ:AAPL" or "NYSE:IBM".
- */
-function formatTradingViewSymbol(ticker: string, exchange?: string): string {
-  const upperExchange = (exchange || '').toUpperCase();
-
-  // Map various exchange names to TradingView format
-  const exchangeMap: Record<string, string> = {
-    // NASDAQ variants
-    NASDAQ: 'NASDAQ',
-    'NASDAQ GLOBAL SELECT MARKET': 'NASDAQ',
-    'NASDAQ GLOBAL MARKET': 'NASDAQ',
-    'NASDAQ CAPITAL MARKET': 'NASDAQ',
-    NGS: 'NASDAQ',
-    NGM: 'NASDAQ',
-    NMS: 'NASDAQ',
-    // NYSE variants
-    NYSE: 'NYSE',
-    'NEW YORK STOCK EXCHANGE': 'NYSE',
-    NYQ: 'NYSE',
-    // AMEX variants
-    AMEX: 'AMEX',
-    'NYSE ARCA': 'AMEX',
-    'NYSE MKT': 'AMEX',
-    'NYSE AMERICAN': 'AMEX',
-    ARCA: 'AMEX',
-    PCX: 'AMEX',
-    // BATS
-    BATS: 'BATS',
-    BZX: 'BATS',
-  };
-
-  // Try to find a matching exchange
-  let tvExchange = exchangeMap[upperExchange];
-
-  // If no exact match, try partial matching for common patterns
-  if (!tvExchange) {
-    if (upperExchange.includes('NASDAQ')) {
-      tvExchange = 'NASDAQ';
-    } else if (upperExchange.includes('NYSE') || upperExchange.includes('NEW YORK')) {
-      tvExchange = 'NYSE';
-    } else if (upperExchange.includes('AMEX') || upperExchange.includes('AMERICAN')) {
-      tvExchange = 'AMEX';
-    } else {
-      // Default to NASDAQ for unknown US exchanges
-      tvExchange = 'NASDAQ';
-    }
-  }
-
-  return `${tvExchange}:${ticker}`;
 }
 
 function AdvancedChartComponent({

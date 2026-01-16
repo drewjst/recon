@@ -29,9 +29,10 @@ export function HeaderSection({ data }: HeaderSectionProps) {
   };
 
   // Calculate 52-week range position (0-100%)
-  const rangePosition = Math.max(0, Math.min(100,
-    ((quote.price - quote.fiftyTwoWeekLow) / (quote.fiftyTwoWeekHigh - quote.fiftyTwoWeekLow)) * 100
-  ));
+  const range = quote.fiftyTwoWeekHigh - quote.fiftyTwoWeekLow;
+  const rangePosition = range > 0
+    ? Math.max(0, Math.min(100, ((quote.price - quote.fiftyTwoWeekLow) / range) * 100))
+    : 50; // Default to middle if high === low
 
   return (
     <Link href={`/stock/${company.ticker}/overview`} className="block group">

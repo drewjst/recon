@@ -108,43 +108,47 @@ export const TwoStockCompare = memo(function TwoStockCompare({
             />
           </CompareSection>
 
-          {/* Efficiency Section */}
-          <CompareSection title="EFFICIENCY">
+          {/* Profitability Section */}
+          <CompareSection title="PROFITABILITY">
             <GrowthRow
               label="ROIC"
-              leftValue={left.efficiency?.roic.value}
-              rightValue={right.efficiency?.roic.value}
+              leftValue={left.profitability?.roic.value}
+              rightValue={right.profitability?.roic.value}
               format={(v) => `${v.toFixed(1)}%`}
             />
             <GrowthRow
               label="ROE"
-              leftValue={left.efficiency?.roe.value}
-              rightValue={right.efficiency?.roe.value}
+              leftValue={left.profitability?.roe.value}
+              rightValue={right.profitability?.roe.value}
               format={(v) => `${v.toFixed(1)}%`}
             />
             <GrowthRow
               label="Op. Margin"
-              leftValue={left.efficiency?.operatingMargin.value}
-              rightValue={right.efficiency?.operatingMargin.value}
+              leftValue={left.profitability?.operatingMargin.value}
+              rightValue={right.profitability?.operatingMargin.value}
               format={(v) => `${v.toFixed(1)}%`}
             />
-            <GrowthRow
-              label="FCF Yield"
-              leftValue={left.efficiency?.fcfYield?.value}
-              rightValue={right.efficiency?.fcfYield?.value}
-              format={(v) => `${v.toFixed(1)}%`}
-            />
+          </CompareSection>
+
+          {/* Financial Health Section */}
+          <CompareSection title="FINANCIAL HEALTH">
             <GrowthRow
               label="Debt/Equity"
-              leftValue={left.efficiency?.debtToEquity.value}
-              rightValue={right.efficiency?.debtToEquity.value}
+              leftValue={left.financialHealth?.debtToEquity.value}
+              rightValue={right.financialHealth?.debtToEquity.value}
               format={(v) => `${v.toFixed(2)}x`}
               lowerIsBetter
             />
             <GrowthRow
               label="Current Ratio"
-              leftValue={left.efficiency?.currentRatio.value}
-              rightValue={right.efficiency?.currentRatio.value}
+              leftValue={left.financialHealth?.currentRatio.value}
+              rightValue={right.financialHealth?.currentRatio.value}
+              format={(v) => `${v.toFixed(2)}x`}
+            />
+            <GrowthRow
+              label="Asset Turnover"
+              leftValue={left.financialHealth?.assetTurnover.value}
+              rightValue={right.financialHealth?.assetTurnover.value}
               format={(v) => `${v.toFixed(2)}x`}
             />
           </CompareSection>

@@ -23,7 +23,10 @@ type Repository interface {
 	GetFinancials(ctx context.Context, ticker string) (*Financials, error)
 	GetFinancialData(ctx context.Context, ticker string, periods int) ([]scores.FinancialData, error)
 	GetValuation(ctx context.Context, ticker string, sector string) (*Valuation, error)
-	GetEfficiency(ctx context.Context, ticker string, sector string, financials *Financials, valuation *Valuation) (*Efficiency, error)
+	GetProfitability(ctx context.Context, sector string, financials *Financials) (*Profitability, error)
+	GetFinancialHealth(ctx context.Context, sector string, financials *Financials, financialData []scores.FinancialData) (*FinancialHealth, error)
+	GetGrowth(ctx context.Context, sector string, financialData []scores.FinancialData) (*Growth, error)
+	GetEarningsQuality(ctx context.Context, ticker string, sector string) (*EarningsQuality, error)
 	GetHoldings(ctx context.Context, ticker string) (*Holdings, error)
 	GetInsiderTrades(ctx context.Context, ticker string, limit int) ([]InsiderTrade, error)
 	GetPerformance(ctx context.Context, ticker string, currentPrice, yearHigh float64) (*Performance, error)
@@ -68,7 +71,10 @@ type StockDetailResponse struct {
 	InsiderTrades   []InsiderTrade   `json:"insiderTrades"`
 	InsiderActivity *InsiderActivity `json:"insiderActivity,omitempty"`
 	Financials      *Financials      `json:"financials,omitempty"`
-	Efficiency      *Efficiency      `json:"efficiency,omitempty"`
+	Profitability   *Profitability   `json:"profitability,omitempty"`
+	FinancialHealth *FinancialHealth `json:"financialHealth,omitempty"`
+	Growth          *Growth          `json:"growth,omitempty"`
+	EarningsQuality *EarningsQuality `json:"earningsQuality,omitempty"`
 	ETFData         *ETFData         `json:"etfData,omitempty"`
 	Meta            DataMeta         `json:"meta"`
 }
@@ -87,7 +93,10 @@ type stockData struct {
 	quote           *Quote
 	financials      *Financials
 	valuation       *Valuation
-	efficiency      *Efficiency
+	profitability   *Profitability
+	financialHealth *FinancialHealth
+	growth          *Growth
+	earningsQuality *EarningsQuality
 	holdings        *Holdings
 	insiderTrades   []InsiderTrade
 	performance     *Performance
@@ -298,12 +307,48 @@ func (s *Service) fetchAllStockData(ctx context.Context, ticker string) (*stockD
 		return nil, err
 	}
 
-	// Phase 3: Fetch efficiency (depends on financials and valuation)
-	efficiency, err := s.repo.GetEfficiency(ctx, ticker, data.company.Sector, data.financials, data.valuation)
-	if err != nil {
-		return nil, fmt.Errorf("fetching efficiency for %s: %w", ticker, err)
+	// Phase 3: Fetch metrics that depend on financials (run in parallel)
+	g3, ctx3 := errgroup.WithContext(ctx)
+
+	g3.Go(func() error {
+		profitability, err := s.repo.GetProfitability(ctx3, data.company.Sector, data.financials)
+		if err != nil {
+			return fmt.Errorf("fetching profitability for %s: %w", ticker, err)
+		}
+		data.profitability = profitability
+		return nil
+	})
+
+	g3.Go(func() error {
+		financialHealth, err := s.repo.GetFinancialHealth(ctx3, data.company.Sector, data.financials, data.financialData)
+		if err != nil {
+			return fmt.Errorf("fetching financial health for %s: %w", ticker, err)
+		}
+		data.financialHealth = financialHealth
+		return nil
+	})
+
+	g3.Go(func() error {
+		growth, err := s.repo.GetGrowth(ctx3, data.company.Sector, data.financialData)
+		if err != nil {
+			return fmt.Errorf("fetching growth for %s: %w", ticker, err)
+		}
+		data.growth = growth
+		return nil
+	})
+
+	g3.Go(func() error {
+		earningsQuality, err := s.repo.GetEarningsQuality(ctx3, ticker, data.company.Sector)
+		if err != nil {
+			return fmt.Errorf("fetching earnings quality for %s: %w", ticker, err)
+		}
+		data.earningsQuality = earningsQuality
+		return nil
+	})
+
+	if err := g3.Wait(); err != nil {
+		return nil, err
 	}
-	data.efficiency = efficiency
 
 	return data, nil
 }
@@ -343,7 +388,10 @@ func (s *Service) buildStockResponse(data *stockData, stockScores Scores, signal
 		InsiderTrades:   data.insiderTrades,
 		InsiderActivity: data.insiderActivity,
 		Financials:      data.financials,
-		Efficiency:      data.efficiency,
+		Profitability:   data.profitability,
+		FinancialHealth: data.financialHealth,
+		Growth:          data.growth,
+		EarningsQuality: data.earningsQuality,
 		Meta: DataMeta{
 			FundamentalsAsOf: fundamentalsDate,
 			HoldingsAsOf:     "N/A",

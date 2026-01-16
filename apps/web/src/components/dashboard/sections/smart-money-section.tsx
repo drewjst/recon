@@ -107,8 +107,8 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
                 {trades
                   .filter((trade) => trade.value > 0)
                   .slice(0, 5)
-                  .map((trade, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm py-1 border-t border-border/30 first:border-t-0">
+                  .map((trade) => (
+                    <div key={`${trade.tradeDate}-${trade.insiderName}-${trade.shares}`} className="flex items-center justify-between text-sm py-1 border-t border-border/30 first:border-t-0">
                       <span className="truncate max-w-[150px] md:max-w-[200px]">{trade.insiderName}</span>
                       <span className={`font-mono ${trade.tradeType === 'buy' ? 'text-success' : 'text-destructive'}`}>
                         {trade.tradeType === 'buy' ? 'Buy' : 'Sell'} {formatValue(trade.value)}

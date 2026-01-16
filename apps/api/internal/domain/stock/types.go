@@ -73,8 +73,8 @@ type InsiderTrade struct {
 	TradeDate   string  `json:"tradeDate" db:"trade_date"`
 }
 
-// EfficiencyMetric represents an efficiency metric with sector context.
-type EfficiencyMetric struct {
+// SectorMetric represents a metric with sector context for comparison.
+type SectorMetric struct {
 	Value        float64 `json:"value"`
 	SectorMin    float64 `json:"sectorMin"`
 	SectorMedian float64 `json:"sectorMedian"`
@@ -82,14 +82,30 @@ type EfficiencyMetric struct {
 	Percentile   int     `json:"percentile"` // 0-100, where stock ranks in sector
 }
 
-// Efficiency contains efficiency metrics with sector comparisons.
-type Efficiency struct {
-	ROIC            EfficiencyMetric  `json:"roic"`
-	ROE             EfficiencyMetric  `json:"roe"`
-	OperatingMargin EfficiencyMetric  `json:"operatingMargin"`
-	FCFYield        *EfficiencyMetric `json:"fcfYield,omitempty"`
-	DebtToEquity    EfficiencyMetric  `json:"debtToEquity"`
-	CurrentRatio    EfficiencyMetric  `json:"currentRatio"`
+// Profitability contains profitability metrics with sector comparisons.
+type Profitability struct {
+	ROIC            SectorMetric `json:"roic"`
+	ROE             SectorMetric `json:"roe"`
+	OperatingMargin SectorMetric `json:"operatingMargin"`
+}
+
+// FinancialHealth contains financial health metrics with sector comparisons.
+type FinancialHealth struct {
+	DebtToEquity  SectorMetric `json:"debtToEquity"`
+	CurrentRatio  SectorMetric `json:"currentRatio"`
+	AssetTurnover SectorMetric `json:"assetTurnover"`
+}
+
+// Growth contains growth metrics with sector comparisons.
+type Growth struct {
+	RevenueGrowthYoY SectorMetric `json:"revenueGrowthYoY"`
+	EPSGrowthYoY     SectorMetric `json:"epsGrowthYoY"`
+}
+
+// EarningsQuality contains earnings quality metrics with sector comparisons.
+type EarningsQuality struct {
+	AccrualRatio  SectorMetric `json:"accrualRatio"`
+	BuybackYield  SectorMetric `json:"buybackYield"`
 }
 
 // Financials contains key financial metrics.

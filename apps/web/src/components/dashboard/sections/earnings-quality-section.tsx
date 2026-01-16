@@ -4,24 +4,25 @@ import { SectionCard } from './section-card';
 import { SectorMetricRow, type SectorMetricConfig } from './sector-metric-row';
 import type { StockDetailResponse } from '@recon/shared';
 
-interface GrowthSectionProps {
+interface EarningsQualitySectionProps {
   data: StockDetailResponse;
 }
 
-export function GrowthSection({ data }: GrowthSectionProps) {
-  const { growth } = data;
-  if (!growth) return null;
+export function EarningsQualitySection({ data }: EarningsQualitySectionProps) {
+  const { earningsQuality } = data;
+  if (!earningsQuality) return null;
 
   const metrics: SectorMetricConfig[] = [
     {
-      label: 'Revenue Growth YoY',
-      metric: growth.revenueGrowthYoY,
+      label: 'Accrual Ratio',
+      metric: earningsQuality.accrualRatio,
       formatValue: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`,
+      invertedScale: true, // Lower is better (more cash-based earnings)
     },
     {
-      label: 'EPS Growth YoY',
-      metric: growth.epsGrowthYoY,
-      formatValue: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`,
+      label: 'Buyback Yield',
+      metric: earningsQuality.buybackYield,
+      formatValue: (v) => `${v.toFixed(2)}%`,
     },
   ];
 
@@ -29,9 +30,9 @@ export function GrowthSection({ data }: GrowthSectionProps) {
   const validMetrics = metrics.filter((m) => m.metric !== null && m.metric !== undefined);
 
   return (
-    <SectionCard title="Growth">
+    <SectionCard title="Earnings Quality">
       {validMetrics.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Growth data not available.</p>
+        <p className="text-sm text-muted-foreground">Earnings quality data not available.</p>
       ) : (
         <div>
           {validMetrics.map((config) => (

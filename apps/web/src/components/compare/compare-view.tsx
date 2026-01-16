@@ -135,19 +135,43 @@ export function CompareView({ tickers }: CompareViewProps) {
         layout="table"
       />
 
+      {/* Profitability Comparison */}
+      <MetricTable
+        title="Profitability"
+        stocks={validStocks}
+        metrics={COMPARE_METRICS.profitability}
+        layout="table"
+      />
+
+      {/* Financial Health Comparison */}
+      <MetricTable
+        title="Financial Health"
+        stocks={validStocks}
+        metrics={COMPARE_METRICS.financialHealth}
+        layout="table"
+      />
+
+      {/* Growth Comparison */}
+      <MetricTable
+        title="Growth"
+        stocks={validStocks}
+        metrics={COMPARE_METRICS.growth}
+        layout="table"
+      />
+
+      {/* Earnings Quality Comparison */}
+      <MetricTable
+        title="Earnings Quality"
+        stocks={validStocks}
+        metrics={COMPARE_METRICS.earningsQuality}
+        layout="table"
+      />
+
       {/* Performance Comparison */}
       <MetricTable
         title="Performance"
         stocks={validStocks}
         metrics={COMPARE_METRICS.performance}
-        layout="table"
-      />
-
-      {/* Efficiency Comparison */}
-      <MetricTable
-        title="Efficiency"
-        stocks={validStocks}
-        metrics={COMPARE_METRICS.efficiency}
         layout="table"
       />
     </div>

@@ -9,6 +9,7 @@ type FinancialData struct {
 	OperatingIncome float64
 	NetIncome       float64
 	EBIT            float64
+	EPS             float64 // Earnings per share (diluted)
 
 	// Balance Sheet
 	TotalAssets        float64

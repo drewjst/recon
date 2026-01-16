@@ -1,20 +1,27 @@
 'use client';
 
-import { SectionCard } from './section-card';
-import type { StockDetailResponse, EfficiencyMetric } from '@recon/shared';
-
-interface EfficiencySectionProps {
-  data: StockDetailResponse;
-}
+import { Info, ExternalLink } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import type { SectorMetric } from '@recon/shared';
 
 type Assessment = 'Excellent' | 'Good' | 'Average' | 'Below Avg' | 'Caution';
 type AssessmentType = 'positive' | 'neutral' | 'negative';
 
-interface MetricConfig {
+export interface SectorMetricConfig {
   label: string;
-  metric: EfficiencyMetric | null;
+  metric: SectorMetric | null | undefined;
   formatValue: (value: number) => string;
-  formatRange: (value: number) => string;
+  /** If true, lower values are better (e.g., Debt/Equity) */
+  invertedScale?: boolean;
+  /** Optional description shown in an info tooltip */
+  info?: string;
+  /** Optional URL for "Learn more" link in tooltip */
+  learnMoreUrl?: string;
 }
 
 function getAssessment(percentile: number): { text: Assessment; type: AssessmentType } {
@@ -39,7 +46,16 @@ function AssessmentBadge({ assessment }: { assessment: { text: Assessment; type:
   );
 }
 
-function PositionBar({ metric }: { metric: EfficiencyMetric }) {
+function formatRangeValue(metric: SectorMetric, value: number): string {
+  // For percentages (values typically > 10)
+  if (Math.abs(metric.sectorMax) > 10 || Math.abs(metric.sectorMin) > 10) {
+    return `${value.toFixed(0)}%`;
+  }
+  // For ratios (smaller values)
+  return value.toFixed(1);
+}
+
+function PositionBar({ metric }: { metric: SectorMetric }) {
   const { percentile, sectorMin, sectorMedian, sectorMax } = metric;
 
   // Determine dot color based on percentile
@@ -50,7 +66,8 @@ function PositionBar({ metric }: { metric: EfficiencyMetric }) {
   };
 
   // Calculate median position on the bar (as percentage of the range)
-  const medianPosition = ((sectorMedian - sectorMin) / (sectorMax - sectorMin)) * 100;
+  const range = sectorMax - sectorMin;
+  const medianPosition = range > 0 ? ((sectorMedian - sectorMin) / range) * 100 : 50;
 
   return (
     <div className="mt-2">
@@ -79,23 +96,13 @@ function PositionBar({ metric }: { metric: EfficiencyMetric }) {
   );
 }
 
-function formatRangeValue(metric: EfficiencyMetric, value: number): string {
-  // For percentages (ROIC, FCF Yield)
-  if (metric.sectorMax > 10) {
-    return `${value.toFixed(0)}%`;
-  }
-  // For ratios (Debt/Equity)
-  if (metric.sectorMax <= 10) {
-    return value.toFixed(1);
-  }
-  return value.toFixed(1);
-}
-
-function EfficiencyMetricRow({
+export function SectorMetricRow({
   label,
   metric,
   formatValue,
-}: MetricConfig) {
+  info,
+  learnMoreUrl,
+}: SectorMetricConfig) {
   if (!metric) return null;
 
   const assessment = getAssessment(metric.percentile);
@@ -103,7 +110,32 @@ function EfficiencyMetricRow({
   return (
     <div className="py-4 border-b border-border/50 last:border-0">
       <div className="flex justify-between items-center mb-1">
-        <span className="font-medium text-sm">{label}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="font-medium text-sm">{label}</span>
+          {info && (
+            <TooltipProvider>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <p className="text-xs">{info}</p>
+                  {learnMoreUrl && (
+                    <a
+                      href={learnMoreUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium mt-1"
+                    >
+                      Learn more
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <span className="font-mono text-sm">{formatValue(metric.value)}</span>
           <AssessmentBadge assessment={assessment} />
@@ -112,66 +144,5 @@ function EfficiencyMetricRow({
 
       <PositionBar metric={metric} />
     </div>
-  );
-}
-
-export function EfficiencySection({ data }: EfficiencySectionProps) {
-  const { efficiency } = data;
-  if (!efficiency) return null;
-
-  const metrics: MetricConfig[] = [
-    {
-      label: 'ROIC',
-      metric: efficiency.roic,
-      formatValue: (v) => `${v.toFixed(1)}%`,
-      formatRange: (v) => `${v.toFixed(0)}%`,
-    },
-    {
-      label: 'ROE',
-      metric: efficiency.roe,
-      formatValue: (v) => `${v.toFixed(1)}%`,
-      formatRange: (v) => `${v.toFixed(0)}%`,
-    },
-    {
-      label: 'Operating Margin',
-      metric: efficiency.operatingMargin,
-      formatValue: (v) => `${v.toFixed(1)}%`,
-      formatRange: (v) => `${v.toFixed(0)}%`,
-    },
-    {
-      label: 'FCF Yield',
-      metric: efficiency.fcfYield,
-      formatValue: (v) => `${v.toFixed(2)}%`,
-      formatRange: (v) => `${v.toFixed(1)}%`,
-    },
-    {
-      label: 'Debt/Equity',
-      metric: efficiency.debtToEquity,
-      formatValue: (v) => v.toFixed(2),
-      formatRange: (v) => v.toFixed(1),
-    },
-    {
-      label: 'Current Ratio',
-      metric: efficiency.currentRatio,
-      formatValue: (v) => `${v.toFixed(2)}x`,
-      formatRange: (v) => `${v.toFixed(1)}x`,
-    },
-  ];
-
-  // Filter out null metrics
-  const validMetrics = metrics.filter((m) => m.metric !== null);
-
-  return (
-    <SectionCard title="Efficiency">
-      {validMetrics.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Efficiency data not available.</p>
-      ) : (
-        <div>
-          {validMetrics.map((config) => (
-            <EfficiencyMetricRow key={config.label} {...config} />
-          ))}
-        </div>
-      )}
-    </SectionCard>
   );
 }

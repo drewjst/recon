@@ -36,18 +36,28 @@ const SignalsSection = dynamic(
   { loading: () => <SectionSkeleton /> }
 );
 
-const GrowthSection = dynamic(
-  () => import('./sections/growth-section').then((mod) => mod.GrowthSection),
-  { loading: () => <SectionSkeleton /> }
-);
-
 const ValuationSection = dynamic(
   () => import('./sections/valuation-section').then((mod) => mod.ValuationSection),
   { loading: () => <SectionSkeleton /> }
 );
 
-const EfficiencySection = dynamic(
-  () => import('./sections/efficiency-section').then((mod) => mod.EfficiencySection),
+const ProfitabilitySection = dynamic(
+  () => import('./sections/profitability-section').then((mod) => mod.ProfitabilitySection),
+  { loading: () => <SectionSkeleton /> }
+);
+
+const FinancialHealthSection = dynamic(
+  () => import('./sections/financial-health-section').then((mod) => mod.FinancialHealthSection),
+  { loading: () => <SectionSkeleton /> }
+);
+
+const GrowthSection = dynamic(
+  () => import('./sections/growth-section').then((mod) => mod.GrowthSection),
+  { loading: () => <SectionSkeleton /> }
+);
+
+const EarningsQualitySection = dynamic(
+  () => import('./sections/earnings-quality-section').then((mod) => mod.EarningsQualitySection),
   { loading: () => <SectionSkeleton /> }
 );
 
@@ -106,13 +116,19 @@ export function StockDashboard({ ticker }: StockDashboardProps) {
       <SignalsSection data={data} />
 
       <DashboardDivider />
-      <GrowthSection data={data} />
-
-      <DashboardDivider />
       <ValuationSection data={data} />
 
       <DashboardDivider />
-      <EfficiencySection data={data} />
+      <ProfitabilitySection data={data} />
+
+      <DashboardDivider />
+      <FinancialHealthSection data={data} />
+
+      <DashboardDivider />
+      <GrowthSection data={data} />
+
+      <DashboardDivider />
+      <EarningsQualitySection data={data} />
 
       <DashboardDivider />
       <SmartMoneySection data={data} />

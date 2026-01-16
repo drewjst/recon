@@ -5,6 +5,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, formatNumber, formatDate, cn } from '@/lib/utils';
 import type { InsiderTrade } from '@recon/shared';
 
+const MAX_DISPLAYED_TRADES = 10;
+
 interface InsiderTableProps {
   trades: InsiderTrade[];
   isLoading?: boolean;
@@ -46,8 +48,8 @@ export function InsiderTable({ trades, isLoading }: InsiderTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {trades.slice(0, 10).map((trade, index) => (
-                <TableRow key={index}>
+              {trades.slice(0, MAX_DISPLAYED_TRADES).map((trade) => (
+                <TableRow key={`${trade.tradeDate}-${trade.insiderName}-${trade.shares}`}>
                   <TableCell className="text-muted-foreground">
                     {formatDate(trade.tradeDate)}
                   </TableCell>

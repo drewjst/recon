@@ -172,6 +172,7 @@ func (r *Repository) GetFinancialData(ctx context.Context, ticker string, period
 			OperatingIncome: is.OperatingIncome,
 			NetIncome:       is.NetIncome,
 			EBIT:            is.OperatingIncome,
+			EPS:             is.EPSDiluted,
 
 			// Balance Sheet
 			TotalAssets:        bs.TotalAssets,
@@ -232,73 +233,93 @@ type efficiencyRange struct {
 	Max    float64
 }
 
-// sectorEfficiencyRanges defines efficiency metric ranges for a single sector.
-type sectorEfficiencyRanges struct {
+// sectorMetricRanges defines metric ranges for a single sector.
+type sectorMetricRanges struct {
+	// Profitability
 	ROIC            efficiencyRange
 	ROE             efficiencyRange
 	OperatingMargin efficiencyRange
-	FCFYield        efficiencyRange
-	DebtToEquity    efficiencyRange
-	CurrentRatio    efficiencyRange
+	// Financial Health
+	DebtToEquity  efficiencyRange
+	CurrentRatio  efficiencyRange
+	AssetTurnover efficiencyRange
+	// Growth
+	RevenueGrowth efficiencyRange
+	EPSGrowth     efficiencyRange
+	// Earnings Quality
+	AccrualRatio efficiencyRange
+	BuybackYield efficiencyRange
 }
 
-// sectorEfficiency contains typical efficiency ranges by sector.
-// ROIC/ROE/OperatingMargin/FCFYield are percentages, DebtToEquity/CurrentRatio are ratios.
-var sectorEfficiency = map[string]sectorEfficiencyRanges{
+// sectorMetrics contains typical metric ranges by sector.
+// Percentages: ROIC, ROE, OperatingMargin, RevenueGrowth, EPSGrowth, AccrualRatio, BuybackYield
+// Ratios: DebtToEquity, CurrentRatio, AssetTurnover
+var sectorMetrics = map[string]sectorMetricRanges{
 	"Technology": {
-		ROIC: efficiencyRange{5, 15, 40}, ROE: efficiencyRange{10, 25, 50},
-		OperatingMargin: efficiencyRange{10, 20, 40}, FCFYield: efficiencyRange{1, 3, 8},
-		DebtToEquity: efficiencyRange{0, 0.4, 1.5}, CurrentRatio: efficiencyRange{1, 2, 4},
+		ROIC: efficiencyRange{5, 15, 40}, ROE: efficiencyRange{10, 25, 50}, OperatingMargin: efficiencyRange{10, 20, 40},
+		DebtToEquity: efficiencyRange{0, 0.4, 1.5}, CurrentRatio: efficiencyRange{1, 2, 4}, AssetTurnover: efficiencyRange{0.3, 0.6, 1.2},
+		RevenueGrowth: efficiencyRange{-5, 10, 40}, EPSGrowth: efficiencyRange{-10, 15, 50},
+		AccrualRatio: efficiencyRange{-15, -5, 5}, BuybackYield: efficiencyRange{0, 1.5, 5},
 	},
 	"Healthcare": {
-		ROIC: efficiencyRange{3, 12, 30}, ROE: efficiencyRange{8, 18, 40},
-		OperatingMargin: efficiencyRange{5, 15, 30}, FCFYield: efficiencyRange{1, 2.5, 6},
-		DebtToEquity: efficiencyRange{0, 0.5, 1.8}, CurrentRatio: efficiencyRange{1, 1.8, 3.5},
+		ROIC: efficiencyRange{3, 12, 30}, ROE: efficiencyRange{8, 18, 40}, OperatingMargin: efficiencyRange{5, 15, 30},
+		DebtToEquity: efficiencyRange{0, 0.5, 1.8}, CurrentRatio: efficiencyRange{1, 1.8, 3.5}, AssetTurnover: efficiencyRange{0.3, 0.5, 1.0},
+		RevenueGrowth: efficiencyRange{-3, 8, 30}, EPSGrowth: efficiencyRange{-10, 12, 40},
+		AccrualRatio: efficiencyRange{-12, -4, 6}, BuybackYield: efficiencyRange{0, 1, 4},
 	},
 	"Financial Services": {
-		ROIC: efficiencyRange{2, 8, 18}, ROE: efficiencyRange{8, 12, 20},
-		OperatingMargin: efficiencyRange{15, 30, 50}, FCFYield: efficiencyRange{2, 5, 12},
-		DebtToEquity: efficiencyRange{0.5, 2, 8}, CurrentRatio: efficiencyRange{0.8, 1.2, 2},
+		ROIC: efficiencyRange{2, 8, 18}, ROE: efficiencyRange{8, 12, 20}, OperatingMargin: efficiencyRange{15, 30, 50},
+		DebtToEquity: efficiencyRange{0.5, 2, 8}, CurrentRatio: efficiencyRange{0.8, 1.2, 2}, AssetTurnover: efficiencyRange{0.02, 0.05, 0.1},
+		RevenueGrowth: efficiencyRange{-5, 5, 20}, EPSGrowth: efficiencyRange{-15, 8, 25},
+		AccrualRatio: efficiencyRange{-10, -2, 8}, BuybackYield: efficiencyRange{0, 2, 6},
 	},
 	"Consumer Cyclical": {
-		ROIC: efficiencyRange{4, 12, 28}, ROE: efficiencyRange{10, 20, 40},
-		OperatingMargin: efficiencyRange{5, 12, 25}, FCFYield: efficiencyRange{1, 3, 7},
-		DebtToEquity: efficiencyRange{0.2, 0.8, 2}, CurrentRatio: efficiencyRange{1, 1.5, 3},
+		ROIC: efficiencyRange{4, 12, 28}, ROE: efficiencyRange{10, 20, 40}, OperatingMargin: efficiencyRange{5, 12, 25},
+		DebtToEquity: efficiencyRange{0.2, 0.8, 2}, CurrentRatio: efficiencyRange{1, 1.5, 3}, AssetTurnover: efficiencyRange{0.8, 1.5, 2.5},
+		RevenueGrowth: efficiencyRange{-8, 7, 25}, EPSGrowth: efficiencyRange{-15, 10, 35},
+		AccrualRatio: efficiencyRange{-10, -3, 5}, BuybackYield: efficiencyRange{0, 1.5, 5},
 	},
 	"Consumer Defensive": {
-		ROIC: efficiencyRange{5, 14, 30}, ROE: efficiencyRange{12, 22, 45},
-		OperatingMargin: efficiencyRange{8, 15, 28}, FCFYield: efficiencyRange{2, 4, 8},
-		DebtToEquity: efficiencyRange{0.2, 0.6, 1.5}, CurrentRatio: efficiencyRange{0.8, 1.2, 2},
+		ROIC: efficiencyRange{5, 14, 30}, ROE: efficiencyRange{12, 22, 45}, OperatingMargin: efficiencyRange{8, 15, 28},
+		DebtToEquity: efficiencyRange{0.2, 0.6, 1.5}, CurrentRatio: efficiencyRange{0.8, 1.2, 2}, AssetTurnover: efficiencyRange{0.8, 1.2, 2.0},
+		RevenueGrowth: efficiencyRange{-2, 4, 15}, EPSGrowth: efficiencyRange{-5, 6, 20},
+		AccrualRatio: efficiencyRange{-8, -2, 4}, BuybackYield: efficiencyRange{0, 2, 5},
 	},
 	"Industrials": {
-		ROIC: efficiencyRange{4, 11, 25}, ROE: efficiencyRange{10, 18, 35},
-		OperatingMargin: efficiencyRange{6, 12, 22}, FCFYield: efficiencyRange{1.5, 3.5, 7},
-		DebtToEquity: efficiencyRange{0.3, 0.8, 2}, CurrentRatio: efficiencyRange{1, 1.5, 2.5},
+		ROIC: efficiencyRange{4, 11, 25}, ROE: efficiencyRange{10, 18, 35}, OperatingMargin: efficiencyRange{6, 12, 22},
+		DebtToEquity: efficiencyRange{0.3, 0.8, 2}, CurrentRatio: efficiencyRange{1, 1.5, 2.5}, AssetTurnover: efficiencyRange{0.5, 0.9, 1.5},
+		RevenueGrowth: efficiencyRange{-5, 6, 20}, EPSGrowth: efficiencyRange{-10, 8, 25},
+		AccrualRatio: efficiencyRange{-10, -3, 5}, BuybackYield: efficiencyRange{0, 1.5, 4},
 	},
 	"Energy": {
-		ROIC: efficiencyRange{2, 8, 20}, ROE: efficiencyRange{5, 15, 30},
-		OperatingMargin: efficiencyRange{5, 15, 35}, FCFYield: efficiencyRange{3, 6, 15},
-		DebtToEquity: efficiencyRange{0.2, 0.5, 1.5}, CurrentRatio: efficiencyRange{0.8, 1.2, 2},
+		ROIC: efficiencyRange{2, 8, 20}, ROE: efficiencyRange{5, 15, 30}, OperatingMargin: efficiencyRange{5, 15, 35},
+		DebtToEquity: efficiencyRange{0.2, 0.5, 1.5}, CurrentRatio: efficiencyRange{0.8, 1.2, 2}, AssetTurnover: efficiencyRange{0.3, 0.6, 1.0},
+		RevenueGrowth: efficiencyRange{-20, 5, 40}, EPSGrowth: efficiencyRange{-30, 10, 60},
+		AccrualRatio: efficiencyRange{-15, -5, 10}, BuybackYield: efficiencyRange{0, 2, 6},
 	},
 	"Basic Materials": {
-		ROIC: efficiencyRange{3, 9, 20}, ROE: efficiencyRange{8, 15, 28},
-		OperatingMargin: efficiencyRange{8, 15, 28}, FCFYield: efficiencyRange{2, 4, 10},
-		DebtToEquity: efficiencyRange{0.2, 0.5, 1.5}, CurrentRatio: efficiencyRange{1, 1.8, 3},
+		ROIC: efficiencyRange{3, 9, 20}, ROE: efficiencyRange{8, 15, 28}, OperatingMargin: efficiencyRange{8, 15, 28},
+		DebtToEquity: efficiencyRange{0.2, 0.5, 1.5}, CurrentRatio: efficiencyRange{1, 1.8, 3}, AssetTurnover: efficiencyRange{0.4, 0.7, 1.2},
+		RevenueGrowth: efficiencyRange{-10, 5, 25}, EPSGrowth: efficiencyRange{-20, 8, 40},
+		AccrualRatio: efficiencyRange{-12, -4, 6}, BuybackYield: efficiencyRange{0, 1.5, 5},
 	},
 	"Utilities": {
-		ROIC: efficiencyRange{2, 5, 10}, ROE: efficiencyRange{6, 10, 15},
-		OperatingMargin: efficiencyRange{15, 25, 40}, FCFYield: efficiencyRange{2, 4, 8},
-		DebtToEquity: efficiencyRange{0.8, 1.2, 2.5}, CurrentRatio: efficiencyRange{0.6, 0.9, 1.5},
+		ROIC: efficiencyRange{2, 5, 10}, ROE: efficiencyRange{6, 10, 15}, OperatingMargin: efficiencyRange{15, 25, 40},
+		DebtToEquity: efficiencyRange{0.8, 1.2, 2.5}, CurrentRatio: efficiencyRange{0.6, 0.9, 1.5}, AssetTurnover: efficiencyRange{0.2, 0.3, 0.5},
+		RevenueGrowth: efficiencyRange{-2, 3, 10}, EPSGrowth: efficiencyRange{-5, 4, 12},
+		AccrualRatio: efficiencyRange{-8, -2, 5}, BuybackYield: efficiencyRange{0, 0.5, 2},
 	},
 	"Real Estate": {
-		ROIC: efficiencyRange{2, 5, 12}, ROE: efficiencyRange{4, 8, 15},
-		OperatingMargin: efficiencyRange{20, 35, 55}, FCFYield: efficiencyRange{3, 5, 10},
-		DebtToEquity: efficiencyRange{0.5, 1, 2.5}, CurrentRatio: efficiencyRange{0.5, 1, 2},
+		ROIC: efficiencyRange{2, 5, 12}, ROE: efficiencyRange{4, 8, 15}, OperatingMargin: efficiencyRange{20, 35, 55},
+		DebtToEquity: efficiencyRange{0.5, 1, 2.5}, CurrentRatio: efficiencyRange{0.5, 1, 2}, AssetTurnover: efficiencyRange{0.05, 0.1, 0.2},
+		RevenueGrowth: efficiencyRange{-5, 5, 20}, EPSGrowth: efficiencyRange{-10, 5, 20},
+		AccrualRatio: efficiencyRange{-10, -3, 8}, BuybackYield: efficiencyRange{0, 0.5, 2},
 	},
 	"Communication Services": {
-		ROIC: efficiencyRange{4, 10, 22}, ROE: efficiencyRange{8, 16, 32},
-		OperatingMargin: efficiencyRange{10, 20, 35}, FCFYield: efficiencyRange{2, 4, 9},
-		DebtToEquity: efficiencyRange{0.3, 0.8, 2}, CurrentRatio: efficiencyRange{0.8, 1.3, 2.5},
+		ROIC: efficiencyRange{4, 10, 22}, ROE: efficiencyRange{8, 16, 32}, OperatingMargin: efficiencyRange{10, 20, 35},
+		DebtToEquity: efficiencyRange{0.3, 0.8, 2}, CurrentRatio: efficiencyRange{0.8, 1.3, 2.5}, AssetTurnover: efficiencyRange{0.3, 0.5, 0.9},
+		RevenueGrowth: efficiencyRange{-5, 8, 30}, EPSGrowth: efficiencyRange{-10, 12, 40},
+		AccrualRatio: efficiencyRange{-10, -3, 5}, BuybackYield: efficiencyRange{0, 1.5, 5},
 	},
 }
 
@@ -406,79 +427,200 @@ func calculatePercentileInverted(value, min, max float64) int {
 	return int(pct)
 }
 
-// GetEfficiency constructs efficiency metrics with sector context.
-func (r *Repository) GetEfficiency(ctx context.Context, ticker string, sector string, financials *stock.Financials, valuation *stock.Valuation) (*stock.Efficiency, error) {
-	// Get sector ranges (with fallback to Technology)
-	ranges, ok := sectorEfficiency[sector]
+// getSectorRanges returns sector metric ranges with fallback to Technology.
+func getSectorRanges(sector string) sectorMetricRanges {
+	ranges, ok := sectorMetrics[sector]
 	if !ok {
-		ranges = sectorEfficiency["Technology"]
+		return sectorMetrics["Technology"]
+	}
+	return ranges
+}
+
+// GetProfitability constructs profitability metrics with sector context.
+func (r *Repository) GetProfitability(ctx context.Context, sector string, financials *stock.Financials) (*stock.Profitability, error) {
+	ranges := getSectorRanges(sector)
+
+	return &stock.Profitability{
+		ROIC: stock.SectorMetric{
+			Value:        financials.ROIC,
+			SectorMin:    ranges.ROIC.Min,
+			SectorMedian: ranges.ROIC.Median,
+			SectorMax:    ranges.ROIC.Max,
+			Percentile:   calculatePercentile(financials.ROIC, ranges.ROIC.Min, ranges.ROIC.Max),
+		},
+		ROE: stock.SectorMetric{
+			Value:        financials.ROE,
+			SectorMin:    ranges.ROE.Min,
+			SectorMedian: ranges.ROE.Median,
+			SectorMax:    ranges.ROE.Max,
+			Percentile:   calculatePercentile(financials.ROE, ranges.ROE.Min, ranges.ROE.Max),
+		},
+		OperatingMargin: stock.SectorMetric{
+			Value:        financials.OperatingMargin,
+			SectorMin:    ranges.OperatingMargin.Min,
+			SectorMedian: ranges.OperatingMargin.Median,
+			SectorMax:    ranges.OperatingMargin.Max,
+			Percentile:   calculatePercentile(financials.OperatingMargin, ranges.OperatingMargin.Min, ranges.OperatingMargin.Max),
+		},
+	}, nil
+}
+
+// GetFinancialHealth constructs financial health metrics with sector context.
+func (r *Repository) GetFinancialHealth(ctx context.Context, sector string, financials *stock.Financials, financialData []scores.FinancialData) (*stock.FinancialHealth, error) {
+	ranges := getSectorRanges(sector)
+
+	// Calculate Asset Turnover from financial data if available
+	var assetTurnover float64
+	if len(financialData) > 0 && financialData[0].TotalAssets > 0 {
+		assetTurnover = financialData[0].Revenue / financialData[0].TotalAssets
 	}
 
-	efficiency := &stock.Efficiency{}
+	return &stock.FinancialHealth{
+		DebtToEquity: stock.SectorMetric{
+			Value:        financials.DebtToEquity,
+			SectorMin:    ranges.DebtToEquity.Min,
+			SectorMedian: ranges.DebtToEquity.Median,
+			SectorMax:    ranges.DebtToEquity.Max,
+			Percentile:   calculatePercentileInverted(financials.DebtToEquity, ranges.DebtToEquity.Min, ranges.DebtToEquity.Max),
+		},
+		CurrentRatio: stock.SectorMetric{
+			Value:        financials.CurrentRatio,
+			SectorMin:    ranges.CurrentRatio.Min,
+			SectorMedian: ranges.CurrentRatio.Median,
+			SectorMax:    ranges.CurrentRatio.Max,
+			Percentile:   calculatePercentile(financials.CurrentRatio, ranges.CurrentRatio.Min, ranges.CurrentRatio.Max),
+		},
+		AssetTurnover: stock.SectorMetric{
+			Value:        assetTurnover,
+			SectorMin:    ranges.AssetTurnover.Min,
+			SectorMedian: ranges.AssetTurnover.Median,
+			SectorMax:    ranges.AssetTurnover.Max,
+			Percentile:   calculatePercentile(assetTurnover, ranges.AssetTurnover.Min, ranges.AssetTurnover.Max),
+		},
+	}, nil
+}
 
-	// ROIC - already in percentage form from financials
-	roicValue := financials.ROIC
-	efficiency.ROIC = stock.EfficiencyMetric{
-		Value:        roicValue,
-		SectorMin:    ranges.ROIC.Min,
-		SectorMedian: ranges.ROIC.Median,
-		SectorMax:    ranges.ROIC.Max,
-		Percentile:   calculatePercentile(roicValue, ranges.ROIC.Min, ranges.ROIC.Max),
-	}
+// GetGrowth constructs growth metrics with sector context.
+func (r *Repository) GetGrowth(ctx context.Context, sector string, financialData []scores.FinancialData) (*stock.Growth, error) {
+	ranges := getSectorRanges(sector)
 
-	// ROE - already in percentage form from financials
-	roeValue := financials.ROE
-	efficiency.ROE = stock.EfficiencyMetric{
-		Value:        roeValue,
-		SectorMin:    ranges.ROE.Min,
-		SectorMedian: ranges.ROE.Median,
-		SectorMax:    ranges.ROE.Max,
-		Percentile:   calculatePercentile(roeValue, ranges.ROE.Min, ranges.ROE.Max),
-	}
+	var revenueGrowth, epsGrowth float64
 
-	// Operating Margin - already in percentage form from financials
-	opMarginValue := financials.OperatingMargin
-	efficiency.OperatingMargin = stock.EfficiencyMetric{
-		Value:        opMarginValue,
-		SectorMin:    ranges.OperatingMargin.Min,
-		SectorMedian: ranges.OperatingMargin.Median,
-		SectorMax:    ranges.OperatingMargin.Max,
-		Percentile:   calculatePercentile(opMarginValue, ranges.OperatingMargin.Min, ranges.OperatingMargin.Max),
-	}
+	// Calculate YoY growth if we have 2 years of data
+	if len(financialData) >= 2 {
+		current := financialData[0]
+		prior := financialData[1]
 
-	// FCF Yield - calculated from Price/FCF (FCF Yield = 1 / P/FCF * 100)
-	if valuation.PriceToFCF.Value != nil && *valuation.PriceToFCF.Value > 0 {
-		fcfYield := (1 / *valuation.PriceToFCF.Value) * 100
-		efficiency.FCFYield = &stock.EfficiencyMetric{
-			Value:        fcfYield,
-			SectorMin:    ranges.FCFYield.Min,
-			SectorMedian: ranges.FCFYield.Median,
-			SectorMax:    ranges.FCFYield.Max,
-			Percentile:   calculatePercentile(fcfYield, ranges.FCFYield.Min, ranges.FCFYield.Max),
+		// Revenue growth
+		if prior.Revenue > 0 {
+			revenueGrowth = ((current.Revenue - prior.Revenue) / prior.Revenue) * 100
+		}
+
+		// EPS growth
+		if prior.EPS != 0 && current.EPS != 0 {
+			// Handle negative EPS cases
+			if prior.EPS > 0 {
+				epsGrowth = ((current.EPS - prior.EPS) / prior.EPS) * 100
+			} else if prior.EPS < 0 && current.EPS > 0 {
+				// From loss to profit - show as large positive growth
+				epsGrowth = 100
+			} else if prior.EPS < 0 && current.EPS < 0 {
+				// Both negative - improvement if loss decreased
+				epsGrowth = ((prior.EPS - current.EPS) / -prior.EPS) * 100
+			}
 		}
 	}
 
-	// Debt/Equity - lower is better (inverted percentile)
-	debtEquity := financials.DebtToEquity
-	efficiency.DebtToEquity = stock.EfficiencyMetric{
-		Value:        debtEquity,
-		SectorMin:    ranges.DebtToEquity.Min,
-		SectorMedian: ranges.DebtToEquity.Median,
-		SectorMax:    ranges.DebtToEquity.Max,
-		Percentile:   calculatePercentileInverted(debtEquity, ranges.DebtToEquity.Min, ranges.DebtToEquity.Max),
+	return &stock.Growth{
+		RevenueGrowthYoY: stock.SectorMetric{
+			Value:        revenueGrowth,
+			SectorMin:    ranges.RevenueGrowth.Min,
+			SectorMedian: ranges.RevenueGrowth.Median,
+			SectorMax:    ranges.RevenueGrowth.Max,
+			Percentile:   calculatePercentile(revenueGrowth, ranges.RevenueGrowth.Min, ranges.RevenueGrowth.Max),
+		},
+		EPSGrowthYoY: stock.SectorMetric{
+			Value:        epsGrowth,
+			SectorMin:    ranges.EPSGrowth.Min,
+			SectorMedian: ranges.EPSGrowth.Median,
+			SectorMax:    ranges.EPSGrowth.Max,
+			Percentile:   calculatePercentile(epsGrowth, ranges.EPSGrowth.Min, ranges.EPSGrowth.Max),
+		},
+	}, nil
+}
+
+// GetEarningsQuality constructs earnings quality metrics with sector context.
+func (r *Repository) GetEarningsQuality(ctx context.Context, ticker string, sector string) (*stock.EarningsQuality, error) {
+	ranges := getSectorRanges(sector)
+
+	// Fetch cash flow and income statements for accrual ratio calculation
+	cashFlows, err := r.client.GetCashFlowStatement(ctx, ticker, 1)
+	if err != nil {
+		return nil, fmt.Errorf("fetching cash flow for earnings quality: %w", err)
 	}
 
-	// Current Ratio - higher is better (good liquidity)
-	currentRatio := financials.CurrentRatio
-	efficiency.CurrentRatio = stock.EfficiencyMetric{
-		Value:        currentRatio,
-		SectorMin:    ranges.CurrentRatio.Min,
-		SectorMedian: ranges.CurrentRatio.Median,
-		SectorMax:    ranges.CurrentRatio.Max,
-		Percentile:   calculatePercentile(currentRatio, ranges.CurrentRatio.Min, ranges.CurrentRatio.Max),
+	incomeStmts, err := r.client.GetIncomeStatement(ctx, ticker, 1)
+	if err != nil {
+		return nil, fmt.Errorf("fetching income statement for earnings quality: %w", err)
 	}
 
-	return efficiency, nil
+	balanceSheets, err := r.client.GetBalanceSheet(ctx, ticker, 2)
+	if err != nil {
+		return nil, fmt.Errorf("fetching balance sheet for earnings quality: %w", err)
+	}
+
+	var accrualRatio, buybackYield float64
+
+	// Accrual Ratio = (Net Income - Operating Cash Flow) / Average Total Assets
+	// Lower is better (more cash-based earnings)
+	if len(cashFlows) > 0 && len(incomeStmts) > 0 && len(balanceSheets) >= 1 {
+		netIncome := incomeStmts[0].NetIncome
+		operatingCF := cashFlows[0].OperatingCashFlow
+
+		// Use average assets if we have 2 periods, otherwise current
+		var avgAssets float64
+		if len(balanceSheets) >= 2 {
+			avgAssets = (balanceSheets[0].TotalAssets + balanceSheets[1].TotalAssets) / 2
+		} else {
+			avgAssets = balanceSheets[0].TotalAssets
+		}
+
+		if avgAssets > 0 {
+			accrualRatio = ((netIncome - operatingCF) / avgAssets) * 100
+		}
+	}
+
+	// Share Buyback Yield = (Shares Repurchased Value / Market Cap) * 100
+	// Positive values indicate buybacks (shareholder friendly)
+	if len(cashFlows) > 0 {
+		// Get current market cap from quote
+		quote, err := r.client.GetQuote(ctx, ticker)
+		if err == nil && quote != nil && quote.MarketCap > 0 {
+			// Common stock repurchased is typically negative in cash flow (cash outflow)
+			// We want positive buyback yield, so we negate it
+			buybackYield = (-cashFlows[0].CommonStockRepurchased / quote.MarketCap) * 100
+			if buybackYield < 0 {
+				buybackYield = 0 // Ignore stock issuance for this metric
+			}
+		}
+	}
+
+	return &stock.EarningsQuality{
+		AccrualRatio: stock.SectorMetric{
+			Value:        accrualRatio,
+			SectorMin:    ranges.AccrualRatio.Min,
+			SectorMedian: ranges.AccrualRatio.Median,
+			SectorMax:    ranges.AccrualRatio.Max,
+			Percentile:   calculatePercentileInverted(accrualRatio, ranges.AccrualRatio.Min, ranges.AccrualRatio.Max), // Lower is better
+		},
+		BuybackYield: stock.SectorMetric{
+			Value:        buybackYield,
+			SectorMin:    ranges.BuybackYield.Min,
+			SectorMedian: ranges.BuybackYield.Median,
+			SectorMax:    ranges.BuybackYield.Max,
+			Percentile:   calculatePercentile(buybackYield, ranges.BuybackYield.Min, ranges.BuybackYield.Max),
+		},
+	}, nil
 }
 
 // GetHoldings retrieves institutional holdings data.

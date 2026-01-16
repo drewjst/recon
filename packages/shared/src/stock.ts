@@ -373,16 +373,16 @@ export interface InsiderActivity {
 }
 
 // =============================================================================
-// Efficiency Metrics
+// Sector Metrics (used across Profitability, Financial Health, Growth, Earnings Quality)
 // =============================================================================
 
 /**
- * A single efficiency metric with sector context for comparison.
+ * A single metric with sector context for comparison.
  *
  * Each metric includes the sector range (min, median, max) and a percentile
  * ranking showing where the stock falls within its sector.
  */
-export interface EfficiencyMetric {
+export interface SectorMetric {
   /** The stock's metric value */
   value: number;
   /** Minimum value typically seen in this sector */
@@ -395,25 +395,78 @@ export interface EfficiencyMetric {
   percentile: number;
 }
 
+// =============================================================================
+// Profitability Metrics
+// =============================================================================
+
 /**
- * Efficiency metrics with sector comparisons.
+ * Profitability metrics with sector comparisons.
  *
- * These metrics show capital efficiency and financial health,
- * with context on how the stock compares to sector peers.
+ * These metrics measure how efficiently a company generates profits.
  */
-export interface Efficiency {
-  /** Return on Invested Capital (higher is better) */
-  roic: EfficiencyMetric;
-  /** Return on Equity (higher is better) */
-  roe: EfficiencyMetric;
-  /** Operating Margin percentage (higher is better) */
-  operatingMargin: EfficiencyMetric;
-  /** Free Cash Flow Yield (higher is better, null if not calculable) */
-  fcfYield: EfficiencyMetric | null;
-  /** Debt to Equity ratio (lower is better for most sectors) */
-  debtToEquity: EfficiencyMetric;
-  /** Current Ratio - liquidity measure (higher is better) */
-  currentRatio: EfficiencyMetric;
+export interface Profitability {
+  /** Return on Invested Capital - measures efficiency of capital deployment (higher is better) */
+  roic: SectorMetric;
+  /** Return on Equity - measures return to shareholders (higher is better) */
+  roe: SectorMetric;
+  /** Operating Margin percentage - measures operational efficiency (higher is better) */
+  operatingMargin: SectorMetric;
+}
+
+// =============================================================================
+// Financial Health Metrics
+// =============================================================================
+
+/**
+ * Financial health metrics with sector comparisons.
+ *
+ * These metrics assess the company's balance sheet strength and liquidity.
+ */
+export interface FinancialHealth {
+  /** Debt to Equity ratio - measures leverage (lower is better for most sectors) */
+  debtToEquity: SectorMetric;
+  /** Current Ratio - measures short-term liquidity (higher is better) */
+  currentRatio: SectorMetric;
+  /** Asset Turnover - measures efficiency of asset utilization (higher is better) */
+  assetTurnover: SectorMetric;
+}
+
+// =============================================================================
+// Growth Metrics
+// =============================================================================
+
+/**
+ * Growth metrics with sector comparisons.
+ *
+ * These metrics show how fast the company is growing.
+ */
+export interface Growth {
+  /** Year-over-year revenue growth rate percentage */
+  revenueGrowthYoY: SectorMetric;
+  /** Year-over-year earnings per share growth rate percentage */
+  epsGrowthYoY: SectorMetric;
+}
+
+// =============================================================================
+// Earnings Quality Metrics
+// =============================================================================
+
+/**
+ * Earnings quality metrics with sector comparisons.
+ *
+ * These metrics assess the quality and sustainability of reported earnings.
+ */
+export interface EarningsQuality {
+  /**
+   * Accrual Ratio = (Net Income - Operating Cash Flow) / Total Assets
+   * Lower values indicate higher quality earnings (more cash-based)
+   */
+  accrualRatio: SectorMetric;
+  /**
+   * Share Buyback Yield = Shares Repurchased / Market Cap
+   * Higher values indicate shareholder-friendly capital return
+   */
+  buybackYield: SectorMetric;
 }
 
 // =============================================================================
@@ -539,7 +592,7 @@ export interface ETFData {
  * with fundamental analysis, scoring systems, and ownership data.
  *
  * For ETFs (assetType === 'etf'), stock-specific fields (scores, valuation,
- * holdings, insiderActivity, financials, efficiency) will be null/undefined,
+ * holdings, insiderActivity, financials, profitability, etc.) will be null/undefined,
  * and etfData will be populated instead.
  */
 export interface StockDetailResponse {
@@ -565,8 +618,14 @@ export interface StockDetailResponse {
   insiderActivity?: InsiderActivity;
   /** Key financial metrics (only for stocks) */
   financials?: Financials;
-  /** Efficiency metrics with sector comparisons (only for stocks) */
-  efficiency?: Efficiency;
+  /** Profitability metrics with sector comparisons (only for stocks) */
+  profitability?: Profitability;
+  /** Financial health metrics with sector comparisons (only for stocks) */
+  financialHealth?: FinancialHealth;
+  /** Growth metrics with sector comparisons (only for stocks) */
+  growth?: Growth;
+  /** Earnings quality metrics with sector comparisons (only for stocks) */
+  earningsQuality?: EarningsQuality;
   /** ETF-specific data (only for ETFs) */
   etfData?: ETFData;
   /** Data freshness timestamps */

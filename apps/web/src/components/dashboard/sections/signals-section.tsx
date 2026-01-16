@@ -242,9 +242,9 @@ function SignalsSectionComponent({ data }: SignalsSectionProps) {
         {topSignals.length === 0 ? (
           <p className="text-sm text-muted-foreground">No significant signals detected.</p>
         ) : (
-          topSignals.map((signal, idx) => (
+          topSignals.map((signal) => (
             <div
-              key={idx}
+              key={`${signal.type}-${signal.category}-${signal.message.slice(0, 30)}`}
               className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/30 hover:bg-muted/50 transition-all duration-200"
             >
               <div className="mt-0.5">{getSignalIcon(signal.type)}</div>

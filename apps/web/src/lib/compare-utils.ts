@@ -136,48 +136,82 @@ export const COMPARE_METRICS: Record<string, MetricConfig[]> = {
       format: (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`,
     },
   ],
-  efficiency: [
+  profitability: [
     {
       key: 'roic',
       label: 'ROIC',
-      path: 'efficiency.roic.value',
+      path: 'profitability.roic.value',
       higherIsBetter: true,
       format: (v) => `${v.toFixed(1)}%`,
     },
     {
       key: 'roe',
       label: 'ROE',
-      path: 'efficiency.roe.value',
+      path: 'profitability.roe.value',
       higherIsBetter: true,
       format: (v) => `${v.toFixed(1)}%`,
     },
     {
       key: 'operatingMargin',
       label: 'Op. Margin',
-      path: 'efficiency.operatingMargin.value',
+      path: 'profitability.operatingMargin.value',
       higherIsBetter: true,
       format: (v) => `${v.toFixed(1)}%`,
     },
-    {
-      key: 'fcfYield',
-      label: 'FCF Yield',
-      path: 'efficiency.fcfYield.value',
-      higherIsBetter: true,
-      format: (v) => `${v.toFixed(1)}%`,
-    },
+  ],
+  financialHealth: [
     {
       key: 'debtToEquity',
       label: 'Debt/Equity',
-      path: 'efficiency.debtToEquity.value',
+      path: 'financialHealth.debtToEquity.value',
       higherIsBetter: false,
       format: (v) => `${v.toFixed(2)}x`,
     },
     {
       key: 'currentRatio',
       label: 'Current Ratio',
-      path: 'efficiency.currentRatio.value',
+      path: 'financialHealth.currentRatio.value',
       higherIsBetter: true,
       format: (v) => `${v.toFixed(2)}x`,
+    },
+    {
+      key: 'assetTurnover',
+      label: 'Asset Turnover',
+      path: 'financialHealth.assetTurnover.value',
+      higherIsBetter: true,
+      format: (v) => `${v.toFixed(2)}x`,
+    },
+  ],
+  growth: [
+    {
+      key: 'revenueGrowthYoY',
+      label: 'Revenue Growth YoY',
+      path: 'growth.revenueGrowthYoY.value',
+      higherIsBetter: true,
+      format: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`,
+    },
+    {
+      key: 'epsGrowthYoY',
+      label: 'EPS Growth YoY',
+      path: 'growth.epsGrowthYoY.value',
+      higherIsBetter: true,
+      format: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`,
+    },
+  ],
+  earningsQuality: [
+    {
+      key: 'accrualRatio',
+      label: 'Accrual Ratio',
+      path: 'earningsQuality.accrualRatio.value',
+      higherIsBetter: false, // Lower is better (more cash-based earnings)
+      format: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`,
+    },
+    {
+      key: 'buybackYield',
+      label: 'Buyback Yield',
+      path: 'earningsQuality.buybackYield.value',
+      higherIsBetter: true,
+      format: (v) => `${v.toFixed(2)}%`,
     },
   ],
 };
@@ -229,7 +263,10 @@ export function calculateRankings(stocks: StockDetailResponse[]): RankingResult[
     ...COMPARE_METRICS.valuation,
     ...COMPARE_METRICS.financials,
     ...COMPARE_METRICS.performance,
-    ...COMPARE_METRICS.efficiency,
+    ...COMPARE_METRICS.profitability,
+    ...COMPARE_METRICS.financialHealth,
+    ...COMPARE_METRICS.growth,
+    ...COMPARE_METRICS.earningsQuality,
   ];
 
   const wins: number[] = stocks.map(() => 0);

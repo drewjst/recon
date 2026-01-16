@@ -141,13 +141,13 @@ function DCFCard({ dcf }: { dcf: Scores['dcfValuation'] }) {
     return 'outline';
   };
 
-  const formatPrice = (value: number) => {
-    if (!value) return 'N/A';
+  const formatPrice = (value: number | null | undefined) => {
+    if (value === null || value === undefined || Number.isNaN(value)) return 'N/A';
     return `$${value.toFixed(2)}`;
   };
 
-  const formatPercent = (value: number) => {
-    if (!value && value !== 0) return '';
+  const formatPercent = (value: number | null | undefined) => {
+    if (value === null || value === undefined || Number.isNaN(value)) return '';
     const sign = value > 0 ? '+' : '';
     return `${sign}${value.toFixed(1)}%`;
   };
