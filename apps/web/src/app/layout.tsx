@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Recon - Stock Research Dashboard',
+  title: 'Crux - Stock Research Dashboard',
   description: 'Distill stock fundamentals into actionable signals',
 };
 

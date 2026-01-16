@@ -171,7 +171,7 @@ function HomeContent() {
               Ready to get started?
             </h2>
             <p className="text-muted-foreground mb-6">
-              Stop drowning in financial data. Recon distills what matters so you can make informed decisions faster.
+              Stop drowning in financial data. Crux distills what matters so you can make informed decisions faster.
             </p>
             <Button size="lg" onClick={scrollToSearch}>
               Distill a Stock

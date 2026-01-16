@@ -2,7 +2,7 @@ export function AboutContent() {
   return (
     <div className="space-y-4 text-sm text-muted-foreground">
       <p>
-        <strong className="text-foreground">Recon</strong> distills stock fundamentals into actionable signals.
+        <strong className="text-foreground">Crux</strong> distills stock fundamentals into actionable signals.
         Enter a ticker, get the crux in 30 seconds.
       </p>
       <p>
@@ -18,10 +18,6 @@ export function AboutContent() {
         </ul>
       </div>
 
-      <div>
-        <h3 className="text-base font-semibold text-foreground mb-2">Contact</h3>
-        <p>Questions or feedback? Reach out at hello@recon.app</p>
-      </div>
     </div>
   );
 }
@@ -34,7 +30,7 @@ export function DisclaimerContent() {
       <div>
         <h3 className="text-base font-semibold text-foreground mb-2">Not Financial Advice</h3>
         <p>
-          Recon is for <strong className="text-foreground">informational and educational purposes only</strong>.
+          Crux is for <strong className="text-foreground">informational and educational purposes only</strong>.
           Nothing on this platform constitutes investment advice, financial advice,
           trading advice, or any other kind of advice.
         </p>
@@ -43,7 +39,7 @@ export function DisclaimerContent() {
       <div>
         <h3 className="text-base font-semibold text-foreground mb-2">No Recommendations</h3>
         <p>
-          The scores, grades, valuations, and signals displayed on Recon are based on
+          The scores, grades, valuations, and signals displayed on Crux are based on
           mathematical models and historical data. They are <strong className="text-foreground">not</strong> buy,
           sell, or hold recommendations.
         </p>
@@ -54,7 +50,7 @@ export function DisclaimerContent() {
         <p>
           All investments involve risk, including loss of principal. Past performance
           does not guarantee future results. You should not make any investment decision
-          based solely on information provided by Recon.
+          based solely on information provided by Crux.
         </p>
       </div>
 
@@ -85,7 +81,7 @@ export function PrivacyContent() {
 
       <div>
         <h3 className="text-base font-semibold text-foreground mb-2">Information We Collect</h3>
-        <p className="mb-2">Recon collects minimal data:</p>
+        <p className="mb-2">Crux collects minimal data:</p>
         <ul className="list-disc list-inside space-y-1">
           <li><strong className="text-foreground">Search queries:</strong> Tickers you search for (not linked to identity)</li>
           <li><strong className="text-foreground">Usage analytics:</strong> Page views, feature usage (anonymized)</li>
@@ -119,12 +115,6 @@ export function PrivacyContent() {
         </p>
       </div>
 
-      <div>
-        <h3 className="text-base font-semibold text-foreground mb-2">Your Rights</h3>
-        <p>
-          You can request deletion of any data associated with you by contacting hello@recon.app.
-        </p>
-      </div>
     </div>
   );
 }
@@ -137,7 +127,7 @@ export function TermsContent() {
       <div>
         <h3 className="text-base font-semibold text-foreground mb-2">Acceptance of Terms</h3>
         <p>
-          By using Recon, you agree to these Terms of Service. If you do not agree,
+          By using Crux, you agree to these Terms of Service. If you do not agree,
           please do not use the service.
         </p>
       </div>
@@ -145,7 +135,7 @@ export function TermsContent() {
       <div>
         <h3 className="text-base font-semibold text-foreground mb-2">Service Description</h3>
         <p>
-          Recon provides stock research tools and information for educational purposes.
+          Crux provides stock research tools and information for educational purposes.
           We do not provide investment advice or recommendations.
         </p>
       </div>
@@ -153,7 +143,7 @@ export function TermsContent() {
       <div>
         <h3 className="text-base font-semibold text-foreground mb-2">No Warranty</h3>
         <p>
-          Recon is provided &quot;as is&quot; without warranty of any kind. We do not guarantee
+          Crux is provided &quot;as is&quot; without warranty of any kind. We do not guarantee
           the accuracy, completeness, or reliability of any information displayed.
         </p>
       </div>
@@ -161,7 +151,7 @@ export function TermsContent() {
       <div>
         <h3 className="text-base font-semibold text-foreground mb-2">Limitation of Liability</h3>
         <p>
-          To the maximum extent permitted by law, Recon and its creators shall not be
+          To the maximum extent permitted by law, Crux and its creators shall not be
           liable for any direct, indirect, incidental, consequential, or punitive damages
           arising from your use of the service, including but not limited to investment losses.
         </p>
@@ -171,7 +161,7 @@ export function TermsContent() {
         <h3 className="text-base font-semibold text-foreground mb-2">User Responsibilities</h3>
         <p className="mb-2">You agree to:</p>
         <ul className="list-disc list-inside space-y-1">
-          <li>Use Recon for lawful purposes only</li>
+          <li>Use Crux for lawful purposes only</li>
           <li>Not attempt to scrape, overload, or abuse the service</li>
           <li>Not redistribute data without permission</li>
           <li>Make your own investment decisions independently</li>
@@ -181,21 +171,16 @@ export function TermsContent() {
       <div>
         <h3 className="text-base font-semibold text-foreground mb-2">Changes to Service</h3>
         <p>
-          We reserve the right to modify, suspend, or discontinue Recon at any time without notice.
+          We reserve the right to modify, suspend, or discontinue Crux at any time without notice.
         </p>
       </div>
 
       <div>
         <h3 className="text-base font-semibold text-foreground mb-2">Changes to Terms</h3>
         <p>
-          We may update these terms at any time. Continued use of Recon constitutes
+          We may update these terms at any time. Continued use of Crux constitutes
           acceptance of updated terms.
         </p>
-      </div>
-
-      <div>
-        <h3 className="text-base font-semibold text-foreground mb-2">Contact</h3>
-        <p>Questions about these terms? Contact hello@recon.app</p>
       </div>
     </div>
   );

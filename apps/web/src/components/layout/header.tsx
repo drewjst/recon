@@ -100,7 +100,7 @@ export function Header() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent transition-all duration-300 group-hover:shadow-glow">
             <BarChart3 className="h-5 w-5 text-accent-foreground" />
           </div>
-          <span className="font-semibold text-xl text-foreground tracking-tight">Recon</span>
+          <span className="font-semibold text-xl text-foreground tracking-tight">Crux</span>
         </Link>
 
         {/* Centered Desktop Navigation */}
