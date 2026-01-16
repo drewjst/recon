@@ -63,7 +63,7 @@ func run() error {
 	router := api.NewRouter(api.RouterDeps{
 		StockService:   stockService,
 		SearchIndex:    searchIndex,
-		AllowedOrigins: []string{"*"}, // Allow all origins for MVP
+		AllowedOrigins: cfg.AllowedOrigins,
 	})
 
 	// Create server
