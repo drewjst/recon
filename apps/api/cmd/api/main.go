@@ -16,8 +16,10 @@ import (
 	"github.com/drewjst/recon/apps/api/internal/config"
 	"github.com/drewjst/recon/apps/api/internal/domain/search"
 	"github.com/drewjst/recon/apps/api/internal/domain/stock"
+	"github.com/drewjst/recon/apps/api/internal/infrastructure/db"
 	"github.com/drewjst/recon/apps/api/internal/infrastructure/external/fmp"
 	"github.com/drewjst/recon/apps/api/internal/infrastructure/external/polygon"
+	fmpprovider "github.com/drewjst/recon/apps/api/internal/infrastructure/providers/fmp"
 )
 
 func main() {
@@ -41,16 +43,49 @@ func run() error {
 		return err
 	}
 
-	// Initialize FMP client
+	// Initialize database if configured
+	var cacheRepo *db.Repository
+	if cfg.DatabaseURL != "" {
+		gormDB, err := db.NewConnection(cfg.DatabaseURL)
+		if err != nil {
+			return err
+		}
+		slog.Info("database connected")
+
+		// Auto-migrate cache tables
+		if err := db.AutoMigrate(gormDB); err != nil {
+			return err
+		}
+		slog.Info("database migrations complete")
+
+		cacheRepo = db.NewRepository(gormDB)
+	} else {
+		slog.Info("DATABASE_URL not set, running without cache database")
+	}
+
+	// Initialize FMP client (legacy)
 	fmpClient := fmp.NewClient(fmp.Config{
 		APIKey: cfg.FMPAPIKey,
 	})
 
-	// Initialize FMP repository (implements stock.Repository)
-	repo := fmp.NewRepository(fmpClient)
-
-	// Initialize stock service (no cache for MVP)
-	stockService := stock.NewService(repo, nil)
+	// Initialize stock service
+	var stockService *stock.Service
+	if cacheRepo != nil {
+		// Use new provider-based service with caching
+		fmpProvider := fmpprovider.NewProvider(cfg.FMPAPIKey)
+		stockService = stock.NewCachedService(
+			fmpProvider,
+			fmpProvider,
+			cacheRepo,
+			stock.DefaultServiceConfig(),
+		)
+		slog.Info("stock service initialized with caching")
+	} else {
+		// Use legacy FMP repository
+		repo := fmp.NewRepository(fmpClient)
+		stockService = stock.NewService(repo, nil)
+		slog.Info("stock service initialized without caching")
+	}
 
 	// Initialize Polygon client and search service
 	polygonClient := polygon.NewClient(cfg.PolygonAPIKey)

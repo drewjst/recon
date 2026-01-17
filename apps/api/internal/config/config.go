@@ -11,6 +11,7 @@ type Config struct {
 	Env            string
 	FMPAPIKey      string
 	PolygonAPIKey  string
+	DatabaseURL    string
 	AllowedOrigins []string
 }
 
@@ -20,6 +21,7 @@ func Load() (*Config, error) {
 		Env:           getEnv("ENV", "development"),
 		FMPAPIKey:     os.Getenv("FMP_API_KEY"),
 		PolygonAPIKey: os.Getenv("POLYGON_API_KEY"),
+		DatabaseURL:   os.Getenv("DATABASE_URL"),
 	}
 
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
