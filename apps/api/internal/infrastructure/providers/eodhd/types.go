@@ -2,43 +2,43 @@ package eodhd
 
 // FundamentalsResponse represents the full response from /api/fundamentals/{ticker}.{exchange}
 type FundamentalsResponse struct {
-	General             General                    `json:"General"`
-	Highlights          Highlights                 `json:"Highlights"`
-	Valuation           Valuation                  `json:"Valuation"`
-	SharesStats         SharesStats                `json:"SharesStats"`
-	Technicals          Technicals                 `json:"Technicals"`
-	Holders             Holders                    `json:"Holders"`
-	InsiderTransactions []InsiderTransaction       `json:"InsiderTransactions"`
-	Financials          Financials                 `json:"Financials"`
+	General             General              `json:"General"`
+	Highlights          Highlights           `json:"Highlights"`
+	Valuation           Valuation            `json:"Valuation"`
+	SharesStats         SharesStats          `json:"SharesStats"`
+	Technicals          Technicals           `json:"Technicals"`
+	Holders             Holders              `json:"Holders"`
+	InsiderTransactions []InsiderTransaction `json:"InsiderTransactions"`
+	Financials          Financials           `json:"Financials"`
 }
 
 // General contains company profile information.
 type General struct {
-	Code              string    `json:"Code"`
-	Type              string    `json:"Type"`
-	Name              string    `json:"Name"`
-	Exchange          string    `json:"Exchange"`
-	CurrencyCode      string    `json:"CurrencyCode"`
-	CurrencyName      string    `json:"CurrencyName"`
-	CountryName       string    `json:"CountryName"`
-	CountryISO        string    `json:"CountryISO"`
-	ISIN              string    `json:"ISIN"`
-	CIK               string    `json:"CIK"`
-	Sector            string    `json:"Sector"`
-	Industry          string    `json:"Industry"`
-	GicSector         string    `json:"GicSector"`
-	GicGroup          string    `json:"GicGroup"`
-	GicIndustry       string    `json:"GicIndustry"`
-	GicSubIndustry    string    `json:"GicSubIndustry"`
-	Description       string    `json:"Description"`
-	Address           string    `json:"Address"`
-	Phone             string    `json:"Phone"`
-	WebURL            string    `json:"WebURL"`
-	LogoURL           string    `json:"LogoURL"`
-	FullTimeEmployees int       `json:"FullTimeEmployees"`
-	UpdatedAt         string    `json:"UpdatedAt"`
-	IPODate           string    `json:"IPODate"`
-	Officers          []Officer `json:"Officers"`
+	Code              string             `json:"Code"`
+	Type              string             `json:"Type"`
+	Name              string             `json:"Name"`
+	Exchange          string             `json:"Exchange"`
+	CurrencyCode      string             `json:"CurrencyCode"`
+	CurrencyName      string             `json:"CurrencyName"`
+	CountryName       string             `json:"CountryName"`
+	CountryISO        string             `json:"CountryISO"`
+	ISIN              string             `json:"ISIN"`
+	CIK               string             `json:"CIK"`
+	Sector            string             `json:"Sector"`
+	Industry          string             `json:"Industry"`
+	GicSector         string             `json:"GicSector"`
+	GicGroup          string             `json:"GicGroup"`
+	GicIndustry       string             `json:"GicIndustry"`
+	GicSubIndustry    string             `json:"GicSubIndustry"`
+	Description       string             `json:"Description"`
+	Address           string             `json:"Address"`
+	Phone             string             `json:"Phone"`
+	WebURL            string             `json:"WebURL"`
+	LogoURL           string             `json:"LogoURL"`
+	FullTimeEmployees int                `json:"FullTimeEmployees"`
+	UpdatedAt         string             `json:"UpdatedAt"`
+	IPODate           string             `json:"IPODate"`
+	Officers          map[string]Officer `json:"Officers"`
 }
 
 // Officer represents a company executive.
@@ -50,30 +50,30 @@ type Officer struct {
 
 // Highlights contains key financial metrics and highlights.
 type Highlights struct {
-	MarketCapitalization      float64 `json:"MarketCapitalization"`
-	MarketCapitalizationMln   float64 `json:"MarketCapitalizationMln"`
-	EBITDA                    float64 `json:"EBITDA"`
-	PERatio                   float64 `json:"PERatio"`
-	PEGRatio                  float64 `json:"PEGRatio"`
-	WallStreetTargetPrice     float64 `json:"WallStreetTargetPrice"`
-	BookValue                 float64 `json:"BookValue"`
-	DividendShare             float64 `json:"DividendShare"`
-	DividendYield             float64 `json:"DividendYield"`
-	EarningsShare             float64 `json:"EarningsShare"`
-	EPSEstimateCurrentYear    float64 `json:"EPSEstimateCurrentYear"`
-	EPSEstimateNextYear       float64 `json:"EPSEstimateNextYear"`
-	EPSEstimateNextQuarter    float64 `json:"EPSEstimateNextQuarter"`
-	EPSEstimateCurrentQuarter float64 `json:"EPSEstimateCurrentQuarter"`
-	MostRecentQuarter         string  `json:"MostRecentQuarter"`
-	ProfitMargin              float64 `json:"ProfitMargin"`
-	OperatingMarginTTM        float64 `json:"OperatingMarginTTM"`
-	ReturnOnAssetsTTM         float64 `json:"ReturnOnAssetsTTM"`
-	ReturnOnEquityTTM         float64 `json:"ReturnOnEquityTTM"`
-	RevenueTTM                float64 `json:"RevenueTTM"`
-	RevenuePerShareTTM        float64 `json:"RevenuePerShareTTM"`
-	QuarterlyRevenueGrowthYOY float64 `json:"QuarterlyRevenueGrowthYOY"`
-	GrossProfitTTM            float64 `json:"GrossProfitTTM"`
-	DilutedEpsTTM             float64 `json:"DilutedEpsTTM"`
+	MarketCapitalization       float64 `json:"MarketCapitalization"`
+	MarketCapitalizationMln    float64 `json:"MarketCapitalizationMln"`
+	EBITDA                     float64 `json:"EBITDA"`
+	PERatio                    float64 `json:"PERatio"`
+	PEGRatio                   float64 `json:"PEGRatio"`
+	WallStreetTargetPrice      float64 `json:"WallStreetTargetPrice"`
+	BookValue                  float64 `json:"BookValue"`
+	DividendShare              float64 `json:"DividendShare"`
+	DividendYield              float64 `json:"DividendYield"`
+	EarningsShare              float64 `json:"EarningsShare"`
+	EPSEstimateCurrentYear     float64 `json:"EPSEstimateCurrentYear"`
+	EPSEstimateNextYear        float64 `json:"EPSEstimateNextYear"`
+	EPSEstimateNextQuarter     float64 `json:"EPSEstimateNextQuarter"`
+	EPSEstimateCurrentQuarter  float64 `json:"EPSEstimateCurrentQuarter"`
+	MostRecentQuarter          string  `json:"MostRecentQuarter"`
+	ProfitMargin               float64 `json:"ProfitMargin"`
+	OperatingMarginTTM         float64 `json:"OperatingMarginTTM"`
+	ReturnOnAssetsTTM          float64 `json:"ReturnOnAssetsTTM"`
+	ReturnOnEquityTTM          float64 `json:"ReturnOnEquityTTM"`
+	RevenueTTM                 float64 `json:"RevenueTTM"`
+	RevenuePerShareTTM         float64 `json:"RevenuePerShareTTM"`
+	QuarterlyRevenueGrowthYOY  float64 `json:"QuarterlyRevenueGrowthYOY"`
+	GrossProfitTTM             float64 `json:"GrossProfitTTM"`
+	DilutedEpsTTM              float64 `json:"DilutedEpsTTM"`
 	QuarterlyEarningsGrowthYOY float64 `json:"QuarterlyEarningsGrowthYOY"`
 }
 
@@ -103,11 +103,11 @@ type SharesStats struct {
 
 // Technicals contains technical analysis metrics.
 type Technicals struct {
-	Beta        float64 `json:"Beta"`
-	High52Week  float64 `json:"52WeekHigh"`
-	Low52Week   float64 `json:"52WeekLow"`
-	MA50Day     float64 `json:"50DayMA"`
-	MA200Day    float64 `json:"200DayMA"`
+	Beta       float64 `json:"Beta"`
+	High52Week float64 `json:"52WeekHigh"`
+	Low52Week  float64 `json:"52WeekLow"`
+	MA50Day    float64 `json:"50DayMA"`
+	MA200Day   float64 `json:"200DayMA"`
 }
 
 // Holders contains institutional and fund holder information.
@@ -129,16 +129,16 @@ type InstitutionalHolder struct {
 
 // InsiderTransaction represents an insider trading transaction.
 type InsiderTransaction struct {
-	Date                       string  `json:"date"`
-	OwnerCIK                   string  `json:"ownerCik"`
-	OwnerName                  string  `json:"ownerName"`
-	TransactionDate            string  `json:"transactionDate"`
-	TransactionCode            string  `json:"transactionCode"`
-	TransactionAmount          float64 `json:"transactionAmount"`
-	TransactionPrice           float64 `json:"transactionPrice"`
-	TransactionAcquiredDisposed string `json:"transactionAcquiredDisposed"`
-	PostTransactionAmount      float64 `json:"postTransactionAmount"`
-	SECLink                    string  `json:"secLink"`
+	Date                        string  `json:"date"`
+	OwnerCIK                    string  `json:"ownerCik"`
+	OwnerName                   string  `json:"ownerName"`
+	TransactionDate             string  `json:"transactionDate"`
+	TransactionCode             string  `json:"transactionCode"`
+	TransactionAmount           float64 `json:"transactionAmount"`
+	TransactionPrice            float64 `json:"transactionPrice"`
+	TransactionAcquiredDisposed string  `json:"transactionAcquiredDisposed"`
+	PostTransactionAmount       float64 `json:"postTransactionAmount"`
+	SECLink                     string  `json:"secLink"`
 }
 
 // Financials contains financial statements data.
@@ -158,9 +158,9 @@ type FinancialStatementSet struct {
 // FinancialPeriod represents a single period's financial data.
 // Fields vary by statement type (balance sheet, income, cash flow).
 type FinancialPeriod struct {
-	Date           string  `json:"date"`
-	FilingDate     string  `json:"filing_date"`
-	CurrencySymbol string  `json:"currency_symbol"`
+	Date           string `json:"date"`
+	FilingDate     string `json:"filing_date"`
+	CurrencySymbol string `json:"currency_symbol"`
 
 	// Income Statement fields
 	TotalRevenue          float64 `json:"totalRevenue"`
@@ -172,25 +172,25 @@ type FinancialPeriod struct {
 	CostOfRevenue         float64 `json:"costOfRevenue"`
 
 	// Balance Sheet fields
-	TotalAssets            float64 `json:"totalAssets"`
-	TotalCurrentAssets     float64 `json:"totalCurrentAssets"`
-	TotalLiabilities       float64 `json:"totalLiab"`
+	TotalAssets             float64 `json:"totalAssets"`
+	TotalCurrentAssets      float64 `json:"totalCurrentAssets"`
+	TotalLiabilities        float64 `json:"totalLiab"`
 	TotalCurrentLiabilities float64 `json:"totalCurrentLiabilities"`
-	TotalStockholderEquity float64 `json:"totalStockholderEquity"`
-	Cash                   float64 `json:"cash"`
-	CashAndShortTermInv    float64 `json:"cashAndShortTermInvestments"`
-	ShortTermDebt          float64 `json:"shortTermDebt"`
-	LongTermDebt           float64 `json:"longTermDebt"`
-	TotalDebt              float64 `json:"shortLongTermDebt"`
-	Inventory              float64 `json:"inventory"`
+	TotalStockholderEquity  float64 `json:"totalStockholderEquity"`
+	Cash                    float64 `json:"cash"`
+	CashAndShortTermInv     float64 `json:"cashAndShortTermInvestments"`
+	ShortTermDebt           float64 `json:"shortTermDebt"`
+	LongTermDebt            float64 `json:"longTermDebt"`
+	TotalDebt               float64 `json:"shortLongTermDebt"`
+	Inventory               float64 `json:"inventory"`
 
 	// Cash Flow fields
-	OperatingCashFlow         float64 `json:"totalCashFromOperatingActivities"`
-	CapitalExpenditures       float64 `json:"capitalExpenditures"`
-	FreeCashFlow              float64 `json:"freeCashFlow"`
-	CashFromInvestingAct      float64 `json:"totalCashflowsFromInvestingActivities"`
-	CashFromFinancingAct      float64 `json:"totalCashFromFinancingActivities"`
-	DividendsPaid             float64 `json:"dividendsPaid"`
+	OperatingCashFlow    float64 `json:"totalCashFromOperatingActivities"`
+	CapitalExpenditures  float64 `json:"capitalExpenditures"`
+	FreeCashFlow         float64 `json:"freeCashFlow"`
+	CashFromInvestingAct float64 `json:"totalCashflowsFromInvestingActivities"`
+	CashFromFinancingAct float64 `json:"totalCashFromFinancingActivities"`
+	DividendsPaid        float64 `json:"dividendsPaid"`
 }
 
 // QuoteResponse represents the response from real-time quote endpoint.
@@ -232,16 +232,16 @@ type SearchResult struct {
 
 // InsiderTransactionResponse represents the response from insider-transactions endpoint.
 type InsiderTransactionResponse struct {
-	Code            string  `json:"code"`
-	Date            string  `json:"date"`
-	OwnerCIK        string  `json:"ownerCik"`
-	OwnerName       string  `json:"ownerName"`
-	OwnerTitle      string  `json:"ownerTitle"`
-	TransactionDate string  `json:"transactionDate"`
-	TransactionCode string  `json:"transactionCode"`
-	TransactionAmount float64 `json:"transactionAmount"`
-	TransactionPrice float64 `json:"transactionPrice"`
-	TransactionAcquiredDisposed string `json:"transactionAcquiredDisposed"`
-	PostTransactionAmount float64 `json:"postTransactionAmount"`
-	SECLink         string  `json:"secLink"`
+	Code                        string  `json:"code"`
+	Date                        string  `json:"date"`
+	OwnerCIK                    string  `json:"ownerCik"`
+	OwnerName                   string  `json:"ownerName"`
+	OwnerTitle                  string  `json:"ownerTitle"`
+	TransactionDate             string  `json:"transactionDate"`
+	TransactionCode             string  `json:"transactionCode"`
+	TransactionAmount           float64 `json:"transactionAmount"`
+	TransactionPrice            float64 `json:"transactionPrice"`
+	TransactionAcquiredDisposed string  `json:"transactionAcquiredDisposed"`
+	PostTransactionAmount       float64 `json:"postTransactionAmount"`
+	SECLink                     string  `json:"secLink"`
 }

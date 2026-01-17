@@ -8,7 +8,7 @@ type InstitutionalHolder struct {
 	Shares        int64
 	Value         int64
 	PercentOwned  float64
-	ChangeShares  int64   // vs last quarter
+	ChangeShares  int64 // vs last quarter
 	ChangePercent float64
 	DateReported  time.Time
 }

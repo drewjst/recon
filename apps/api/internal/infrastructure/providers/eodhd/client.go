@@ -19,17 +19,17 @@ const (
 
 // Client is the EODHD API client.
 type Client struct {
-	apiKey     string
-	httpClient *http.Client
-	baseURL    string
+	apiKey      string
+	httpClient  *http.Client
+	baseURL     string
 	rateLimiter *rateLimiter
 }
 
 // Config holds EODHD client configuration.
 type Config struct {
-	APIKey       string
-	Timeout      time.Duration
-	RateLimit    int // requests per second, 0 uses default
+	APIKey    string
+	Timeout   time.Duration
+	RateLimit int // requests per second, 0 uses default
 }
 
 // rateLimiter implements a simple token bucket rate limiter.

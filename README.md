@@ -22,7 +22,7 @@ Recon synthesizes financial data into conviction scores and actionable signals�
 | Frontend | Next.js 14, React 18, TanStack Query, Tailwind CSS, shadcn/ui |
 | Backend | Go 1.23, Chi Router, GORM |
 | Database | PostgreSQL (Cloud SQL) — caches fundamentals for 24h |
-| Data | Financial Modeling Prep API, Polygon.io API |
+| Data | EODHD API (fundamentals), Polygon.io API (search) |
 | Deployment | Google Cloud Run, GitHub Actions |
 
 ## Local Development
@@ -32,8 +32,8 @@ Recon synthesizes financial data into conviction scores and actionable signals�
 - Node.js 20+
 - Go 1.23+
 - pnpm
-- [FMP API key](https://financialmodelingprep.com/developer/docs/)
-- [Polygon API key](https://polygon.io/)
+- [EODHD API key](https://eodhd.com/) (for fundamentals)
+- [Polygon API key](https://polygon.io/) (for ticker search)
 
 ### Quick Start
 
@@ -45,7 +45,7 @@ pnpm install
 
 # Configure backend
 cp apps/api/.env.example apps/api/.env
-# Add your FMP_API_KEY and POLYGON_API_KEY to apps/api/.env
+# Add your EODHD_API_KEY and POLYGON_API_KEY to apps/api/.env
 
 # Configure frontend
 cp apps/web/.env.example apps/web/.env.local
@@ -66,11 +66,13 @@ cd apps/web && pnpm dev
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `FMP_API_KEY` | Yes | Financial Modeling Prep API key |
+| `EODHD_API_KEY` | Yes* | EODHD API key (required unless using FMP) |
 | `POLYGON_API_KEY` | Yes | Polygon.io API key (for ticker search) |
 | `DATABASE_URL` | No | PostgreSQL connection string (enables caching) |
 | `PORT` | No | Server port (default: 8080) |
 | `ALLOWED_ORIGINS` | No | CORS origins (default: http://localhost:3000) |
+| `FUNDAMENTALS_PROVIDER` | No | "eodhd" (default) or "fmp" |
+| `FMP_API_KEY` | No | FMP API key (only if FUNDAMENTALS_PROVIDER=fmp) |
 
 **Frontend (`apps/web/.env.local`):**
 
@@ -132,7 +134,7 @@ recon/
 │   │   └── internal/
 │   │       ├── api/            # Router, handlers, middleware
 │   │       ├── domain/         # Business logic, models, services
-│   │       └── infrastructure/ # DB, providers (FMP, Polygon)
+│   │       └── infrastructure/ # DB, providers (EODHD, Polygon)
 │   │
 │   └── web/                    # Next.js frontend
 │       └── src/

@@ -82,7 +82,7 @@ func TestGenerator_SignalPrioritySorting(t *testing.T) {
 	// Create context that will generate multiple signals
 	signals := gen.GenerateAll(
 		&StockData{},
-		scores.PiotroskiResult{Score: 8},         // High score (priority 4)
+		scores.PiotroskiResult{Score: 8},               // High score (priority 4)
 		scores.AltmanZResult{Zone: "safe", Score: 4.5}, // Safe zone (priority 3)
 	)
 

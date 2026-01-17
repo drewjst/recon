@@ -32,12 +32,12 @@ type Index struct {
 }
 
 type tickerEntry struct {
-	Ticker       string
-	TickerLower  string // pre-computed lowercase ticker for matching
-	Name         string
-	Exchange     string
-	Type         string
-	SearchKey    string // lowercase ticker + name for matching
+	Ticker      string
+	TickerLower string // pre-computed lowercase ticker for matching
+	Name        string
+	Exchange    string
+	Type        string
+	SearchKey   string // lowercase ticker + name for matching
 }
 
 // NewIndex creates a new search index from embedded ticker data.

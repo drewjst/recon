@@ -17,7 +17,6 @@ import (
 	"github.com/drewjst/recon/apps/api/internal/domain/search"
 	"github.com/drewjst/recon/apps/api/internal/domain/stock"
 	"github.com/drewjst/recon/apps/api/internal/infrastructure/db"
-	"github.com/drewjst/recon/apps/api/internal/infrastructure/external/fmp"
 	"github.com/drewjst/recon/apps/api/internal/infrastructure/external/polygon"
 	"github.com/drewjst/recon/apps/api/internal/infrastructure/providers"
 )
@@ -63,37 +62,25 @@ func run() error {
 		slog.Info("DATABASE_URL not set, running without cache database")
 	}
 
-	// Initialize FMP client (legacy)
-	fmpClient := fmp.NewClient(fmp.Config{
-		APIKey: cfg.FMPAPIKey,
-	})
+	// Create provider based on config
+	providerCfg := providers.Config{
+		Provider:    providers.ParseProviderType(cfg.FundamentalsProvider),
+		FMPAPIKey:   cfg.FMPAPIKey,
+		EODHDAPIKey: cfg.EODHDAPIKey,
+	}
+	dataProvider, err := providers.NewFullProvider(providerCfg)
+	if err != nil {
+		return err
+	}
 
 	// Initialize stock service with configured provider
-	var stockService *stock.Service
-	if cacheRepo != nil {
-		// Create provider based on config
-		providerCfg := providers.Config{
-			Provider:    providers.ParseProviderType(cfg.FundamentalsProvider),
-			FMPAPIKey:   cfg.FMPAPIKey,
-			EODHDAPIKey: cfg.EODHDAPIKey,
-		}
-		dataProvider, err := providers.NewFullProvider(providerCfg)
-		if err != nil {
-			return err
-		}
-		stockService = stock.NewCachedService(
-			dataProvider,
-			dataProvider,
-			cacheRepo,
-			stock.DefaultServiceConfig(),
-		)
-		slog.Info("stock service initialized with caching", "provider", cfg.FundamentalsProvider)
-	} else {
-		// Use legacy FMP repository
-		repo := fmp.NewRepository(fmpClient)
-		stockService = stock.NewService(repo, nil)
-		slog.Info("stock service initialized without caching")
-	}
+	stockService := stock.NewCachedService(
+		dataProvider,
+		dataProvider,
+		cacheRepo,
+		stock.DefaultServiceConfig(),
+	)
+	slog.Info("stock service initialized", "provider", cfg.FundamentalsProvider, "caching", cacheRepo != nil)
 
 	// Initialize Polygon client and search service
 	polygonClient := polygon.NewClient(cfg.PolygonAPIKey)

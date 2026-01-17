@@ -211,9 +211,9 @@ func TestCalculatePiotroskiScore_ZeroScore(t *testing.T) {
 func TestCalculatePiotroskiScore_PartialScore(t *testing.T) {
 	// Test with some passing, some failing
 	current := FinancialData{
-		NetIncome:          100,   // Pass
-		TotalAssets:        1000,  // Pass (positive ROA)
-		OperatingCashFlow:  150,   // Pass (positive) and Pass (> net income)
+		NetIncome:          100,  // Pass
+		TotalAssets:        1000, // Pass (positive ROA)
+		OperatingCashFlow:  150,  // Pass (positive) and Pass (> net income)
 		LongTermDebt:       500,
 		CurrentAssets:      500,
 		CurrentLiabilities: 500,
@@ -224,12 +224,12 @@ func TestCalculatePiotroskiScore_PartialScore(t *testing.T) {
 
 	previous := FinancialData{
 		TotalAssets:        1000,
-		LongTermDebt:       500,   // Same ratio -> fail
+		LongTermDebt:       500, // Same ratio -> fail
 		CurrentAssets:      500,
-		CurrentLiabilities: 500,   // Same ratio -> fail
-		SharesOutstanding:  1000,  // Same shares -> pass
-		GrossProfit:        200,   // Same margin -> fail
-		Revenue:            1000,  // Same turnover -> fail
+		CurrentLiabilities: 500,  // Same ratio -> fail
+		SharesOutstanding:  1000, // Same shares -> pass
+		GrossProfit:        200,  // Same margin -> fail
+		Revenue:            1000, // Same turnover -> fail
 	}
 
 	result := CalculatePiotroskiScore(current, previous)

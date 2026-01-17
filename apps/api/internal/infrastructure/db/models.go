@@ -22,10 +22,10 @@ type StockCache struct {
 
 // QuoteCache stores cached real-time quote data.
 type QuoteCache struct {
-	Ticker    string    `gorm:"primaryKey;size:10"`
-	Price     float64   `gorm:"type:decimal(12,4)"`
-	Change    float64   `gorm:"type:decimal(12,4)"`
-	ChangePct float64   `gorm:"type:decimal(8,4)"`
+	Ticker    string  `gorm:"primaryKey;size:10"`
+	Price     float64 `gorm:"type:decimal(12,4)"`
+	Change    float64 `gorm:"type:decimal(12,4)"`
+	ChangePct float64 `gorm:"type:decimal(8,4)"`
 	Volume    int64
 	Provider  string    `gorm:"size:20"`
 	UpdatedAt time.Time `gorm:"index"`

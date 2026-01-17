@@ -13,6 +13,7 @@ import (
 func mapCompany(e *FundamentalsResponse) *models.Company {
 	ceo := ""
 	if len(e.General.Officers) > 0 {
+		// First pass: look for CEO
 		for _, officer := range e.General.Officers {
 			title := strings.ToLower(officer.Title)
 			if strings.Contains(title, "ceo") || strings.Contains(title, "chief executive") {
@@ -20,9 +21,11 @@ func mapCompany(e *FundamentalsResponse) *models.Company {
 				break
 			}
 		}
-		// Fallback to first officer if no CEO found
+		// Fallback to first officer (key "0") if no CEO found
 		if ceo == "" {
-			ceo = e.General.Officers[0].Name
+			if first, ok := e.General.Officers["0"]; ok {
+				ceo = first.Name
+			}
 		}
 	}
 

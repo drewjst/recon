@@ -15,9 +15,9 @@ type Provider struct {
 
 	// Cache for fundamentals data to avoid repeated API calls
 	// EODHD returns all fundamentals in one call, so we cache it
-	cache     map[string]*cachedFundamentals
-	cacheMu   sync.RWMutex
-	cacheTTL  time.Duration
+	cache    map[string]*cachedFundamentals
+	cacheMu  sync.RWMutex
+	cacheTTL time.Duration
 }
 
 type cachedFundamentals struct {

@@ -7,14 +7,14 @@ import (
 )
 
 type Config struct {
-	Port                string
-	Env                 string
-	FMPAPIKey           string
-	EODHDAPIKey         string
+	Port                 string
+	Env                  string
+	FMPAPIKey            string
+	EODHDAPIKey          string
 	FundamentalsProvider string // "eodhd" (default) or "fmp"
-	PolygonAPIKey       string
-	DatabaseURL         string
-	AllowedOrigins      []string
+	PolygonAPIKey        string
+	DatabaseURL          string
+	AllowedOrigins       []string
 }
 
 func Load() (*Config, error) {

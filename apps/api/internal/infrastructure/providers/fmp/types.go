@@ -46,28 +46,28 @@ type Quote struct {
 
 // IncomeStatement represents the FMP income statement response (stable API).
 type IncomeStatement struct {
-	Date                   string  `json:"date"`
-	Symbol                 string  `json:"symbol"`
-	FilingDate             string  `json:"filingDate"`
-	FiscalYear             string  `json:"fiscalYear"`
-	Period                 string  `json:"period"`
-	Revenue                float64 `json:"revenue"`
-	CostOfRevenue          float64 `json:"costOfRevenue"`
-	GrossProfit            float64 `json:"grossProfit"`
-	OperatingExpenses      float64 `json:"operatingExpenses"`
-	OperatingIncome        float64 `json:"operatingIncome"`
-	EBITDA                 float64 `json:"ebitda"`
-	EBIT                   float64 `json:"ebit"`
-	InterestExpense        float64 `json:"interestExpense"`
-	InterestIncome         float64 `json:"interestIncome"`
-	IncomeBeforeTax        float64 `json:"incomeBeforeTax"`
-	IncomeTaxExpense       float64 `json:"incomeTaxExpense"`
-	NetIncome              float64 `json:"netIncome"`
-	BottomLineNetIncome    float64 `json:"bottomLineNetIncome"`
-	EPS                    float64 `json:"eps"`
-	EPSDiluted             float64 `json:"epsDiluted"`
-	WeightedAvgSharesOut   int64   `json:"weightedAverageShsOut"`
-	WeightedAvgSharesDil   int64   `json:"weightedAverageShsOutDil"`
+	Date                 string  `json:"date"`
+	Symbol               string  `json:"symbol"`
+	FilingDate           string  `json:"filingDate"`
+	FiscalYear           string  `json:"fiscalYear"`
+	Period               string  `json:"period"`
+	Revenue              float64 `json:"revenue"`
+	CostOfRevenue        float64 `json:"costOfRevenue"`
+	GrossProfit          float64 `json:"grossProfit"`
+	OperatingExpenses    float64 `json:"operatingExpenses"`
+	OperatingIncome      float64 `json:"operatingIncome"`
+	EBITDA               float64 `json:"ebitda"`
+	EBIT                 float64 `json:"ebit"`
+	InterestExpense      float64 `json:"interestExpense"`
+	InterestIncome       float64 `json:"interestIncome"`
+	IncomeBeforeTax      float64 `json:"incomeBeforeTax"`
+	IncomeTaxExpense     float64 `json:"incomeTaxExpense"`
+	NetIncome            float64 `json:"netIncome"`
+	BottomLineNetIncome  float64 `json:"bottomLineNetIncome"`
+	EPS                  float64 `json:"eps"`
+	EPSDiluted           float64 `json:"epsDiluted"`
+	WeightedAvgSharesOut int64   `json:"weightedAverageShsOut"`
+	WeightedAvgSharesDil int64   `json:"weightedAverageShsOutDil"`
 }
 
 // BalanceSheet represents the FMP balance sheet response (stable API).
@@ -126,62 +126,62 @@ type SearchResult struct {
 
 // Ratios represents the FMP ratios response (stable API).
 type Ratios struct {
-	Date                   string  `json:"date"`
-	Symbol                 string  `json:"symbol"`
-	FiscalYear             string  `json:"fiscalYear"`
-	Period                 string  `json:"period"`
-	CurrentRatio           float64 `json:"currentRatio"`
-	QuickRatio             float64 `json:"quickRatio"`
-	CashRatio              float64 `json:"cashRatio"`
-	GrossProfitMargin      float64 `json:"grossProfitMargin"`
-	OperatingProfitMargin  float64 `json:"operatingProfitMargin"`
-	PretaxProfitMargin     float64 `json:"pretaxProfitMargin"`
-	NetProfitMargin        float64 `json:"netProfitMargin"`
-	EffectiveTaxRate       float64 `json:"effectiveTaxRate"`
-	AssetTurnover          float64 `json:"assetTurnover"`
-	FixedAssetTurnover     float64 `json:"fixedAssetTurnover"`
-	InventoryTurnover      float64 `json:"inventoryTurnover"`
-	ReceivablesTurnover    float64 `json:"receivablesTurnover"`
-	PayablesTurnover       float64 `json:"payablesTurnover"`
-	DebtToAssetsRatio      float64 `json:"debtToAssetsRatio"`
-	DebtToEquityRatio      float64 `json:"debtToEquityRatio"`
-	DebtToCapitalRatio     float64 `json:"debtToCapitalRatio"`
-	InterestCoverageRatio  float64 `json:"interestCoverageRatio"`
-	FreeCashFlowPerShare   float64 `json:"freeCashFlowPerShare"`
-	BookValuePerShare      float64 `json:"bookValuePerShare"`
-	PriceToEarningsRatio   float64 `json:"priceToEarningsRatio"`
-	PriceToEarningsGrowthRatio float64 `json:"priceToEarningsGrowthRatio"`
-	PriceToBookRatio       float64 `json:"priceToBookRatio"`
-	PriceToSalesRatio      float64 `json:"priceToSalesRatio"`
-	PriceToFreeCashFlowRatio float64 `json:"priceToFreeCashFlowRatio"`
+	Date                          string  `json:"date"`
+	Symbol                        string  `json:"symbol"`
+	FiscalYear                    string  `json:"fiscalYear"`
+	Period                        string  `json:"period"`
+	CurrentRatio                  float64 `json:"currentRatio"`
+	QuickRatio                    float64 `json:"quickRatio"`
+	CashRatio                     float64 `json:"cashRatio"`
+	GrossProfitMargin             float64 `json:"grossProfitMargin"`
+	OperatingProfitMargin         float64 `json:"operatingProfitMargin"`
+	PretaxProfitMargin            float64 `json:"pretaxProfitMargin"`
+	NetProfitMargin               float64 `json:"netProfitMargin"`
+	EffectiveTaxRate              float64 `json:"effectiveTaxRate"`
+	AssetTurnover                 float64 `json:"assetTurnover"`
+	FixedAssetTurnover            float64 `json:"fixedAssetTurnover"`
+	InventoryTurnover             float64 `json:"inventoryTurnover"`
+	ReceivablesTurnover           float64 `json:"receivablesTurnover"`
+	PayablesTurnover              float64 `json:"payablesTurnover"`
+	DebtToAssetsRatio             float64 `json:"debtToAssetsRatio"`
+	DebtToEquityRatio             float64 `json:"debtToEquityRatio"`
+	DebtToCapitalRatio            float64 `json:"debtToCapitalRatio"`
+	InterestCoverageRatio         float64 `json:"interestCoverageRatio"`
+	FreeCashFlowPerShare          float64 `json:"freeCashFlowPerShare"`
+	BookValuePerShare             float64 `json:"bookValuePerShare"`
+	PriceToEarningsRatio          float64 `json:"priceToEarningsRatio"`
+	PriceToEarningsGrowthRatio    float64 `json:"priceToEarningsGrowthRatio"`
+	PriceToBookRatio              float64 `json:"priceToBookRatio"`
+	PriceToSalesRatio             float64 `json:"priceToSalesRatio"`
+	PriceToFreeCashFlowRatio      float64 `json:"priceToFreeCashFlowRatio"`
 	PriceToOperatingCashFlowRatio float64 `json:"priceToOperatingCashFlowRatio"`
-	EnterpriseValueMultiple float64 `json:"enterpriseValueMultiple"`
-	DividendYield          float64 `json:"dividendYield"`
-	DividendPerShare       float64 `json:"dividendPerShare"`
+	EnterpriseValueMultiple       float64 `json:"enterpriseValueMultiple"`
+	DividendYield                 float64 `json:"dividendYield"`
+	DividendPerShare              float64 `json:"dividendPerShare"`
 }
 
 // KeyMetrics represents the FMP key metrics response (stable API).
 type KeyMetrics struct {
-	Date                     string  `json:"date"`
-	Symbol                   string  `json:"symbol"`
-	FiscalYear               string  `json:"fiscalYear"`
-	Period                   string  `json:"period"`
-	MarketCap                float64 `json:"marketCap"`
-	EnterpriseValue          float64 `json:"enterpriseValue"`
-	EVToSales                float64 `json:"evToSales"`
-	EVToOperatingCashFlow    float64 `json:"evToOperatingCashFlow"`
-	EVToFreeCashFlow         float64 `json:"evToFreeCashFlow"`
-	EVToEBITDA               float64 `json:"evToEBITDA"`
-	CurrentRatio             float64 `json:"currentRatio"`
-	ReturnOnAssets           float64 `json:"returnOnAssets"`
-	ReturnOnEquity           float64 `json:"returnOnEquity"`
-	ReturnOnInvestedCapital  float64 `json:"returnOnInvestedCapital"`
-	ReturnOnCapitalEmployed  float64 `json:"returnOnCapitalEmployed"`
-	EarningsYield            float64 `json:"earningsYield"`
-	FreeCashFlowYield        float64 `json:"freeCashFlowYield"`
-	CapexToRevenue           float64 `json:"capexToRevenue"`
-	WorkingCapital           float64 `json:"workingCapital"`
-	TangibleAssetValue       float64 `json:"tangibleAssetValue"`
+	Date                    string  `json:"date"`
+	Symbol                  string  `json:"symbol"`
+	FiscalYear              string  `json:"fiscalYear"`
+	Period                  string  `json:"period"`
+	MarketCap               float64 `json:"marketCap"`
+	EnterpriseValue         float64 `json:"enterpriseValue"`
+	EVToSales               float64 `json:"evToSales"`
+	EVToOperatingCashFlow   float64 `json:"evToOperatingCashFlow"`
+	EVToFreeCashFlow        float64 `json:"evToFreeCashFlow"`
+	EVToEBITDA              float64 `json:"evToEBITDA"`
+	CurrentRatio            float64 `json:"currentRatio"`
+	ReturnOnAssets          float64 `json:"returnOnAssets"`
+	ReturnOnEquity          float64 `json:"returnOnEquity"`
+	ReturnOnInvestedCapital float64 `json:"returnOnInvestedCapital"`
+	ReturnOnCapitalEmployed float64 `json:"returnOnCapitalEmployed"`
+	EarningsYield           float64 `json:"earningsYield"`
+	FreeCashFlowYield       float64 `json:"freeCashFlowYield"`
+	CapexToRevenue          float64 `json:"capexToRevenue"`
+	WorkingCapital          float64 `json:"workingCapital"`
+	TangibleAssetValue      float64 `json:"tangibleAssetValue"`
 }
 
 // HistoricalPrice represents a single day's price data.
@@ -242,21 +242,21 @@ type RatiosTTM struct {
 	AssetTurnoverTTM     float64 `json:"assetTurnoverTTM"`
 	InventoryTurnoverTTM float64 `json:"inventoryTurnoverTTM"`
 	// Solvency
-	DebtToEquityRatioTTM  float64 `json:"debtToEquityRatioTTM"`
-	CurrentRatioTTM       float64 `json:"currentRatioTTM"`
-	QuickRatioTTM         float64 `json:"quickRatioTTM"`
+	DebtToEquityRatioTTM     float64 `json:"debtToEquityRatioTTM"`
+	CurrentRatioTTM          float64 `json:"currentRatioTTM"`
+	QuickRatioTTM            float64 `json:"quickRatioTTM"`
 	InterestCoverageRatioTTM float64 `json:"interestCoverageTTM"`
 }
 
 // KeyMetricsTTM represents trailing twelve month key metrics from FMP API.
 type KeyMetricsTTM struct {
-	Symbol                      string  `json:"symbol"`
-	EVToEBITDATTM               float64 `json:"evToEBITDATTM"`
-	EVToSalesTTM                float64 `json:"evToSalesTTM"`
-	MarketCap                   float64 `json:"marketCap"`
-	ReturnOnAssetsTTM           float64 `json:"returnOnAssetsTTM"`
-	ReturnOnEquityTTM           float64 `json:"returnOnEquityTTM"`
-	ReturnOnInvestedCapitalTTM  float64 `json:"returnOnInvestedCapitalTTM"`
+	Symbol                     string  `json:"symbol"`
+	EVToEBITDATTM              float64 `json:"evToEBITDATTM"`
+	EVToSalesTTM               float64 `json:"evToSalesTTM"`
+	MarketCap                  float64 `json:"marketCap"`
+	ReturnOnAssetsTTM          float64 `json:"returnOnAssetsTTM"`
+	ReturnOnEquityTTM          float64 `json:"returnOnEquityTTM"`
+	ReturnOnInvestedCapitalTTM float64 `json:"returnOnInvestedCapitalTTM"`
 }
 
 // DCF represents the FMP discounted cash flow response.

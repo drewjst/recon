@@ -74,8 +74,8 @@ type ServiceConfig struct {
 // DefaultServiceConfig returns default configuration.
 func DefaultServiceConfig() ServiceConfig {
 	return ServiceConfig{
-		CacheTTL:      24 * time.Hour,    // Fundamentals fresh for 24h
-		QuoteCacheTTL: 5 * time.Minute,   // Quotes fresh for 5m
+		CacheTTL:      24 * time.Hour,  // Fundamentals fresh for 24h
+		QuoteCacheTTL: 5 * time.Minute, // Quotes fresh for 5m
 	}
 }
 
@@ -337,7 +337,7 @@ func (s *Service) buildResponseFromProviders(
 
 	// Convert financials to score data and calculate scores
 	financialData := convertToScoreData(financialStatements, quote.Price, quote.MarketCap)
-	stockScores := s.calculateScoresFromData(financialData, dcf)
+	stockScores := s.calculateScoresFromData(financialData, dcf, quote.Price)
 
 	// Generate signals
 	signalData := &signals.StockData{
@@ -1276,8 +1276,8 @@ func convertToScoreData(financials []models.Financials, price float64, marketCap
 			EPS:                f.EPS,
 			TotalAssets:        float64(f.TotalAssets),
 			TotalLiabilities:   float64(f.TotalLiabilities),
-			CurrentAssets:      float64(f.Cash),  // Simplified
-			CurrentLiabilities: float64(f.Debt),  // Simplified
+			CurrentAssets:      float64(f.Cash), // Simplified
+			CurrentLiabilities: float64(f.Debt), // Simplified
 			LongTermDebt:       float64(f.Debt),
 			ShareholdersEquity: float64(f.TotalEquity),
 			OperatingCashFlow:  float64(f.OperatingCashFlow),
@@ -1292,7 +1292,7 @@ func convertToScoreData(financials []models.Financials, price float64, marketCap
 }
 
 // calculateScoresFromData calculates all financial scores from the data.
-func (s *Service) calculateScoresFromData(data []scores.FinancialData, dcf *models.DCF) Scores {
+func (s *Service) calculateScoresFromData(data []scores.FinancialData, dcf *models.DCF, quotePrice float64) Scores {
 	var piotroskiResult scores.PiotroskiResult
 	var ruleOf40Result scores.RuleOf40Result
 	var altmanZResult scores.AltmanZResult
@@ -1311,9 +1311,14 @@ func (s *Service) calculateScoresFromData(data []scores.FinancialData, dcf *mode
 
 	dcfValuation := DCFValuation{}
 	if dcf != nil {
+		// Use quote price if DCF endpoint doesn't provide stock price
+		currentPrice := dcf.StockPrice
+		if currentPrice == 0 {
+			currentPrice = quotePrice
+		}
 		diffPercent := 0.0
-		if dcf.StockPrice > 0 {
-			diffPercent = ((dcf.DCFValue - dcf.StockPrice) / dcf.StockPrice) * 100
+		if currentPrice > 0 {
+			diffPercent = ((dcf.DCFValue - currentPrice) / currentPrice) * 100
 		}
 		assessment := "Fairly Valued"
 		if diffPercent > 15 {
@@ -1323,7 +1328,7 @@ func (s *Service) calculateScoresFromData(data []scores.FinancialData, dcf *mode
 		}
 		dcfValuation = DCFValuation{
 			IntrinsicValue:    dcf.DCFValue,
-			CurrentPrice:      dcf.StockPrice,
+			CurrentPrice:      currentPrice,
 			DifferencePercent: diffPercent,
 			Assessment:        assessment,
 		}
