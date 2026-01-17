@@ -436,3 +436,25 @@ func abs(n int64) int64 {
 	}
 	return n
 }
+
+// mapTechnicalMetrics converts EODHD Technicals to internal TechnicalMetrics model.
+func mapTechnicalMetrics(e *FundamentalsResponse) *models.TechnicalMetrics {
+	return &models.TechnicalMetrics{
+		Ticker:   e.General.Code,
+		Beta:     e.Technicals.Beta,
+		MA50Day:  e.Technicals.MA50Day,
+		MA200Day: e.Technicals.MA200Day,
+	}
+}
+
+// mapShortInterest converts EODHD SharesStats to internal ShortInterest model.
+func mapShortInterest(e *FundamentalsResponse) *models.ShortInterest {
+	return &models.ShortInterest{
+		Ticker:                e.General.Code,
+		SharesShort:           int64(e.SharesStats.SharesShort),
+		SharesShortPriorMonth: int64(e.SharesStats.SharesShortPriorMonth),
+		ShortRatio:            e.SharesStats.ShortRatio,
+		ShortPercentFloat:     e.SharesStats.ShortPercentFloat,
+		ShortPercentShares:    e.SharesStats.ShortPercentOutstanding,
+	}
+}

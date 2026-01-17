@@ -115,6 +115,22 @@ type EarningsQuality struct {
 	IncomePerEmployee  *SectorMetric `json:"incomePerEmployee,omitempty"`
 }
 
+// TechnicalMetrics contains technical analysis metrics.
+type TechnicalMetrics struct {
+	Beta     float64 `json:"beta"`
+	MA50Day  float64 `json:"ma50Day"`
+	MA200Day float64 `json:"ma200Day"`
+}
+
+// ShortInterest contains short selling data for a stock.
+type ShortInterest struct {
+	SharesShort           int64   `json:"sharesShort"`
+	SharesShortPriorMonth int64   `json:"sharesShortPriorMonth"`
+	ShortRatio            float64 `json:"shortRatio"`
+	ShortPercentFloat     float64 `json:"shortPercentFloat"`
+	ShortPercentShares    float64 `json:"shortPercentShares"`
+}
+
 // Financials contains key financial metrics.
 type Financials struct {
 	RevenueGrowthYoY float64  `json:"revenueGrowthYoY" db:"revenue_growth_yoy"`

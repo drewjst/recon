@@ -195,3 +195,27 @@ func (p *Provider) Search(ctx context.Context, query string, limit int) ([]model
 	}
 	return mapSearchResults(results), nil
 }
+
+// GetTechnicalMetrics returns technical analysis metrics for a ticker.
+func (p *Provider) GetTechnicalMetrics(ctx context.Context, ticker string) (*models.TechnicalMetrics, error) {
+	fundamentals, err := p.getFundamentals(ctx, ticker)
+	if err != nil {
+		return nil, fmt.Errorf("fetching technical metrics: %w", err)
+	}
+	if fundamentals == nil {
+		return nil, nil
+	}
+	return mapTechnicalMetrics(fundamentals), nil
+}
+
+// GetShortInterest returns short interest data for a ticker.
+func (p *Provider) GetShortInterest(ctx context.Context, ticker string) (*models.ShortInterest, error) {
+	fundamentals, err := p.getFundamentals(ctx, ticker)
+	if err != nil {
+		return nil, fmt.Errorf("fetching short interest: %w", err)
+	}
+	if fundamentals == nil {
+		return nil, nil
+	}
+	return mapShortInterest(fundamentals), nil
+}

@@ -36,6 +36,8 @@ type Repository interface {
 	GetPerformance(ctx context.Context, ticker string, currentPrice, yearHigh float64) (*Performance, error)
 	GetInsiderActivity(ctx context.Context, ticker string) (*InsiderActivity, error)
 	GetDCF(ctx context.Context, ticker string) (*DCFValuation, error)
+	GetTechnicalMetrics(ctx context.Context, ticker string) (*TechnicalMetrics, error)
+	GetShortInterest(ctx context.Context, ticker string) (*ShortInterest, error)
 	Search(ctx context.Context, query string, limit int) ([]SearchResult, error)
 	IsETF(ctx context.Context, ticker string) (bool, error)
 	GetETFData(ctx context.Context, ticker string) (*ETFData, error)
@@ -106,23 +108,25 @@ func NewCachedService(
 
 // StockDetailResponse is the complete response for GET /api/stock/{ticker}.
 type StockDetailResponse struct {
-	AssetType       AssetType        `json:"assetType"`
-	Company         Company          `json:"company"`
-	Quote           Quote            `json:"quote"`
-	Performance     Performance      `json:"performance"`
-	Scores          *Scores          `json:"scores,omitempty"`
-	Signals         []signals.Signal `json:"signals"`
-	Valuation       *Valuation       `json:"valuation,omitempty"`
-	Holdings        *Holdings        `json:"holdings,omitempty"`
-	InsiderTrades   []InsiderTrade   `json:"insiderTrades"`
-	InsiderActivity *InsiderActivity `json:"insiderActivity,omitempty"`
-	Financials      *Financials      `json:"financials,omitempty"`
-	Profitability   *Profitability   `json:"profitability,omitempty"`
-	FinancialHealth *FinancialHealth `json:"financialHealth,omitempty"`
-	Growth          *Growth          `json:"growth,omitempty"`
-	EarningsQuality *EarningsQuality `json:"earningsQuality,omitempty"`
-	ETFData         *ETFData         `json:"etfData,omitempty"`
-	Meta            DataMeta         `json:"meta"`
+	AssetType        AssetType         `json:"assetType"`
+	Company          Company           `json:"company"`
+	Quote            Quote             `json:"quote"`
+	Performance      Performance       `json:"performance"`
+	Scores           *Scores           `json:"scores,omitempty"`
+	Signals          []signals.Signal  `json:"signals"`
+	Valuation        *Valuation        `json:"valuation,omitempty"`
+	Holdings         *Holdings         `json:"holdings,omitempty"`
+	InsiderTrades    []InsiderTrade    `json:"insiderTrades"`
+	InsiderActivity  *InsiderActivity  `json:"insiderActivity,omitempty"`
+	Financials       *Financials       `json:"financials,omitempty"`
+	Profitability    *Profitability    `json:"profitability,omitempty"`
+	FinancialHealth  *FinancialHealth  `json:"financialHealth,omitempty"`
+	Growth           *Growth           `json:"growth,omitempty"`
+	EarningsQuality  *EarningsQuality  `json:"earningsQuality,omitempty"`
+	TechnicalMetrics *TechnicalMetrics `json:"technicalMetrics,omitempty"`
+	ShortInterest    *ShortInterest    `json:"shortInterest,omitempty"`
+	ETFData          *ETFData          `json:"etfData,omitempty"`
+	Meta             DataMeta          `json:"meta"`
 }
 
 // Scores contains all computed scores.
@@ -135,20 +139,22 @@ type Scores struct {
 
 // stockData holds all fetched data for building a response.
 type stockData struct {
-	company         *Company
-	quote           *Quote
-	financials      *Financials
-	valuation       *Valuation
-	profitability   *Profitability
-	financialHealth *FinancialHealth
-	growth          *Growth
-	earningsQuality *EarningsQuality
-	holdings        *Holdings
-	insiderTrades   []InsiderTrade
-	performance     *Performance
-	insiderActivity *InsiderActivity
-	financialData   []scores.FinancialData
-	dcfValuation    *DCFValuation
+	company          *Company
+	quote            *Quote
+	financials       *Financials
+	valuation        *Valuation
+	profitability    *Profitability
+	financialHealth  *FinancialHealth
+	growth           *Growth
+	earningsQuality  *EarningsQuality
+	holdings         *Holdings
+	insiderTrades    []InsiderTrade
+	performance      *Performance
+	insiderActivity  *InsiderActivity
+	financialData    []scores.FinancialData
+	dcfValuation     *DCFValuation
+	technicalMetrics *TechnicalMetrics
+	shortInterest    *ShortInterest
 }
 
 // GetStockDetail retrieves comprehensive stock data for a ticker.
@@ -203,14 +209,16 @@ func (s *Service) GetStockDetail(ctx context.Context, ticker string) (*StockDeta
 // fetchAndBuildResponse fetches data from providers and builds the response.
 func (s *Service) fetchAndBuildResponse(ctx context.Context, ticker string) (*StockDetailResponse, error) {
 	var (
-		company    *models.Company
-		quote      *models.Quote
-		ratios     *models.Ratios
-		financials []models.Financials
-		holders    []models.InstitutionalHolder
-		trades     []models.InsiderTrade
-		prices     []models.PriceBar
-		dcf        *models.DCF
+		company          *models.Company
+		quote            *models.Quote
+		ratios           *models.Ratios
+		financials       []models.Financials
+		holders          []models.InstitutionalHolder
+		trades           []models.InsiderTrade
+		prices           []models.PriceBar
+		dcf              *models.DCF
+		technicalMetrics *models.TechnicalMetrics
+		shortInterest    *models.ShortInterest
 	)
 
 	// Fetch all data in parallel
@@ -291,12 +299,30 @@ func (s *Service) fetchAndBuildResponse(ctx context.Context, ticker string) (*St
 		return nil
 	})
 
+	g.Go(func() error {
+		var err error
+		technicalMetrics, err = s.fundamentals.GetTechnicalMetrics(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch technical metrics", "ticker", ticker, "error", err)
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		var err error
+		shortInterest, err = s.fundamentals.GetShortInterest(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch short interest", "ticker", ticker, "error", err)
+		}
+		return nil
+	})
+
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
 	// Build response from fetched data
-	return s.buildResponseFromProviders(company, quote, ratios, financials, holders, trades, prices, dcf), nil
+	return s.buildResponseFromProviders(company, quote, ratios, financials, holders, trades, prices, dcf, technicalMetrics, shortInterest), nil
 }
 
 // buildResponseFromProviders constructs the response from provider data.
@@ -309,6 +335,8 @@ func (s *Service) buildResponseFromProviders(
 	trades []models.InsiderTrade,
 	prices []models.PriceBar,
 	dcf *models.DCF,
+	technicalMetrics *models.TechnicalMetrics,
+	shortInterest *models.ShortInterest,
 ) *StockDetailResponse {
 	// Convert provider models to domain types
 	domainCompany := convertCompanyFromModel(company)
@@ -354,21 +382,23 @@ func (s *Service) buildResponseFromProviders(
 	}
 
 	return &StockDetailResponse{
-		AssetType:       AssetTypeStock,
-		Company:         domainCompany,
-		Quote:           domainQuote,
-		Performance:     performance,
-		Scores:          &stockScores,
-		Signals:         signalList,
-		Valuation:       valuation,
-		Holdings:        holdings,
-		InsiderTrades:   insiderTrades,
-		InsiderActivity: insiderActivity,
-		Financials:      financials,
-		Profitability:   profitability,
-		FinancialHealth: financialHealth,
-		Growth:          growth,
-		EarningsQuality: earningsQuality,
+		AssetType:        AssetTypeStock,
+		Company:          domainCompany,
+		Quote:            domainQuote,
+		Performance:      performance,
+		Scores:           &stockScores,
+		Signals:          signalList,
+		Valuation:        valuation,
+		Holdings:         holdings,
+		InsiderTrades:    insiderTrades,
+		InsiderActivity:  insiderActivity,
+		Financials:       financials,
+		Profitability:    profitability,
+		FinancialHealth:  financialHealth,
+		Growth:           growth,
+		EarningsQuality:  earningsQuality,
+		TechnicalMetrics: convertTechnicalMetricsFromModel(technicalMetrics),
+		ShortInterest:    convertShortInterestFromModel(shortInterest),
 		Meta: DataMeta{
 			FundamentalsAsOf: fundamentalsDate,
 			HoldingsAsOf:     "Latest 13F",
@@ -481,6 +511,30 @@ func convertInsiderTradesFromModel(trades []models.InsiderTrade) ([]InsiderTrade
 	return result, activity
 }
 
+func convertTechnicalMetricsFromModel(m *models.TechnicalMetrics) *TechnicalMetrics {
+	if m == nil {
+		return nil
+	}
+	return &TechnicalMetrics{
+		Beta:     m.Beta,
+		MA50Day:  m.MA50Day,
+		MA200Day: m.MA200Day,
+	}
+}
+
+func convertShortInterestFromModel(m *models.ShortInterest) *ShortInterest {
+	if m == nil {
+		return nil
+	}
+	return &ShortInterest{
+		SharesShort:           m.SharesShort,
+		SharesShortPriorMonth: m.SharesShortPriorMonth,
+		ShortRatio:            m.ShortRatio,
+		ShortPercentFloat:     m.ShortPercentFloat,
+		ShortPercentShares:    m.ShortPercentShares,
+	}
+}
+
 func convertFinancialsFromRatios(r *models.Ratios) *Financials {
 	if r == nil {
 		return &Financials{}
@@ -502,15 +556,25 @@ func convertValuationFromRatios(r *models.Ratios, sector string) *Valuation {
 	}
 
 	medians := getSectorMedians(sector)
+	ranges := getSectorRanges(sector)
 	ptr := func(v float64) *float64 { return &v }
+	ptrInt := func(v int) *int { return &v }
+
+	// Helper to calculate inverted percentile for valuation metrics (lower is better)
+	calcPct := func(value float64, rng metricRange) *int {
+		if value <= 0 {
+			return nil // Invalid or missing value
+		}
+		return ptrInt(calculatePercentileInverted(value, rng.Min, rng.Max))
+	}
 
 	return &Valuation{
-		PE:          ValuationMetric{Value: ptr(r.PE), SectorMedian: ptr(medians.PE)},
-		ForwardPE:   ValuationMetric{Value: ptr(r.ForwardPE), SectorMedian: ptr(medians.PE)},
-		PEG:         ValuationMetric{Value: ptr(r.PEG), SectorMedian: ptr(medians.PEG)},
-		EVToEBITDA:  ValuationMetric{Value: ptr(r.EVToEBITDA), SectorMedian: ptr(medians.EVToEBITDA)},
-		PriceToFCF:  ValuationMetric{Value: ptr(r.PriceToFCF), SectorMedian: ptr(medians.PriceToFCF)},
-		PriceToBook: ValuationMetric{Value: ptr(r.PB), SectorMedian: ptr(medians.PriceToBook)},
+		PE:          ValuationMetric{Value: ptr(r.PE), SectorMedian: ptr(medians.PE), Percentile: calcPct(r.PE, ranges.PE)},
+		ForwardPE:   ValuationMetric{Value: ptr(r.ForwardPE), SectorMedian: ptr(medians.PE), Percentile: calcPct(r.ForwardPE, ranges.PE)},
+		PEG:         ValuationMetric{Value: ptr(r.PEG), SectorMedian: ptr(medians.PEG), Percentile: calcPct(r.PEG, ranges.PEG)},
+		EVToEBITDA:  ValuationMetric{Value: ptr(r.EVToEBITDA), SectorMedian: ptr(medians.EVToEBITDA), Percentile: calcPct(r.EVToEBITDA, ranges.EVToEBITDA)},
+		PriceToFCF:  ValuationMetric{Value: ptr(r.PriceToFCF), SectorMedian: ptr(medians.PriceToFCF), Percentile: calcPct(r.PriceToFCF, ranges.PriceToFCF)},
+		PriceToBook: ValuationMetric{Value: ptr(r.PB), SectorMedian: ptr(medians.PriceToBook), Percentile: calcPct(r.PB, ranges.PriceToBook)},
 	}
 }
 
@@ -788,6 +852,13 @@ type metricRange struct {
 }
 
 type sectorRanges struct {
+	// Valuation metrics (lower is better)
+	PE          metricRange
+	PEG         metricRange
+	EVToEBITDA  metricRange
+	PriceToFCF  metricRange
+	PriceToBook metricRange
+	// Profitability metrics
 	ROIC               metricRange
 	ROE                metricRange
 	OperatingMargin    metricRange
@@ -820,6 +891,7 @@ var sectorMedianData = map[string]sectorMedians{
 
 var sectorRangeData = map[string]sectorRanges{
 	"Technology": {
+		PE: metricRange{10, 28, 60}, PEG: metricRange{0.5, 1.8, 4}, EVToEBITDA: metricRange{8, 18, 40}, PriceToFCF: metricRange{10, 25, 60}, PriceToBook: metricRange{2, 6, 15},
 		ROIC: metricRange{5, 15, 40}, ROE: metricRange{10, 25, 50}, OperatingMargin: metricRange{10, 20, 40},
 		GrossMargin: metricRange{40, 60, 85}, NetMargin: metricRange{5, 15, 30},
 		DebtToEquity: metricRange{0, 0.4, 1.5}, CurrentRatio: metricRange{1, 2, 4}, AssetTurnover: metricRange{0.3, 0.6, 1.2},
@@ -827,6 +899,7 @@ var sectorRangeData = map[string]sectorRanges{
 		CashFlowGrowth: metricRange{-20, 15, 60}, RevenuePerEmployee: metricRange{200000, 500000, 1500000}, IncomePerEmployee: metricRange{20000, 80000, 300000},
 	},
 	"Healthcare": {
+		PE: metricRange{8, 22, 50}, PEG: metricRange{0.4, 1.6, 3.5}, EVToEBITDA: metricRange{6, 14, 35}, PriceToFCF: metricRange{8, 20, 50}, PriceToBook: metricRange{1.5, 4, 12},
 		ROIC: metricRange{3, 12, 30}, ROE: metricRange{8, 18, 40}, OperatingMargin: metricRange{5, 15, 30},
 		GrossMargin: metricRange{30, 55, 80}, NetMargin: metricRange{2, 12, 25},
 		DebtToEquity: metricRange{0, 0.5, 1.8}, CurrentRatio: metricRange{1, 1.8, 3.5}, AssetTurnover: metricRange{0.3, 0.5, 1.0},
@@ -834,6 +907,7 @@ var sectorRangeData = map[string]sectorRanges{
 		CashFlowGrowth: metricRange{-25, 12, 50}, RevenuePerEmployee: metricRange{150000, 350000, 800000}, IncomePerEmployee: metricRange{15000, 50000, 150000},
 	},
 	"Financial Services": {
+		PE: metricRange{6, 14, 25}, PEG: metricRange{0.3, 1.2, 2.5}, EVToEBITDA: metricRange{4, 10, 20}, PriceToFCF: metricRange{5, 12, 25}, PriceToBook: metricRange{0.5, 1.5, 3},
 		ROIC: metricRange{2, 8, 18}, ROE: metricRange{8, 12, 20}, OperatingMargin: metricRange{15, 30, 50},
 		GrossMargin: metricRange{50, 70, 90}, NetMargin: metricRange{10, 22, 40},
 		DebtToEquity: metricRange{0.5, 2, 8}, CurrentRatio: metricRange{0.8, 1.2, 2}, AssetTurnover: metricRange{0.02, 0.05, 0.1},
@@ -841,6 +915,7 @@ var sectorRangeData = map[string]sectorRanges{
 		CashFlowGrowth: metricRange{-30, 10, 45}, RevenuePerEmployee: metricRange{300000, 600000, 2000000}, IncomePerEmployee: metricRange{80000, 150000, 500000},
 	},
 	"Consumer Cyclical": {
+		PE: metricRange{8, 18, 40}, PEG: metricRange{0.4, 1.4, 3}, EVToEBITDA: metricRange{5, 12, 28}, PriceToFCF: metricRange{8, 18, 45}, PriceToBook: metricRange{1.5, 4, 10},
 		ROIC: metricRange{4, 12, 28}, ROE: metricRange{10, 20, 40}, OperatingMargin: metricRange{5, 12, 25},
 		GrossMargin: metricRange{20, 35, 55}, NetMargin: metricRange{2, 8, 18},
 		DebtToEquity: metricRange{0.2, 0.8, 2}, CurrentRatio: metricRange{1, 1.5, 3}, AssetTurnover: metricRange{0.8, 1.5, 2.5},
@@ -848,6 +923,7 @@ var sectorRangeData = map[string]sectorRanges{
 		CashFlowGrowth: metricRange{-25, 10, 45}, RevenuePerEmployee: metricRange{100000, 250000, 600000}, IncomePerEmployee: metricRange{10000, 30000, 100000},
 	},
 	"Consumer Defensive": {
+		PE: metricRange{10, 20, 35}, PEG: metricRange{1, 2.2, 4}, EVToEBITDA: metricRange{8, 14, 25}, PriceToFCF: metricRange{12, 22, 45}, PriceToBook: metricRange{2, 5, 12},
 		ROIC: metricRange{5, 14, 30}, ROE: metricRange{12, 22, 45}, OperatingMargin: metricRange{8, 15, 28},
 		GrossMargin: metricRange{25, 40, 60}, NetMargin: metricRange{4, 10, 20},
 		DebtToEquity: metricRange{0.2, 0.6, 1.5}, CurrentRatio: metricRange{0.8, 1.2, 2}, AssetTurnover: metricRange{0.8, 1.2, 2.0},
@@ -855,6 +931,7 @@ var sectorRangeData = map[string]sectorRanges{
 		CashFlowGrowth: metricRange{-15, 8, 35}, RevenuePerEmployee: metricRange{150000, 350000, 800000}, IncomePerEmployee: metricRange{20000, 50000, 120000},
 	},
 	"Industrials": {
+		PE: metricRange{10, 20, 40}, PEG: metricRange{0.5, 1.5, 3}, EVToEBITDA: metricRange{6, 12, 25}, PriceToFCF: metricRange{8, 18, 40}, PriceToBook: metricRange{1.5, 3.5, 8},
 		ROIC: metricRange{4, 11, 25}, ROE: metricRange{10, 18, 35}, OperatingMargin: metricRange{6, 12, 22},
 		GrossMargin: metricRange{20, 32, 50}, NetMargin: metricRange{3, 8, 16},
 		DebtToEquity: metricRange{0.3, 0.8, 2}, CurrentRatio: metricRange{1, 1.5, 2.5}, AssetTurnover: metricRange{0.5, 0.9, 1.5},
@@ -862,6 +939,7 @@ var sectorRangeData = map[string]sectorRanges{
 		CashFlowGrowth: metricRange{-20, 10, 40}, RevenuePerEmployee: metricRange{150000, 300000, 700000}, IncomePerEmployee: metricRange{15000, 40000, 100000},
 	},
 	"Energy": {
+		PE: metricRange{5, 12, 25}, PEG: metricRange{0.3, 1.0, 2.5}, EVToEBITDA: metricRange{3, 6, 15}, PriceToFCF: metricRange{4, 10, 25}, PriceToBook: metricRange{0.8, 1.8, 4},
 		ROIC: metricRange{2, 8, 20}, ROE: metricRange{5, 15, 30}, OperatingMargin: metricRange{5, 15, 35},
 		GrossMargin: metricRange{15, 30, 55}, NetMargin: metricRange{2, 10, 25},
 		DebtToEquity: metricRange{0.2, 0.5, 1.5}, CurrentRatio: metricRange{0.8, 1.2, 2}, AssetTurnover: metricRange{0.3, 0.6, 1.0},
@@ -869,6 +947,7 @@ var sectorRangeData = map[string]sectorRanges{
 		CashFlowGrowth: metricRange{-40, 8, 60}, RevenuePerEmployee: metricRange{500000, 1200000, 3000000}, IncomePerEmployee: metricRange{50000, 150000, 400000},
 	},
 	"Basic Materials": {
+		PE: metricRange{6, 14, 30}, PEG: metricRange{0.3, 1.2, 2.5}, EVToEBITDA: metricRange{4, 8, 18}, PriceToFCF: metricRange{5, 12, 30}, PriceToBook: metricRange{0.8, 2, 5},
 		ROIC: metricRange{3, 9, 20}, ROE: metricRange{8, 15, 28}, OperatingMargin: metricRange{8, 15, 28},
 		GrossMargin: metricRange{15, 28, 45}, NetMargin: metricRange{3, 9, 18},
 		DebtToEquity: metricRange{0.2, 0.5, 1.5}, CurrentRatio: metricRange{1, 1.8, 3}, AssetTurnover: metricRange{0.4, 0.7, 1.2},
@@ -876,6 +955,7 @@ var sectorRangeData = map[string]sectorRanges{
 		CashFlowGrowth: metricRange{-30, 8, 50}, RevenuePerEmployee: metricRange{300000, 600000, 1500000}, IncomePerEmployee: metricRange{30000, 70000, 200000},
 	},
 	"Utilities": {
+		PE: metricRange{10, 18, 30}, PEG: metricRange{1.5, 2.5, 4.5}, EVToEBITDA: metricRange{8, 12, 20}, PriceToFCF: metricRange{8, 15, 30}, PriceToBook: metricRange{1, 2, 3.5},
 		ROIC: metricRange{2, 5, 10}, ROE: metricRange{6, 10, 15}, OperatingMargin: metricRange{15, 25, 40},
 		GrossMargin: metricRange{30, 45, 65}, NetMargin: metricRange{5, 12, 22},
 		DebtToEquity: metricRange{0.8, 1.2, 2.5}, CurrentRatio: metricRange{0.6, 0.9, 1.5}, AssetTurnover: metricRange{0.2, 0.3, 0.5},
@@ -883,6 +963,7 @@ var sectorRangeData = map[string]sectorRanges{
 		CashFlowGrowth: metricRange{-15, 5, 25}, RevenuePerEmployee: metricRange{400000, 800000, 1800000}, IncomePerEmployee: metricRange{50000, 100000, 250000},
 	},
 	"Real Estate": {
+		PE: metricRange{15, 35, 70}, PEG: metricRange{1, 2, 4}, EVToEBITDA: metricRange{10, 18, 35}, PriceToFCF: metricRange{12, 25, 50}, PriceToBook: metricRange{1, 2.5, 5},
 		ROIC: metricRange{2, 5, 12}, ROE: metricRange{4, 8, 15}, OperatingMargin: metricRange{20, 35, 55},
 		GrossMargin: metricRange{40, 60, 80}, NetMargin: metricRange{10, 25, 45},
 		DebtToEquity: metricRange{0.5, 1, 2.5}, CurrentRatio: metricRange{0.5, 1, 2}, AssetTurnover: metricRange{0.05, 0.1, 0.2},
@@ -890,6 +971,7 @@ var sectorRangeData = map[string]sectorRanges{
 		CashFlowGrowth: metricRange{-20, 5, 30}, RevenuePerEmployee: metricRange{200000, 500000, 1500000}, IncomePerEmployee: metricRange{30000, 100000, 400000},
 	},
 	"Communication Services": {
+		PE: metricRange{8, 18, 40}, PEG: metricRange{0.4, 1.3, 3}, EVToEBITDA: metricRange{5, 10, 22}, PriceToFCF: metricRange{6, 15, 35}, PriceToBook: metricRange{1.2, 3, 8},
 		ROIC: metricRange{4, 10, 22}, ROE: metricRange{8, 16, 32}, OperatingMargin: metricRange{10, 20, 35},
 		GrossMargin: metricRange{35, 55, 75}, NetMargin: metricRange{5, 15, 28},
 		DebtToEquity: metricRange{0.3, 0.8, 2}, CurrentRatio: metricRange{0.8, 1.3, 2.5}, AssetTurnover: metricRange{0.3, 0.5, 0.9},
@@ -1062,6 +1144,28 @@ func (s *Service) fetchAllStockData(ctx context.Context, ticker string) (*stockD
 		return nil
 	})
 
+	g1.Go(func() error {
+		technicalMetrics, err := s.legacyRepo.GetTechnicalMetrics(ctx1, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch technical metrics", "ticker", ticker, "error", err)
+			data.technicalMetrics = &TechnicalMetrics{}
+		} else {
+			data.technicalMetrics = technicalMetrics
+		}
+		return nil
+	})
+
+	g1.Go(func() error {
+		shortInterest, err := s.legacyRepo.GetShortInterest(ctx1, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch short interest", "ticker", ticker, "error", err)
+			data.shortInterest = &ShortInterest{}
+		} else {
+			data.shortInterest = shortInterest
+		}
+		return nil
+	})
+
 	if err := g1.Wait(); err != nil {
 		return nil, err
 	}
@@ -1169,21 +1273,23 @@ func (s *Service) buildStockResponse(data *stockData, stockScores Scores, signal
 	}
 
 	return &StockDetailResponse{
-		AssetType:       AssetTypeStock,
-		Company:         *data.company,
-		Quote:           *data.quote,
-		Performance:     *data.performance,
-		Scores:          &stockScores,
-		Signals:         signalList,
-		Valuation:       data.valuation,
-		Holdings:        data.holdings,
-		InsiderTrades:   data.insiderTrades,
-		InsiderActivity: data.insiderActivity,
-		Financials:      data.financials,
-		Profitability:   data.profitability,
-		FinancialHealth: data.financialHealth,
-		Growth:          data.growth,
-		EarningsQuality: data.earningsQuality,
+		AssetType:        AssetTypeStock,
+		Company:          *data.company,
+		Quote:            *data.quote,
+		Performance:      *data.performance,
+		Scores:           &stockScores,
+		Signals:          signalList,
+		Valuation:        data.valuation,
+		Holdings:         data.holdings,
+		InsiderTrades:    data.insiderTrades,
+		InsiderActivity:  data.insiderActivity,
+		Financials:       data.financials,
+		Profitability:    data.profitability,
+		FinancialHealth:  data.financialHealth,
+		Growth:           data.growth,
+		EarningsQuality:  data.earningsQuality,
+		TechnicalMetrics: data.technicalMetrics,
+		ShortInterest:    data.shortInterest,
 		Meta: DataMeta{
 			FundamentalsAsOf: fundamentalsDate,
 			HoldingsAsOf:     "N/A",

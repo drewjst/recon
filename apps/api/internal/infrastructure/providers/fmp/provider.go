@@ -221,6 +221,21 @@ func (p *Provider) GetIndustryAverages(ctx context.Context, industry string) (*m
 	return nil, nil
 }
 
+// GetTechnicalMetrics implements FundamentalsProvider.
+// Note: FMP doesn't provide this data in the same format. Returns nil.
+func (p *Provider) GetTechnicalMetrics(ctx context.Context, ticker string) (*models.TechnicalMetrics, error) {
+	// FMP doesn't have a dedicated technical metrics endpoint that matches our model.
+	// Future: could fetch from FMP's technical indicator endpoints if needed.
+	return nil, nil
+}
+
+// GetShortInterest implements FundamentalsProvider.
+// Note: FMP doesn't provide short interest data. Returns nil.
+func (p *Provider) GetShortInterest(ctx context.Context, ticker string) (*models.ShortInterest, error) {
+	// FMP doesn't have short interest data in the free tier.
+	return nil, nil
+}
+
 // getMostRecentFilingQuarter returns the most recent quarter with complete 13F filings.
 func getMostRecentFilingQuarter() (year int, quarter int) {
 	now := time.Now()
