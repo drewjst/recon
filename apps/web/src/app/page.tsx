@@ -61,13 +61,7 @@ function HomeContent() {
       title: 'News Sentiment',
       description: 'AI-powered news analysis and scoring',
       timeline: 'Q3 2025',
-    },
-    {
-      icon: GitCompare,
-      title: 'Compare Mode',
-      description: 'Side-by-side stock comparison',
-      timeline: 'Q2 2025',
-    },
+    }
   ];
 
   const scrollToSearch = () => {
