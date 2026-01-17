@@ -9,7 +9,7 @@ interface FinancialHealthSectionProps {
 }
 
 export function FinancialHealthSection({ data }: FinancialHealthSectionProps) {
-  const { financialHealth } = data;
+  const { company, financialHealth } = data;
   if (!financialHealth) return null;
 
   const metrics: SectorMetricConfig[] = [
@@ -34,8 +34,10 @@ export function FinancialHealthSection({ data }: FinancialHealthSectionProps) {
   // Filter out null metrics
   const validMetrics = metrics.filter((m) => m.metric !== null && m.metric !== undefined);
 
+  const shareText = `${company.ticker} Financial Health: D/E ${financialHealth.debtToEquity?.value.toFixed(2) ?? 'N/A'}, Current Ratio ${financialHealth.currentRatio?.value.toFixed(2) ?? 'N/A'}x`;
+
   return (
-    <SectionCard title="Financial Health">
+    <SectionCard title="Financial Health" shareTicker={company.ticker} shareText={shareText}>
       {validMetrics.length === 0 ? (
         <p className="text-sm text-muted-foreground">Financial health data not available.</p>
       ) : (

@@ -9,7 +9,7 @@ interface SmartMoneySectionProps {
 }
 
 export function SmartMoneySection({ data }: SmartMoneySectionProps) {
-  const { holdings, insiderActivity } = data;
+  const { company, holdings, insiderActivity } = data;
   if (!holdings) return null;
 
   const formatValue = (val: number) => {
@@ -26,8 +26,13 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
   const trades = insiderActivity?.trades ?? [];
   const hasInsiderActivity = buyCount > 0 || sellCount > 0;
 
+  const institutionalPct = holdings.totalInstitutionalOwnership > 0
+    ? `${(holdings.totalInstitutionalOwnership * 100).toFixed(1)}%`
+    : 'N/A';
+  const shareText = `${company.ticker} Smart Money: ${institutionalPct} institutional ownership, ${buyCount} insider buys / ${sellCount} sells (90d)`;
+
   return (
-    <SectionCard title="Smart Money">
+    <SectionCard title="Smart Money" shareTicker={company.ticker} shareText={shareText}>
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div>
           <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Institutional Ownership</div>

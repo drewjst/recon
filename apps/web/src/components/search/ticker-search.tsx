@@ -98,15 +98,15 @@ export function TickerSearch({ size = 'default', autoFocus = false, className }:
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Search ticker or company..."
+          placeholder="Search ticker..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
           autoFocus={autoFocus}
           className={cn(
-            'pl-10 pr-24',
-            isLarge && 'h-14 text-lg'
+            'pl-9 pr-20',
+            isLarge && 'h-14 text-lg pl-10 pr-24'
           )}
         />
         <Button

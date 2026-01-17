@@ -9,7 +9,7 @@ interface ProfitabilitySectionProps {
 }
 
 export function ProfitabilitySection({ data }: ProfitabilitySectionProps) {
-  const { profitability } = data;
+  const { company, profitability } = data;
   if (!profitability) return null;
 
   const metrics: SectorMetricConfig[] = [
@@ -39,8 +39,10 @@ export function ProfitabilitySection({ data }: ProfitabilitySectionProps) {
   // Filter out null metrics
   const validMetrics = metrics.filter((m) => m.metric !== null && m.metric !== undefined);
 
+  const shareText = `${company.ticker} Profitability: ROIC ${profitability.roic?.value.toFixed(1) ?? 'N/A'}%, ROE ${profitability.roe?.value.toFixed(1) ?? 'N/A'}%, Operating Margin ${profitability.operatingMargin?.value.toFixed(1) ?? 'N/A'}%`;
+
   return (
-    <SectionCard title="Profitability">
+    <SectionCard title="Profitability" shareTicker={company.ticker} shareText={shareText}>
       {validMetrics.length === 0 ? (
         <p className="text-sm text-muted-foreground">Profitability data not available.</p>
       ) : (
