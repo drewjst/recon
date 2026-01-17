@@ -102,7 +102,7 @@ if score > PiotroskiStrongSignal {
 | Decision | Rationale |
 |----------|-----------|
 | Chi router | Lightweight, idiomatic, good middleware support |
-| sqlx | Direct SQL control, no ORM magic |
+| GORM | ORM for cache tables, auto-migration support |
 | Explicit errors | Wrapped errors with `fmt.Errorf("context: %w", err)` |
 | slog | Structured logging, stdlib |
 | Constructor DI | Dependencies via function params, not globals |
@@ -111,15 +111,88 @@ if score > PiotroskiStrongSignal {
 
 | Technology | Purpose |
 |------------|---------|
-| PostgreSQL | Persistent data, financial records, user data |
-| Redis | Caching, rate limiting, session storage |
-| Explicit migrations | Version controlled, never auto-migrate in production |
+| PostgreSQL | Cache storage (JSONB), stock data persistence |
+| GORM auto-migrate | Schema management for cache tables |
 
 ### Shared Contracts (`/packages/shared`)
 
 - TypeScript interfaces define API request/response shapes
 - These are the **source of truth** for frontend types
 - Backend must conform to these contracts (validated in tests)
+
+### Data Providers
+
+We use two external data sources:
+
+| Provider | Purpose | Key Endpoints |
+|----------|---------|---------------|
+| **EODHD** | Fundamentals, financials, ratios, holdings, insider trades | `/fundamentals/{ticker}.US` |
+| **Polygon.io** | Ticker search, company metadata | `/v3/reference/tickers` |
+
+**Provider Architecture:**
+```
+internal/infrastructure/providers/
+├── interfaces.go       # FundamentalsProvider, QuoteProvider, SearchProvider
+├── factory.go          # Provider creation based on config
+├── eodhd/
+│   ├── client.go       # HTTP client, auth, rate limiting
+│   ├── provider.go     # Interface implementation
+│   ├── mapper.go       # EODHD response → canonical models
+│   └── types.go        # EODHD-specific response types
+└── fmp/                # Legacy provider (optional)
+    └── ...
+```
+
+**Key patterns:**
+- Providers implement interfaces defined in `interfaces.go`
+- All external data maps to canonical models in `internal/domain/models/`
+- Services depend on interfaces, not concrete providers
+- Provider selection via `FUNDAMENTALS_PROVIDER` environment variable
+
+### Caching Strategy
+
+Data is cached in PostgreSQL to minimize external API calls:
+
+| Data Type | Source | Cache TTL | Rationale |
+|-----------|--------|-----------|-----------|
+| Company Profile | EODHD | 24 hours | Rarely changes |
+| Financial Statements | EODHD | 24 hours | Updates quarterly |
+| Ratios/Metrics | EODHD | 24 hours | Derived from financials |
+| Institutional Holdings | EODHD | 24 hours | Updates quarterly (13F) |
+| Insider Trades | EODHD | 24 hours | Updates with SEC filings |
+| Technical Metrics | EODHD | 24 hours | Beta, moving averages |
+| Short Interest | EODHD | 24 hours | Updates bi-monthly |
+
+Cache is stored as JSONB in the `stock_cache` table, keyed by ticker.
+
+### Provider Implementation Guidelines
+
+When adding or modifying data providers:
+
+1. **Implement the interface** — All providers must satisfy `FundamentalsProvider`, `QuoteProvider`, or `SearchProvider`
+2. **Map to canonical models** — Never leak provider-specific types to domain layer
+3. **Handle errors gracefully** — Wrap external errors with context
+4. **Log API calls** — Use `slog` for structured logging
+5. **Use in-memory caching** — Provider-level cache (5 min TTL) reduces duplicate calls
+6. **Return nil for missing data** — Don't error on optional fields
+
+```go
+// Good: graceful handling of optional data
+func (p *Provider) GetDCF(ctx context.Context, ticker string) (*models.DCF, error) {
+    // Provider doesn't support this endpoint
+    return nil, nil
+}
+```
+
+### Environment Variables
+
+**Required API keys:**
+- `EODHD_API_KEY` — EODHD API key ([eodhd.com](https://eodhd.com))
+- `POLYGON_API_KEY` — Polygon.io API key ([polygon.io](https://polygon.io))
+
+**Optional:**
+- `FUNDAMENTALS_PROVIDER` — `"eodhd"` (default) or `"fmp"`
+- `DATABASE_URL` — PostgreSQL connection (enables caching)
 
 ---
 

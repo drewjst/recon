@@ -25,6 +25,15 @@ Recon synthesizes financial data into conviction scores and actionable signalsâ€
 | Data | EODHD API (fundamentals), Polygon.io API (search) |
 | Deployment | Google Cloud Run, GitHub Actions |
 
+## Data Sources
+
+| Provider | Data Type | Update Frequency |
+|----------|-----------|------------------|
+| [EODHD](https://eodhd.com) | Fundamentals, ratios, financials, holdings, insider trades | Daily/Quarterly |
+| [Polygon.io](https://polygon.io) | Ticker search, company metadata | Real-time |
+
+Data is cached in PostgreSQL for 24 hours to minimize API calls.
+
 ## Local Development
 
 ### Prerequisites
