@@ -67,7 +67,7 @@ jobs:
             --port 8080 \
             --add-cloudsql-instances=recon-484118:us-central1:cruxit-db \
             --set-secrets=FMP_API_KEY=fmp-api-key:latest,POLYGON_API_KEY=polygon-api-key:latest,DATABASE_URL=database-url:latest \
-            --set-env-vars=ALLOWED_ORIGINS=https://recon-web-prod-273165967255.us-central1.run.app \
+            --set-env-vars=ALLOWED_ORIGINS=https://cruxit.finance,https://recon-web-prod-273165967255.us-central1.run.app \
             --memory 512Mi \
             --cpu 1 \
             --min-instances 0 \
