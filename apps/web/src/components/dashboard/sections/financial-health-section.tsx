@@ -1,52 +1,76 @@
 'use client';
 
-import { SectionCard } from './section-card';
-import { SectorMetricRow, type SectorMetricConfig } from './sector-metric-row';
-import type { StockDetailResponse } from '@recon/shared';
+import { MetricSection, type Metric } from './metric-section';
+import type { StockDetailResponse, SectorMetric } from '@recon/shared';
 
 interface FinancialHealthSectionProps {
   data: StockDetailResponse;
+}
+
+/**
+ * Helper to convert SectorMetric to Metric format
+ */
+function toMetric(
+  key: string,
+  label: string,
+  sm: SectorMetric | undefined,
+  options: {
+    format: Metric['format'];
+    higherIsBetter: boolean;
+    info?: string;
+    learnMoreUrl?: string;
+  }
+): Metric {
+  return {
+    key,
+    label,
+    value: sm?.value ?? null,
+    industryAverage: sm?.sectorMedian ?? null,
+    percentile: sm?.percentile ?? null,
+    format: options.format,
+    higherIsBetter: options.higherIsBetter,
+    info: options.info,
+    learnMoreUrl: options.learnMoreUrl,
+  };
 }
 
 export function FinancialHealthSection({ data }: FinancialHealthSectionProps) {
   const { company, financialHealth } = data;
   if (!financialHealth) return null;
 
-  const metrics: SectorMetricConfig[] = [
-    {
-      label: 'Debt/Equity',
-      metric: financialHealth.debtToEquity,
-      formatValue: (v) => v.toFixed(2),
-      invertedScale: true, // Lower is better
-    },
-    {
-      label: 'Current Ratio',
-      metric: financialHealth.currentRatio,
-      formatValue: (v) => `${v.toFixed(2)}x`,
-    },
-    {
-      label: 'Asset Turnover',
-      metric: financialHealth.assetTurnover,
-      formatValue: (v) => `${v.toFixed(2)}x`,
-    },
+  // Build metrics array - order determines display priority
+  // For debt metrics, lower is generally better (higherIsBetter: false)
+  const metrics: Metric[] = [
+    toMetric('debtToEquity', 'Debt/Equity (TTM)', financialHealth.debtToEquity, {
+      format: 'ratio',
+      higherIsBetter: false, // Lower debt is better
+      info: 'Debt-to-Equity ratio measures financial leverage. Lower ratios indicate less reliance on debt financing.',
+      learnMoreUrl: 'https://www.investopedia.com/terms/d/debtequityratio.asp',
+    }),
+    toMetric('currentRatio', 'Current Ratio', financialHealth.currentRatio, {
+      format: 'ratio',
+      higherIsBetter: true, // Higher liquidity is better
+      info: 'Current Ratio measures short-term liquidity. A ratio above 1 indicates the company can cover its short-term obligations.',
+      learnMoreUrl: 'https://www.investopedia.com/terms/c/currentratio.asp',
+    }),
+    toMetric('assetTurnover', 'Asset Turnover', financialHealth.assetTurnover, {
+      format: 'ratio',
+      higherIsBetter: true, // Higher efficiency is better
+      info: 'Asset Turnover measures how efficiently a company uses its assets to generate revenue. Higher values indicate better efficiency.',
+      learnMoreUrl: 'https://www.investopedia.com/terms/a/assetturnover.asp',
+    }),
   ];
 
-  // Filter out null metrics
-  const validMetrics = metrics.filter((m) => m.metric !== null && m.metric !== undefined);
-
-  const shareText = `${company.ticker} Financial Health: D/E ${financialHealth.debtToEquity?.value.toFixed(2) ?? 'N/A'}, Current Ratio ${financialHealth.currentRatio?.value.toFixed(2) ?? 'N/A'}x`;
+  // Build share text
+  const shareText = `${company.ticker} Financial Health: D/E ${financialHealth.debtToEquity?.value?.toFixed(2) ?? 'N/A'}, Current Ratio ${financialHealth.currentRatio?.value?.toFixed(2) ?? 'N/A'}x`;
 
   return (
-    <SectionCard title="Financial Health" shareTicker={company.ticker} shareText={shareText}>
-      {validMetrics.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Financial health data not available.</p>
-      ) : (
-        <div>
-          {validMetrics.map((config) => (
-            <SectorMetricRow key={config.label} {...config} />
-          ))}
-        </div>
-      )}
-    </SectionCard>
+    <MetricSection
+      title="Financial Health"
+      ticker={company.ticker}
+      metrics={metrics}
+      topN={5}
+      shareText={shareText}
+    />
   );
 }

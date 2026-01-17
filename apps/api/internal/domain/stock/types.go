@@ -84,9 +84,11 @@ type SectorMetric struct {
 
 // Profitability contains profitability metrics with sector comparisons.
 type Profitability struct {
-	ROIC            SectorMetric `json:"roic"`
-	ROE             SectorMetric `json:"roe"`
-	OperatingMargin SectorMetric `json:"operatingMargin"`
+	ROIC            SectorMetric  `json:"roic"`
+	ROE             SectorMetric  `json:"roe"`
+	OperatingMargin SectorMetric  `json:"operatingMargin"`
+	GrossMargin     *SectorMetric `json:"grossMargin,omitempty"`
+	NetMargin       *SectorMetric `json:"netMargin,omitempty"`
 }
 
 // FinancialHealth contains financial health metrics with sector comparisons.
@@ -98,14 +100,19 @@ type FinancialHealth struct {
 
 // Growth contains growth metrics with sector comparisons.
 type Growth struct {
-	RevenueGrowthYoY SectorMetric `json:"revenueGrowthYoY"`
-	EPSGrowthYoY     SectorMetric `json:"epsGrowthYoY"`
+	RevenueGrowthYoY   SectorMetric  `json:"revenueGrowthYoY"`
+	EPSGrowthYoY       SectorMetric  `json:"epsGrowthYoY"`
+	ProjectedEPSGrowth *SectorMetric `json:"projectedEpsGrowth,omitempty"`
+	FreeCashFlowTTM    *SectorMetric `json:"freeCashFlowTTM,omitempty"`
+	CashFlowGrowthYoY  *SectorMetric `json:"cashFlowGrowthYoY,omitempty"`
 }
 
-// EarningsQuality contains earnings quality metrics with sector comparisons.
+// EarningsQuality contains earnings quality and operating metrics with sector comparisons.
 type EarningsQuality struct {
-	AccrualRatio  SectorMetric `json:"accrualRatio"`
-	BuybackYield  SectorMetric `json:"buybackYield"`
+	AccrualRatio       SectorMetric  `json:"accrualRatio"`
+	BuybackYield       SectorMetric  `json:"buybackYield"`
+	RevenuePerEmployee *SectorMetric `json:"revenuePerEmployee,omitempty"`
+	IncomePerEmployee  *SectorMetric `json:"incomePerEmployee,omitempty"`
 }
 
 // Financials contains key financial metrics.

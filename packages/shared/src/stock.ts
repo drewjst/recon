@@ -411,6 +411,10 @@ export interface Profitability {
   roe: SectorMetric;
   /** Operating Margin percentage - measures operational efficiency (higher is better) */
   operatingMargin: SectorMetric;
+  /** Gross Margin percentage - measures production efficiency (higher is better) */
+  grossMargin?: SectorMetric;
+  /** Net Margin percentage - bottom line profitability (higher is better) */
+  netMargin?: SectorMetric;
 }
 
 // =============================================================================
@@ -445,6 +449,12 @@ export interface Growth {
   revenueGrowthYoY: SectorMetric;
   /** Year-over-year earnings per share growth rate percentage */
   epsGrowthYoY: SectorMetric;
+  /** Projected EPS growth based on analyst estimates */
+  projectedEpsGrowth?: SectorMetric;
+  /** Free Cash Flow (TTM) in millions */
+  freeCashFlowTTM?: SectorMetric;
+  /** Year-over-year operating cash flow growth rate percentage */
+  cashFlowGrowthYoY?: SectorMetric;
 }
 
 // =============================================================================
@@ -452,9 +462,9 @@ export interface Growth {
 // =============================================================================
 
 /**
- * Earnings quality metrics with sector comparisons.
+ * Operating metrics and earnings quality with sector comparisons.
  *
- * These metrics assess the quality and sustainability of reported earnings.
+ * These metrics assess operational efficiency and the quality/sustainability of earnings.
  */
 export interface EarningsQuality {
   /**
@@ -467,6 +477,16 @@ export interface EarningsQuality {
    * Higher values indicate shareholder-friendly capital return
    */
   buybackYield: SectorMetric;
+  /**
+   * Revenue per Employee = Revenue TTM / Full-time Employees
+   * Higher values indicate better workforce productivity
+   */
+  revenuePerEmployee?: SectorMetric;
+  /**
+   * Income per Employee = Net Income TTM / Full-time Employees
+   * Higher values indicate better workforce profitability
+   */
+  incomePerEmployee?: SectorMetric;
 }
 
 // =============================================================================

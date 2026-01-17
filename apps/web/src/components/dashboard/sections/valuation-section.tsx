@@ -1,152 +1,98 @@
 'use client';
 
-import { Info, ExternalLink } from 'lucide-react';
-import { SectionCard } from './section-card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import type { StockDetailResponse } from '@recon/shared';
+import { MetricSection, type Metric } from './metric-section';
+import type { StockDetailResponse, ValuationMetric } from '@recon/shared';
 
 interface ValuationSectionProps {
   data: StockDetailResponse;
+}
+
+/**
+ * Helper to convert ValuationMetric to Metric format
+ */
+function toMetric(
+  key: string,
+  label: string,
+  vm: ValuationMetric | undefined,
+  options: {
+    format: Metric['format'];
+    higherIsBetter: boolean;
+    info?: string;
+    learnMoreUrl?: string;
+  }
+): Metric {
+  return {
+    key,
+    label,
+    value: vm?.value ?? null,
+    industryAverage: vm?.sectorMedian ?? null,
+    percentile: vm?.percentile ?? null,
+    format: options.format,
+    higherIsBetter: options.higherIsBetter,
+    info: options.info,
+    learnMoreUrl: options.learnMoreUrl,
+  };
 }
 
 export function ValuationSection({ data }: ValuationSectionProps) {
   const { company, valuation } = data;
   if (!valuation) return null;
 
-  // Build share text with P/E comparison
+  // Build metrics array - order determines display priority
+  // Top 5 shown by default: P/E, PEG, P/S (priceToFcf as proxy), P/B, EV/EBITDA
+  const metrics: Metric[] = [
+    toMetric('pe', 'P/E (TTM)', valuation.pe, {
+      format: 'ratio',
+      higherIsBetter: false, // Lower P/E is often considered better value
+      info: "Price-to-Earnings ratio compares a company's stock price to its earnings per share. Lower P/E may indicate undervaluation relative to earnings.",
+      learnMoreUrl: 'https://www.investopedia.com/terms/p/price-earningsratio.asp',
+    }),
+    toMetric('peg', 'PEG Ratio', valuation.peg, {
+      format: 'ratio',
+      higherIsBetter: false, // Lower PEG (< 1) suggests undervaluation
+      info: 'Price/Earnings-to-Growth ratio factors in expected earnings growth. A PEG below 1 may suggest the stock is undervalued relative to its growth.',
+      learnMoreUrl: 'https://www.investopedia.com/terms/p/pegratio.asp',
+    }),
+    toMetric('priceToFcf', 'Price/FCF', valuation.priceToFcf, {
+      format: 'ratio',
+      higherIsBetter: false,
+      info: 'Price-to-Free Cash Flow measures how the stock price compares to cash generated after capital expenditures. Lower values may indicate better value.',
+      learnMoreUrl: 'https://www.investopedia.com/terms/p/pricetofreecashflow.asp',
+    }),
+    toMetric('priceToBook', 'Price/Book', valuation.priceToBook, {
+      format: 'ratio',
+      higherIsBetter: false,
+      info: "Price-to-Book ratio compares market value to book value. A P/B below 1 may indicate the stock trades below the value of its net assets.",
+      learnMoreUrl: 'https://www.investopedia.com/terms/p/price-to-bookratio.asp',
+    }),
+    toMetric('evToEbitda', 'EV/EBITDA', valuation.evToEbitda, {
+      format: 'ratio',
+      higherIsBetter: false,
+      info: "Enterprise Value to EBITDA measures a company's total value relative to its operating earnings. Useful for comparing companies regardless of capital structure.",
+      learnMoreUrl: 'https://www.investopedia.com/terms/e/ev-ebitda.asp',
+    }),
+    toMetric('forwardPe', 'Forward P/E', valuation.forwardPe, {
+      format: 'ratio',
+      higherIsBetter: false,
+      info: 'Forward P/E uses estimated future earnings instead of trailing earnings. It can indicate expected growth or whether the market anticipates earnings changes.',
+      learnMoreUrl: 'https://www.investopedia.com/terms/f/forwardpe.asp',
+    }),
+  ];
+
+  // Build share text
   const pe = valuation.pe.value;
   const sectorPe = valuation.pe.sectorMedian;
   const shareText = pe && sectorPe
-    ? `${company.ticker} trades at ${pe.toFixed(1)}x P/E vs sector median ${sectorPe.toFixed(1)}x`
+    ? `${company.ticker} trades at ${pe.toFixed(1)}x P/E vs industry avg ${sectorPe.toFixed(1)}x`
     : `${company.ticker} valuation analysis on Cruxit`;
 
-  const rows = [
-    {
-      metric: 'P/E Ratio',
-      current: valuation.pe.value,
-      sector: valuation.pe.sectorMedian,
-      info: 'Price-to-Earnings ratio compares a company\'s stock price to its earnings per share. Lower P/E may indicate undervaluation relative to earnings.',
-      learnMoreUrl: 'https://www.investopedia.com/terms/p/price-earningsratio.asp',
-    },
-    {
-      metric: 'PEG Ratio',
-      current: valuation.peg.value,
-      sector: valuation.peg.sectorMedian,
-      info: 'Price/Earnings-to-Growth ratio factors in expected earnings growth. A PEG below 1 may suggest the stock is undervalued relative to its growth.',
-      learnMoreUrl: 'https://www.investopedia.com/terms/p/pegratio.asp',
-    },
-    {
-      metric: 'EV/EBITDA',
-      current: valuation.evToEbitda.value,
-      sector: valuation.evToEbitda.sectorMedian,
-      info: 'Enterprise Value to EBITDA measures a company\'s total value relative to its operating earnings. Useful for comparing companies regardless of capital structure.',
-      learnMoreUrl: 'https://www.investopedia.com/ask/answers/072815/how-can-i-find-companys-evebitda-multiple.asp',
-    },
-    {
-      metric: 'Price/FCF',
-      current: valuation.priceToFcf.value,
-      sector: valuation.priceToFcf.sectorMedian,
-      info: 'Price-to-Free Cash Flow measures how the stock price compares to cash generated after capital expenditures. Lower values may indicate better value.',
-      learnMoreUrl: 'https://www.investopedia.com/terms/p/pricetofreecashflow.asp',
-    },
-    {
-      metric: 'Price/Book',
-      current: valuation.priceToBook.value,
-      sector: valuation.priceToBook.sectorMedian,
-      info: 'Price-to-Book ratio compares market value to book value. A P/B below 1 may indicate the stock trades below the value of its net assets.',
-      learnMoreUrl: 'https://www.investopedia.com/terms/p/price-to-bookratio.asp',
-    },
-  ];
-
-  const validRows = rows.filter((row) => row.current !== null);
-
   return (
-    <SectionCard title="Valuation" shareTicker={company.ticker} shareText={shareText}>
-      {validRows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Valuation data not available.</p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border/50 hover:bg-transparent">
-              <TableHead className="w-[150px] text-muted-foreground">Metric</TableHead>
-              <TableHead className="text-right text-muted-foreground">Current</TableHead>
-              <TableHead className="text-right text-muted-foreground">Sector</TableHead>
-              <TableHead className="text-right text-muted-foreground">vs Sector</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {validRows.map((row) => {
-              const diff = row.sector ? ((row.current! - row.sector) / row.sector) * 100 : null;
-              return (
-                <TableRow key={row.metric} className="border-border/30 hover:bg-secondary/30">
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-1.5">
-                      {row.metric}
-                      {row.info && (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <button
-                              type="button"
-                              className="inline-flex items-center justify-center rounded-full p-1 hover:bg-muted/50 active:bg-muted focus:outline-none focus-visible:ring-1 focus-visible:ring-ring touch-manipulation"
-                              aria-label={`Info about ${row.metric}`}
-                            >
-                              <Info className="h-3.5 w-3.5 text-muted-foreground/60" />
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent side="top" align="center" className="w-64 p-3">
-                            <p className="text-xs text-muted-foreground leading-relaxed mb-2">{row.info}</p>
-                            {row.learnMoreUrl && (
-                              <a
-                                href={row.learnMoreUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-accent hover:underline font-medium"
-                              >
-                                Learn more
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            )}
-                          </PopoverContent>
-                        </Popover>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right font-mono">{row.current?.toFixed(1) ?? '-'}</TableCell>
-                  <TableCell className="text-right font-mono text-muted-foreground">
-                    {row.sector?.toFixed(1) ?? '-'}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {diff !== null ? (
-                      <span
-                        className={
-                          diff > 10
-                            ? 'text-destructive'
-                            : diff < -10
-                            ? 'text-success'
-                            : 'text-muted-foreground'
-                        }
-                      >
-                        {diff > 0 ? '+' : ''}
-                        {diff.toFixed(0)}%
-                      </span>
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      )}
-    </SectionCard>
+    <MetricSection
+      title="Valuation"
+      ticker={company.ticker}
+      metrics={metrics}
+      topN={5}
+      shareText={shareText}
+    />
   );
 }

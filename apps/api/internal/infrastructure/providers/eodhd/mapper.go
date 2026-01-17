@@ -42,7 +42,7 @@ func mapCompany(e *FundamentalsResponse) *models.Company {
 
 // mapRatios converts EODHD Highlights and Valuation to internal Ratios model.
 func mapRatios(e *FundamentalsResponse) *models.Ratios {
-	return &models.Ratios{
+	ratios := &models.Ratios{
 		Ticker: e.General.Code,
 		AsOf:   time.Now(),
 
@@ -61,18 +61,38 @@ func mapRatios(e *FundamentalsResponse) *models.Ratios {
 		ROE:             e.Highlights.ReturnOnEquityTTM * 100,
 		ROA:             e.Highlights.ReturnOnAssetsTTM * 100,
 
-		// Note: EODHD doesn't provide these in Highlights, would need to calculate
-		// from financial statements if needed
-		// PriceToFCF: calculated separately if needed
-		// FCFMargin: calculated separately if needed
-		// ROIC: calculated separately if needed
-		// AssetTurnover: calculated separately if needed
-		// InventoryTurnover: calculated separately if needed
-		// DebtToEquity: calculated separately if needed
-		// CurrentRatio: calculated separately if needed
-		// QuickRatio: calculated separately if needed
-		// InterestCoverage: calculated separately if needed
+		// Growth metrics from EODHD
+		EPSEstimateCurrent: e.Highlights.EPSEstimateCurrentYear,
+		EPSEstimateNext:    e.Highlights.EPSEstimateNextYear,
+		RevenueGrowthYoY:   e.Highlights.QuarterlyRevenueGrowthYOY * 100,
+		EPSGrowthYoY:       e.Highlights.QuarterlyEarningsGrowthYOY * 100,
+
+		// Revenue/Income for per-employee calculations
+		RevenueTTM:        e.Highlights.RevenueTTM,
+		FullTimeEmployees: e.General.FullTimeEmployees,
 	}
+
+	// Calculate projected EPS growth
+	if e.Highlights.EarningsShare > 0 && e.Highlights.EPSEstimateNextYear > 0 {
+		ratios.EPSGrowthYoY = ((e.Highlights.EPSEstimateNextYear - e.Highlights.EarningsShare) / e.Highlights.EarningsShare) * 100
+	}
+
+	// Calculate per-employee metrics
+	if e.General.FullTimeEmployees > 0 {
+		ratios.RevenuePerEmployee = e.Highlights.RevenueTTM / float64(e.General.FullTimeEmployees)
+		// Get net income from most recent year's financial statements
+		if netIncome := getLatestNetIncome(e); netIncome != 0 {
+			ratios.NetIncomeTTM = netIncome
+			ratios.IncomePerEmployee = netIncome / float64(e.General.FullTimeEmployees)
+		}
+	}
+
+	// Calculate FCF TTM and growth from cash flow statements
+	fcfTTM, fcfGrowth := calculateFCFMetrics(e)
+	ratios.FreeCashFlowTTM = fcfTTM
+	ratios.CashFlowGrowthYoY = fcfGrowth
+
+	return ratios
 }
 
 // calculateGrossMargin calculates gross margin from revenue and gross profit.
@@ -81,6 +101,54 @@ func calculateGrossMargin(e *FundamentalsResponse) float64 {
 		return 0
 	}
 	return (e.Highlights.GrossProfitTTM / e.Highlights.RevenueTTM) * 100
+}
+
+// getLatestNetIncome extracts the most recent net income from financial statements.
+func getLatestNetIncome(e *FundamentalsResponse) float64 {
+	dates := getSortedPeriods(e.Financials.IncomeStatement.Yearly)
+	if len(dates) == 0 {
+		return 0
+	}
+	latest := e.Financials.IncomeStatement.Yearly[dates[0]]
+	return latest.NetIncome
+}
+
+// calculateFCFMetrics calculates FCF TTM and YoY growth from cash flow statements.
+func calculateFCFMetrics(e *FundamentalsResponse) (fcfTTM, fcfGrowth float64) {
+	dates := getSortedPeriods(e.Financials.CashFlow.Yearly)
+	if len(dates) == 0 {
+		return 0, 0
+	}
+
+	// Get most recent FCF
+	latest := e.Financials.CashFlow.Yearly[dates[0]]
+	fcfTTM = latest.FreeCashFlow
+	if fcfTTM == 0 && latest.OperatingCashFlow != 0 {
+		// Calculate from OCF - CapEx if not directly provided
+		fcfTTM = latest.OperatingCashFlow - abs64(latest.CapitalExpenditures)
+	}
+
+	// Calculate YoY growth if we have prior year data
+	if len(dates) >= 2 {
+		prior := e.Financials.CashFlow.Yearly[dates[1]]
+		priorFCF := prior.FreeCashFlow
+		if priorFCF == 0 && prior.OperatingCashFlow != 0 {
+			priorFCF = prior.OperatingCashFlow - abs64(prior.CapitalExpenditures)
+		}
+		if priorFCF != 0 {
+			fcfGrowth = ((fcfTTM - priorFCF) / abs64(priorFCF)) * 100
+		}
+	}
+
+	return fcfTTM, fcfGrowth
+}
+
+// abs64 returns the absolute value of a float64.
+func abs64(n float64) float64 {
+	if n < 0 {
+		return -n
+	}
+	return n
 }
 
 // mapFinancials converts EODHD financial statements to internal Financials model.

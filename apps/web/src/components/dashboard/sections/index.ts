@@ -14,3 +14,6 @@ export { ETFOverviewSection } from './etf-overview-section';
 export { HoldingsTableSection } from './holdings-table-section';
 export { SectorBreakdownSection } from './sector-breakdown-section';
 export { SectorMetricRow } from './sector-metric-row';
+export { PercentileBar } from './percentile-bar';
+export { MetricRow } from './metric-row';
+export { MetricSection } from './metric-section';
