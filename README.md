@@ -20,7 +20,8 @@ Recon synthesizes financial data into conviction scores and actionable signals�
 | Layer | Technology |
 |-------|------------|
 | Frontend | Next.js 14, React 18, TanStack Query, Tailwind CSS, shadcn/ui |
-| Backend | Go 1.23, Chi Router |
+| Backend | Go 1.23, Chi Router, GORM |
+| Database | PostgreSQL (Cloud SQL) — caches fundamentals for 24h |
 | Data | Financial Modeling Prep API, Polygon.io API |
 | Deployment | Google Cloud Run, GitHub Actions |
 
@@ -67,6 +68,7 @@ cd apps/web && pnpm dev
 |----------|----------|-------------|
 | `FMP_API_KEY` | Yes | Financial Modeling Prep API key |
 | `POLYGON_API_KEY` | Yes | Polygon.io API key (for ticker search) |
+| `DATABASE_URL` | No | PostgreSQL connection string (enables caching) |
 | `PORT` | No | Server port (default: 8080) |
 | `ALLOWED_ORIGINS` | No | CORS origins (default: http://localhost:3000) |
 
@@ -129,8 +131,8 @@ recon/
 │   │   ├── cmd/api/            # Entry point
 │   │   └── internal/
 │   │       ├── api/            # Router, handlers, middleware
-│   │       ├── domain/         # Business logic (stock, scores, signals, search)
-│   │       └── infrastructure/ # External API clients (FMP, Polygon)
+│   │       ├── domain/         # Business logic, models, services
+│   │       └── infrastructure/ # DB, providers (FMP, Polygon)
 │   │
 │   └── web/                    # Next.js frontend
 │       └── src/
@@ -145,11 +147,12 @@ recon/
 
 ## Deployment
 
-Hosted on **Google Cloud Run** with automated CI/CD via GitHub Actions.
+Hosted on **Google Cloud Run** with **Cloud SQL** (PostgreSQL) for caching.
 
-- Push to `main` triggers Cloud Build
-- Docker images built and pushed to Container Registry
-- Cloud Run services auto-updated with new revisions
+- Push to `main` deploys to dev environment
+- Release publish deploys to production
+- Secrets managed via Google Secret Manager
+- Database auto-migrates on startup
 
 ## Contributing
 
