@@ -254,9 +254,9 @@ type KeyMetricsTTM struct {
 	EVToEBITDATTM               float64 `json:"evToEBITDATTM"`
 	EVToSalesTTM                float64 `json:"evToSalesTTM"`
 	MarketCap                   float64 `json:"marketCap"`
-	ReturnOnAssetsTTM           float64 `json:"roaTTM"`
-	ReturnOnEquityTTM           float64 `json:"roeTTM"`
-	ReturnOnInvestedCapitalTTM  float64 `json:"roicTTM"`
+	ReturnOnAssetsTTM           float64 `json:"returnOnAssetsTTM"`
+	ReturnOnEquityTTM           float64 `json:"returnOnEquityTTM"`
+	ReturnOnInvestedCapitalTTM  float64 `json:"returnOnInvestedCapitalTTM"`
 }
 
 // DCF represents the FMP discounted cash flow response.
