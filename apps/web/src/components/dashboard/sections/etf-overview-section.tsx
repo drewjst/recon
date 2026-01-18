@@ -10,16 +10,35 @@ interface ETFOverviewSectionProps {
 }
 
 function formatAUM(aum: number): string {
+  if (!aum || aum === 0) return 'N/A';
   if (aum >= 1e12) return `$${(aum / 1e12).toFixed(2)}T`;
-  if (aum >= 1e9) return `$${(aum / 1e9).toFixed(2)}B`;
+  if (aum >= 1e9) return `$${(aum / 1e9).toFixed(1)}B`;
   if (aum >= 1e6) return `$${(aum / 1e6).toFixed(0)}M`;
   return `$${aum.toLocaleString()}`;
+}
+
+function formatVolume(volume: number): string {
+  if (!volume || volume === 0) return 'N/A';
+  if (volume >= 1e9) return `${(volume / 1e9).toFixed(2)}B`;
+  if (volume >= 1e6) return `${(volume / 1e6).toFixed(1)}M`;
+  if (volume >= 1e3) return `${(volume / 1e3).toFixed(0)}K`;
+  return volume.toLocaleString();
 }
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return 'N/A';
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+}
+
+function formatNAV(nav: number): string {
+  if (!nav || nav === 0) return 'N/A';
+  return `$${nav.toFixed(2)}`;
+}
+
+function formatBeta(beta: number): string {
+  if (!beta && beta !== 0) return 'N/A';
+  return beta.toFixed(2);
 }
 
 function getExpenseRatioAssessment(ratio: number): string {
@@ -51,40 +70,77 @@ function ETFOverviewSectionComponent({ data }: ETFOverviewSectionProps) {
   const { etfData } = data;
   if (!etfData) return null;
 
-  const metrics = [
+  // Row 1: Expense Ratio | Market Cap | NAV | Inception
+  const row1Metrics = [
     {
       label: 'Expense Ratio',
-      value: `${(etfData.expenseRatio * 100).toFixed(2)}%`,
-      description: getExpenseRatioAssessment(etfData.expenseRatio),
+      value: etfData.expenseRatio ? `${etfData.expenseRatio.toFixed(2)}%` : 'N/A',
+      description: etfData.expenseRatio ? getExpenseRatioAssessment(etfData.expenseRatio) : '',
     },
     {
-      label: 'AUM',
+      label: 'Market Cap',
       value: formatAUM(etfData.aum),
-      description: 'Assets Under Management',
+      description: 'Fund Size',
     },
     {
-      label: 'Yield',
-      value: etfData.yield ? `${etfData.yield.toFixed(2)}%` : 'N/A',
-      description: 'Distribution Yield',
+      label: 'NAV',
+      value: formatNAV(etfData.nav),
+      description: 'Net Asset Value',
     },
     {
       label: 'Inception',
       value: formatDate(etfData.inceptionDate),
-      description: 'Fund Start Date',
+      description: 'Fund Start',
+    },
+  ];
+
+  // Row 2: Volume | Beta | Holdings | Domicile
+  const row2Metrics = [
+    {
+      label: 'Volume',
+      value: formatVolume(etfData.avgVolume),
+      description: 'Avg Daily',
+    },
+    {
+      label: 'Beta',
+      value: formatBeta(etfData.beta),
+      description: 'vs Market',
+    },
+    {
+      label: 'Holdings',
+      value: etfData.holdingsCount ? etfData.holdingsCount.toString() : 'N/A',
+      description: 'Positions',
+    },
+    {
+      label: 'Domicile',
+      value: etfData.domicile || 'N/A',
+      description: 'Country',
     },
   ];
 
   return (
     <SectionCard title="Fund Overview">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {metrics.map((metric) => (
-          <MetricCard
-            key={metric.label}
-            label={metric.label}
-            value={metric.value}
-            description={metric.description}
-          />
-        ))}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {row1Metrics.map((metric) => (
+            <MetricCard
+              key={metric.label}
+              label={metric.label}
+              value={metric.value}
+              description={metric.description}
+            />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {row2Metrics.map((metric) => (
+            <MetricCard
+              key={metric.label}
+              label={metric.label}
+              value={metric.value}
+              description={metric.description}
+            />
+          ))}
+        </div>
       </div>
     </SectionCard>
   );

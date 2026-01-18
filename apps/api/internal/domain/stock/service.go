@@ -544,7 +544,11 @@ func convertETFDataFromModel(m *models.ETFData) *ETFData {
 	return &ETFData{
 		ExpenseRatio:       m.ExpenseRatio,
 		AUM:                m.AUM,
-		Yield:              m.Yield,
+		NAV:                m.NAV,
+		AvgVolume:          m.AvgVolume,
+		Beta:               m.Beta,
+		HoldingsCount:      m.HoldingsCount,
+		Domicile:           m.Domicile,
 		InceptionDate:      m.InceptionDate,
 		Holdings:           holdings,
 		SectorWeights:      sectorWeights,

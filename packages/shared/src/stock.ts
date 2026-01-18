@@ -648,12 +648,20 @@ export interface ETFPerformance {
  * ETF-specific data not applicable to individual stocks.
  */
 export interface ETFData {
-  /** Annual expense ratio as percentage (e.g., 0.03 for 0.03%) */
+  /** Annual expense ratio as percentage (e.g., 0.09 for 0.09%) */
   expenseRatio: number;
-  /** Assets under management in USD */
+  /** Assets under management / Net assets in USD */
   aum: number;
-  /** Distribution yield percentage */
-  yield: number;
+  /** Net Asset Value per share */
+  nav: number;
+  /** Average daily trading volume */
+  avgVolume: number;
+  /** Beta relative to market (1.0 = market) */
+  beta: number;
+  /** Total number of holdings in the ETF */
+  holdingsCount: number;
+  /** Fund domicile country (e.g., "US", "IE") */
+  domicile: string;
   /** Fund inception date (ISO 8601) */
   inceptionDate: string;
   /** Top holdings by weight */

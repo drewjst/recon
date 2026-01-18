@@ -248,7 +248,11 @@ type ETFPerformance struct {
 type ETFData struct {
 	ExpenseRatio       float64            `json:"expenseRatio"`
 	AUM                int64              `json:"aum"`
-	Yield              float64            `json:"yield"`
+	NAV                float64            `json:"nav"`
+	AvgVolume          int64              `json:"avgVolume"`
+	Beta               float64            `json:"beta"`
+	HoldingsCount      int                `json:"holdingsCount"`
+	Domicile           string             `json:"domicile"`
 	InceptionDate      string             `json:"inceptionDate"`
 	Holdings           []ETFHolding       `json:"holdings"`
 	SectorWeights      []ETFSectorWeight  `json:"sectorWeights"`

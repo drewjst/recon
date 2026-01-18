@@ -227,7 +227,7 @@ func parseYear(date string) (int, error) {
 }
 
 // mapETFData converts FMP ETF data to internal ETFData model.
-func mapETFData(info *ETFInfo, holdings []ETFHolding, sectors []ETFSectorWeighting) *models.ETFData {
+func mapETFData(info *ETFInfo, holdings []ETFHolding, sectors []ETFSectorWeighting, profile *CompanyProfile) *models.ETFData {
 	if info == nil {
 		return nil
 	}
@@ -257,9 +257,35 @@ func mapETFData(info *ETFInfo, holdings []ETFHolding, sectors []ETFSectorWeighti
 		})
 	}
 
+	// Determine AUM: prefer netAssets, fall back to aum, then MarketCap from profile
+	aum := int64(info.NetAssets)
+	if aum == 0 {
+		aum = int64(info.AUM)
+	}
+	if aum == 0 && profile != nil {
+		aum = int64(profile.MarketCap)
+	}
+
+	// Get beta from profile if available
+	var beta float64
+	if profile != nil {
+		beta = profile.Beta
+	}
+
+	// Use avgVolume from ETF info, fall back to profile
+	avgVolume := info.AvgVolume
+	if avgVolume == 0 && profile != nil {
+		avgVolume = int64(profile.VolAvg)
+	}
+
 	return &models.ETFData{
-		ExpenseRatio:  info.ExpenseRatio,
-		AUM:           int64(info.AUM),
+		ExpenseRatio:  info.ExpenseRatio * 100, // Convert to percentage (0.0009 -> 0.09)
+		AUM:           aum,
+		NAV:           info.NAV,
+		AvgVolume:     avgVolume,
+		Beta:          beta,
+		HoldingsCount: len(holdings),
+		Domicile:      info.Domicile,
 		InceptionDate: info.InceptionDate,
 		Holdings:      modelHoldings,
 		SectorWeights: sectorWeights,

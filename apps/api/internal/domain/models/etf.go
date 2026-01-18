@@ -5,7 +5,11 @@ package models
 type ETFData struct {
 	ExpenseRatio       float64
 	AUM                int64
-	Yield              float64
+	NAV                float64
+	AvgVolume          int64
+	Beta               float64
+	HoldingsCount      int
+	Domicile           string
 	InceptionDate      string
 	Holdings           []ETFHolding
 	SectorWeights      []ETFSectorWeight

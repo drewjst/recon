@@ -469,12 +469,14 @@ func mapETFData(etf *ETFData) *models.ETFData {
 		return nil
 	}
 
+	holdings := mapETFHoldings(etf.Holdings)
+
 	return &models.ETFData{
 		ExpenseRatio:       float64(etf.NetExpenseRatio),
 		AUM:                int64(etf.TotalAssets),
-		Yield:              float64(etf.Yield),
+		HoldingsCount:      len(holdings),
 		InceptionDate:      etf.InceptionDate,
-		Holdings:           mapETFHoldings(etf.Holdings),
+		Holdings:           holdings,
 		SectorWeights:      mapETFSectorWeights(etf.SectorWeights),
 		Regions:            mapETFRegions(etf.WorldRegions),
 		MarketCapBreakdown: mapETFMarketCap(etf.MarketCapitalisation),

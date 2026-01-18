@@ -274,11 +274,12 @@ func (p *Provider) IsETF(ctx context.Context, ticker string) (bool, error) {
 }
 
 // GetETFData implements FundamentalsProvider.
-// Fetches ETF info, holdings, and sector weightings from FMP.
+// Fetches ETF info, holdings, sector weightings, and profile (for beta) from FMP.
 func (p *Provider) GetETFData(ctx context.Context, ticker string) (*models.ETFData, error) {
 	var info *ETFInfo
 	var holdings []ETFHolding
 	var sectors []ETFSectorWeighting
+	var profile *CompanyProfile
 
 	g, gctx := errgroup.WithContext(ctx)
 
@@ -309,6 +310,15 @@ func (p *Provider) GetETFData(ctx context.Context, ticker string) (*models.ETFDa
 		return nil
 	})
 
+	g.Go(func() error {
+		var err error
+		profile, err = p.client.GetCompanyProfile(gctx, ticker)
+		if err != nil {
+			slog.Debug("failed to fetch ETF profile for beta", "ticker", ticker, "error", err)
+		}
+		return nil
+	})
+
 	if err := g.Wait(); err != nil {
 		return nil, fmt.Errorf("fetching ETF data: %w", err)
 	}
@@ -318,7 +328,7 @@ func (p *Provider) GetETFData(ctx context.Context, ticker string) (*models.ETFDa
 		return nil, nil
 	}
 
-	return mapETFData(info, holdings, sectors), nil
+	return mapETFData(info, holdings, sectors, profile), nil
 }
 
 // GetAnalystEstimates implements FundamentalsProvider.
