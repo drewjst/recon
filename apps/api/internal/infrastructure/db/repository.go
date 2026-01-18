@@ -47,3 +47,21 @@ func (r *Repository) UpsertStock(stock *StockCache) error {
 	}
 	return nil
 }
+
+// DeleteStock removes a cached stock by ticker.
+func (r *Repository) DeleteStock(ticker string) error {
+	result := r.db.Where("ticker = ?", ticker).Delete(&StockCache{})
+	if result.Error != nil {
+		return fmt.Errorf("deleting stock cache: %w", result.Error)
+	}
+	return nil
+}
+
+// DeleteAllStocks removes all cached stocks.
+func (r *Repository) DeleteAllStocks() error {
+	result := r.db.Exec("TRUNCATE TABLE stock_caches")
+	if result.Error != nil {
+		return fmt.Errorf("truncating stock cache: %w", result.Error)
+	}
+	return nil
+}

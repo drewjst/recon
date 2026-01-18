@@ -5,8 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log/slog"
 	"net/http"
 	"time"
 )
@@ -230,35 +228,14 @@ func (c *Client) GetDCF(ctx context.Context, ticker string) (*DCF, error) {
 func (c *Client) GetETFInfo(ctx context.Context, ticker string) (*ETFInfo, error) {
 	url := fmt.Sprintf("%s/etf/info?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
 
-	// Debug: fetch raw response to see actual field names
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("making request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("reading response body: %w", err)
-	}
-
-	slog.Info("FMP ETF info raw response", "ticker", ticker, "body", string(body))
-
 	var info []ETFInfo
-	if err := json.Unmarshal(body, &info); err != nil {
-		return nil, fmt.Errorf("decoding response: %w", err)
+	if err := c.get(ctx, url, &info); err != nil {
+		return nil, fmt.Errorf("fetching ETF info: %w", err)
 	}
 
 	if len(info) == 0 {
 		return nil, nil
 	}
-
-	slog.Info("FMP ETF info parsed", "ticker", ticker, "info", info[0])
 
 	return &info[0], nil
 }
