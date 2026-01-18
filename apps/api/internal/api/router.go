@@ -27,6 +27,8 @@ func NewRouter(deps RouterDeps) *chi.Mux {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.CORS(deps.AllowedOrigins))
+	r.Use(middleware.SecurityHeaders)
+	r.Use(middleware.RateLimit(10)) // 10 requests per second per IP
 
 	// Health check (no auth required)
 	healthHandler := handlers.NewHealthHandler()
