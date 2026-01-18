@@ -278,16 +278,20 @@ func (c *Client) GetInstitutionalHolders(ctx context.Context, ticker string, yea
 	return holders, nil
 }
 
-// GetAnalystRecommendations retrieves analyst buy/hold/sell ratings.
-func (c *Client) GetAnalystRecommendations(ctx context.Context, ticker string) ([]AnalystRecommendation, error) {
-	url := fmt.Sprintf("%s/analyst-stock-recommendations?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+// GetGradesConsensus retrieves pre-aggregated analyst grades consensus.
+func (c *Client) GetGradesConsensus(ctx context.Context, ticker string) (*GradesConsensus, error) {
+	url := fmt.Sprintf("%s/grades-consensus?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
 
-	var recommendations []AnalystRecommendation
-	if err := c.get(ctx, url, &recommendations); err != nil {
-		return nil, fmt.Errorf("fetching analyst recommendations: %w", err)
+	var consensus []GradesConsensus
+	if err := c.get(ctx, url, &consensus); err != nil {
+		return nil, fmt.Errorf("fetching grades consensus: %w", err)
 	}
 
-	return recommendations, nil
+	if len(consensus) == 0 {
+		return nil, nil
+	}
+
+	return &consensus[0], nil
 }
 
 // GetPriceTargetConsensus retrieves analyst price target consensus.

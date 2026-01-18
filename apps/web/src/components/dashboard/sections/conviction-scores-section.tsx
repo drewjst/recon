@@ -5,7 +5,7 @@ import { Info, ExternalLink } from 'lucide-react';
 import { SectionCard } from './section-card';
 import { Card } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import type { StockDetailResponse } from '@recon/shared';
+import type { StockDetailResponse, AnalystEstimates } from '@recon/shared';
 
 interface ConvictionScoresSectionProps {
   data: StockDetailResponse;
@@ -81,14 +81,106 @@ const getAltmanStatus = (zone: string): 'positive' | 'neutral' | 'negative' => {
   return 'negative';
 };
 
-const getDCFStatus = (assessment: string): 'positive' | 'neutral' | 'negative' => {
-  if (assessment === 'Undervalued') return 'positive';
-  if (assessment === 'Fairly Valued') return 'neutral';
-  return 'negative';
-};
+interface AnalystConsensusProps {
+  estimates: AnalystEstimates;
+  currentPrice: number;
+}
+
+const AnalystConsensus = memo(function AnalystConsensus({ estimates, currentPrice }: AnalystConsensusProps) {
+  const buyCount = estimates.strongBuyCount + estimates.buyCount;
+  const holdCount = estimates.holdCount;
+  const sellCount = estimates.sellCount + estimates.strongSellCount;
+  const total = buyCount + holdCount + sellCount;
+
+  if (total === 0) {
+    return (
+      <Card className="p-4 mt-4 border-border/50">
+        <div className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Analyst Consensus</div>
+        <div className="text-sm text-muted-foreground">No analyst coverage</div>
+      </Card>
+    );
+  }
+
+  const buyPercent = (buyCount / total) * 100;
+  const holdPercent = (holdCount / total) * 100;
+  const sellPercent = (sellCount / total) * 100;
+
+  const targetPrice = estimates.priceTargetAverage;
+  const upside = currentPrice > 0 ? ((targetPrice - currentPrice) / currentPrice) * 100 : 0;
+  const isPositive = upside >= 0;
+
+  return (
+    <Card className="p-4 mt-4 border-border/50">
+      <div className="flex items-center gap-1 mb-3">
+        <div className="text-xs text-muted-foreground uppercase tracking-widest">Analyst Consensus</div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-full p-1 hover:bg-muted/50 active:bg-muted focus:outline-none focus-visible:ring-1 focus-visible:ring-ring touch-manipulation"
+              aria-label="Info about Analyst Consensus"
+            >
+              <Info className="h-3.5 w-3.5 text-muted-foreground/60" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="start" className="w-64 p-3">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Wall Street analyst ratings aggregated from major brokerages. Buy includes Strong Buy ratings, Sell includes Strong Sell ratings.
+            </p>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Stacked bar */}
+      <div className="h-2 rounded-full overflow-hidden flex mb-3">
+        {buyPercent > 0 && (
+          <div
+            className="bg-success h-full"
+            style={{ width: `${buyPercent}%` }}
+          />
+        )}
+        {holdPercent > 0 && (
+          <div
+            className="bg-muted-foreground/40 h-full"
+            style={{ width: `${holdPercent}%` }}
+          />
+        )}
+        {sellPercent > 0 && (
+          <div
+            className="bg-destructive h-full"
+            style={{ width: `${sellPercent}%` }}
+          />
+        )}
+      </div>
+
+      {/* Labels row */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm">
+          <span className="text-success font-medium">{buyCount}</span>
+          <span className="text-muted-foreground"> Buy</span>
+          <span className="text-muted-foreground mx-1.5">·</span>
+          <span className="text-muted-foreground font-medium">{holdCount}</span>
+          <span className="text-muted-foreground"> Hold</span>
+          <span className="text-muted-foreground mx-1.5">·</span>
+          <span className="text-destructive font-medium">{sellCount}</span>
+          <span className="text-muted-foreground"> Sell</span>
+        </div>
+
+        {targetPrice > 0 && (
+          <div className="text-right">
+            <div className="text-sm font-medium">${targetPrice.toFixed(0)} Target</div>
+            <div className={`text-xs ${isPositive ? 'text-success' : 'text-destructive'}`}>
+              {isPositive ? '+' : ''}{upside.toFixed(0)}% {isPositive ? 'upside' : 'downside'}
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+});
 
 function ConvictionScoresSectionComponent({ data }: ConvictionScoresSectionProps) {
-  const { company, scores } = data;
+  const { company, scores, analystEstimates, quote } = data;
   if (!scores) return null;
 
   const ruleOf40Emoji = scores.ruleOf40.passed ? '✓' : '✗';
@@ -100,7 +192,7 @@ function ConvictionScoresSectionComponent({ data }: ConvictionScoresSectionProps
       shareTicker={company.ticker}
       shareText={shareText}
     >
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <ScoreBox
           label="Piotroski"
           value={`${scores.piotroski.score}/9`}
@@ -125,19 +217,11 @@ function ConvictionScoresSectionComponent({ data }: ConvictionScoresSectionProps
           tooltip="Bankruptcy risk predictor. Above 2.99 is safe, 1.81-2.99 is gray zone, below 1.81 indicates distress."
           learnMoreUrl="https://www.investopedia.com/terms/a/altman.asp"
         />
-        <ScoreBox
-          label="DCF Value"
-          value={scores.dcfValuation.intrinsicValue ? `$${scores.dcfValuation.intrinsicValue.toFixed(0)}` : 'N/A'}
-          description={
-            scores.dcfValuation.differencePercent
-              ? `${scores.dcfValuation.differencePercent > 0 ? '+' : ''}${scores.dcfValuation.differencePercent.toFixed(0)}% vs price`
-              : scores.dcfValuation.assessment
-          }
-          status={getDCFStatus(scores.dcfValuation.assessment)}
-          tooltip="Discounted Cash Flow intrinsic value vs current price. Undervalued if DCF is 15%+ above price, Overvalued if 15%+ below."
-          learnMoreUrl="https://www.investopedia.com/terms/d/dcf.asp"
-        />
       </div>
+
+      {analystEstimates && (
+        <AnalystConsensus estimates={analystEstimates} currentPrice={quote.price} />
+      )}
     </SectionCard>
   );
 }

@@ -352,7 +352,7 @@ func (p *Provider) GetETFData(ctx context.Context, ticker string) (*models.ETFDa
 // GetAnalystEstimates implements FundamentalsProvider.
 // Fetches analyst ratings, price targets, and EPS/revenue estimates from FMP.
 func (p *Provider) GetAnalystEstimates(ctx context.Context, ticker string) (*models.AnalystEstimates, error) {
-	var recs []AnalystRecommendation
+	var grades *GradesConsensus
 	var targets *PriceTargetConsensus
 	var estimates []AnalystEstimate
 
@@ -360,9 +360,9 @@ func (p *Provider) GetAnalystEstimates(ctx context.Context, ticker string) (*mod
 
 	g.Go(func() error {
 		var err error
-		recs, err = p.client.GetAnalystRecommendations(gctx, ticker)
+		grades, err = p.client.GetGradesConsensus(gctx, ticker)
 		if err != nil {
-			slog.Debug("failed to fetch analyst recommendations", "ticker", ticker, "error", err)
+			slog.Debug("failed to fetch grades consensus", "ticker", ticker, "error", err)
 		}
 		return nil
 	})
@@ -389,12 +389,31 @@ func (p *Provider) GetAnalystEstimates(ctx context.Context, ticker string) (*mod
 		return nil, fmt.Errorf("fetching analyst estimates: %w", err)
 	}
 
+	// Log what we got for debugging
+	slog.Info("FMP analyst data fetched",
+		"ticker", ticker,
+		"hasGrades", grades != nil,
+		"hasTargets", targets != nil,
+		"estimatesCount", len(estimates),
+	)
+	if grades != nil {
+		slog.Info("FMP grades consensus",
+			"ticker", ticker,
+			"strongBuy", grades.StrongBuy,
+			"buy", grades.Buy,
+			"hold", grades.Hold,
+			"sell", grades.Sell,
+			"strongSell", grades.StrongSell,
+			"consensus", grades.Consensus,
+		)
+	}
+
 	// If no data at all, return nil
-	if len(recs) == 0 && targets == nil && len(estimates) == 0 {
+	if grades == nil && targets == nil && len(estimates) == 0 {
 		return nil, nil
 	}
 
-	return mapAnalystEstimates(ticker, recs, targets, estimates), nil
+	return mapAnalystEstimates(ticker, grades, targets, estimates), nil
 }
 
 // getMostRecentFilingQuarter returns the most recent quarter with complete 13F filings.

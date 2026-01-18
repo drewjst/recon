@@ -322,15 +322,15 @@ type InstitutionalOwnershipHolder struct {
 // Analyst Estimates Types
 // =============================================================================
 
-// AnalystRecommendation represents FMP analyst recommendation response.
-type AnalystRecommendation struct {
-	Symbol                   string `json:"symbol"`
-	Date                     string `json:"date"`
-	AnalystRatingsBuy        int    `json:"analystRatingsbuy"`
-	AnalystRatingsHold       int    `json:"analystRatingsHold"`
-	AnalystRatingsSell       int    `json:"analystRatingsSell"`
-	AnalystRatingsStrongBuy  int    `json:"analystRatingsStrongBuy"`
-	AnalystRatingsStrongSell int    `json:"analystRatingsStrongSell"`
+// GradesConsensus represents FMP /grades-consensus response with pre-aggregated counts.
+type GradesConsensus struct {
+	Symbol     string `json:"symbol"`
+	StrongBuy  int    `json:"strongBuy"`
+	Buy        int    `json:"buy"`
+	Hold       int    `json:"hold"`
+	Sell       int    `json:"sell"`
+	StrongSell int    `json:"strongSell"`
+	Consensus  string `json:"consensus"`
 }
 
 // PriceTargetConsensus represents FMP price target consensus response.

@@ -298,43 +298,27 @@ func mapETFData(info *ETFInfo, holdings []ETFHolding, sectors []ETFSectorWeighti
 }
 
 // mapAnalystEstimates converts FMP analyst data to internal AnalystEstimates model.
-func mapAnalystEstimates(ticker string, recs []AnalystRecommendation, targets *PriceTargetConsensus, estimates []AnalystEstimate) *models.AnalystEstimates {
+func mapAnalystEstimates(ticker string, grades *GradesConsensus, targets *PriceTargetConsensus, estimates []AnalystEstimate) *models.AnalystEstimates {
 	result := &models.AnalystEstimates{
 		Ticker: ticker,
 		AsOf:   time.Now(),
 	}
 
-	// Map recommendations (most recent)
-	if len(recs) > 0 {
-		rec := recs[0]
-		result.StrongBuyCount = rec.AnalystRatingsStrongBuy
-		result.BuyCount = rec.AnalystRatingsBuy
-		result.HoldCount = rec.AnalystRatingsHold
-		result.SellCount = rec.AnalystRatingsSell
-		result.StrongSellCount = rec.AnalystRatingsStrongSell
+	// Map pre-aggregated grades consensus
+	if grades != nil {
+		result.StrongBuyCount = grades.StrongBuy
+		result.BuyCount = grades.Buy
+		result.HoldCount = grades.Hold
+		result.SellCount = grades.Sell
+		result.StrongSellCount = grades.StrongSell
+		result.Rating = grades.Consensus
 
-		result.AnalystCount = rec.AnalystRatingsStrongBuy + rec.AnalystRatingsBuy +
-			rec.AnalystRatingsHold + rec.AnalystRatingsSell + rec.AnalystRatingsStrongSell
+		result.AnalystCount = grades.StrongBuy + grades.Buy + grades.Hold + grades.Sell + grades.StrongSell
 
 		// Calculate rating score (weighted average: Strong Buy=5, Buy=4, Hold=3, Sell=2, Strong Sell=1)
 		if result.AnalystCount > 0 {
-			total := float64(rec.AnalystRatingsStrongBuy*5 + rec.AnalystRatingsBuy*4 +
-				rec.AnalystRatingsHold*3 + rec.AnalystRatingsSell*2 + rec.AnalystRatingsStrongSell*1)
+			total := float64(grades.StrongBuy*5 + grades.Buy*4 + grades.Hold*3 + grades.Sell*2 + grades.StrongSell*1)
 			result.RatingScore = total / float64(result.AnalystCount)
-
-			// Determine consensus rating based on score
-			switch {
-			case result.RatingScore >= 4.5:
-				result.Rating = "Strong Buy"
-			case result.RatingScore >= 3.5:
-				result.Rating = "Buy"
-			case result.RatingScore >= 2.5:
-				result.Rating = "Hold"
-			case result.RatingScore >= 1.5:
-				result.Rating = "Sell"
-			default:
-				result.Rating = "Strong Sell"
-			}
 		}
 	}
 
