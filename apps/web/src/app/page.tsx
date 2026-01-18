@@ -17,7 +17,8 @@ function HomeContent() {
     return (
       <div className="flex flex-col min-h-screen">
         <div className="py-8 flex-1">
-          <StockDashboard ticker={tickerParam} />
+          {/* key forces remount when ticker changes, ensuring fresh state for ETF/stock detection */}
+          <StockDashboard key={tickerParam} ticker={tickerParam} />
         </div>
       </div>
     );
