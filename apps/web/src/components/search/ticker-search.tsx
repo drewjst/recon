@@ -24,6 +24,26 @@ export function TickerSearch({ size = 'default', autoFocus = false, className }:
 
   const { query, setQuery, results, isLoading } = useSearch();
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === 'k' &&
+        (e.metaKey || e.ctrlKey) &&
+        !e.shiftKey &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      } else if (e.key === '/' && document.activeElement !== inputRef.current) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleSubmit = useCallback(
     (ticker?: string) => {
       const target = ticker || query;
@@ -94,8 +114,13 @@ export function TickerSearch({ size = 'default', autoFocus = false, className }:
             'absolute left-3 text-muted-foreground',
             isLarge ? 'h-5 w-5' : 'h-4 w-4'
           )}
+          aria-hidden="true"
         />
+        <label htmlFor="ticker-search" className="sr-only">
+          Search ticker
+        </label>
         <Input
+          id="ticker-search"
           ref={inputRef}
           type="text"
           placeholder="Search ticker..."
@@ -104,11 +129,23 @@ export function TickerSearch({ size = 'default', autoFocus = false, className }:
           onKeyDown={handleKeyDown}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
           autoFocus={autoFocus}
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-controls="search-results"
+          aria-autocomplete="list"
           className={cn(
             'pl-9 pr-20',
             isLarge && 'h-14 text-lg pl-10 pr-24'
           )}
         />
+        {!query && (
+          <div className={cn(
+            "pointer-events-none absolute right-24 top-1/2 -translate-y-1/2 hidden select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex text-muted-foreground",
+            isLarge && "right-28"
+          )}>
+            <span className="text-xs">⌘</span>K
+          </div>
+        )}
         <Button
           type="button"
           onClick={() => handleSubmit()}
@@ -117,6 +154,7 @@ export function TickerSearch({ size = 'default', autoFocus = false, className }:
             'absolute right-1',
             isLarge ? 'h-12 px-6' : 'h-8 px-4'
           )}
+          aria-label="Distill stock data"
         >
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -128,9 +166,9 @@ export function TickerSearch({ size = 'default', autoFocus = false, className }:
 
       {isOpen && results.length > 0 && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border bg-popover shadow-md">
-          <ul className="py-1">
+          <ul id="search-results" role="listbox" className="py-1">
             {results.map((result, index) => (
-              <li key={result.ticker}>
+              <li key={result.ticker} role="option" aria-selected={index === selectedIndex}>
                 <button
                   type="button"
                   onClick={() => handleSubmit(result.ticker)}
@@ -139,6 +177,7 @@ export function TickerSearch({ size = 'default', autoFocus = false, className }:
                     'flex w-full items-center justify-between px-4 py-2 text-left',
                     index === selectedIndex && 'bg-accent'
                   )}
+                  tabIndex={-1}
                 >
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{result.ticker}</span>
