@@ -162,12 +162,62 @@ export const TwoStockCompare = memo(function TwoStockCompare({
               format={(v) => `${v.toFixed(1)}%`}
             />
             <GrowthRow
-              label="Net Inst. Change"
-              leftValue={left.holdings?.netChangeShares}
-              rightValue={right.holdings?.netChangeShares}
-              format={(v) => formatShareChange(v)}
+              label="Accum. Quarters"
+              leftValue={left.holdings?.netChangeQuarters}
+              rightValue={right.holdings?.netChangeQuarters}
+              format={(v) => `${v > 0 ? '+' : ''}${v}`}
             />
             <InsiderRow left={left} right={right} />
+          </CompareSection>
+
+          {/* Analyst Estimates Section */}
+          <CompareSection title="ANALYST ESTIMATES">
+            <GrowthRow
+              label="Rating Score"
+              leftValue={left.analystEstimates?.ratingScore}
+              rightValue={right.analystEstimates?.ratingScore}
+              format={(v) => v.toFixed(1)}
+            />
+            <GrowthRow
+              label="Analyst Count"
+              leftValue={left.analystEstimates?.analystCount}
+              rightValue={right.analystEstimates?.analystCount}
+              format={(v) => v.toFixed(0)}
+            />
+            <GrowthRow
+              label="EPS Growth Est."
+              leftValue={left.analystEstimates?.epsGrowthNextYear}
+              rightValue={right.analystEstimates?.epsGrowthNextYear}
+              format={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
+          </CompareSection>
+
+          {/* Performance Section */}
+          <CompareSection title="PERFORMANCE">
+            <GrowthRow
+              label="1D Change"
+              leftValue={left.performance?.day1Change}
+              rightValue={right.performance?.day1Change}
+              format={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
+            <GrowthRow
+              label="1M Change"
+              leftValue={left.performance?.month1Change}
+              rightValue={right.performance?.month1Change}
+              format={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
+            <GrowthRow
+              label="YTD Return"
+              leftValue={left.performance?.ytdChange}
+              rightValue={right.performance?.ytdChange}
+              format={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
+            <GrowthRow
+              label="1Y Return"
+              leftValue={left.performance?.year1Change}
+              rightValue={right.performance?.year1Change}
+              format={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
           </CompareSection>
         </CardContent>
       </Card>

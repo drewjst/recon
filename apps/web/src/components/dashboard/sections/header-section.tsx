@@ -92,27 +92,28 @@ export function HeaderSection({ data }: HeaderSectionProps) {
             />
           </div>
 
-          {/* Performance Metrics - grid on mobile, flex on desktop */}
-          <div className="grid grid-cols-5 gap-1 sm:flex sm:items-center sm:gap-0 mb-3">
-            {performanceMetrics.map(({ label, value }, index) => (
-              <div key={label} className="flex flex-col sm:flex-row items-center text-center sm:text-left">
-                {index > 0 && <span className="hidden sm:inline text-muted-foreground/40 mx-2">|</span>}
-                <span className="text-[10px] sm:text-xs text-muted-foreground sm:mr-1">{label}</span>
-                <span className={`text-xs font-medium font-mono ${value >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {value > 0 ? '+' : ''}{value.toFixed(1)}%
-                </span>
-              </div>
-            ))}
-          </div>
+          {/* Performance Metrics + 52-Week Range - stacked on mobile, inline on desktop */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            {/* Performance Metrics */}
+            <div className="grid grid-cols-5 gap-1 sm:flex sm:items-center sm:gap-0">
+              {performanceMetrics.map(({ label, value }, index) => (
+                <div key={label} className="flex flex-col sm:flex-row items-center text-center sm:text-left">
+                  {index > 0 && <span className="hidden sm:inline text-muted-foreground/40 mx-2">|</span>}
+                  <span className="text-[10px] sm:text-xs text-muted-foreground sm:mr-1">{label}</span>
+                  <span className={`text-xs font-medium font-mono ${value >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {value > 0 ? '+' : ''}{value.toFixed(1)}%
+                  </span>
+                </div>
+              ))}
+            </div>
 
-          {/* 52-Week Range Slider */}
-          <div>
-            <div className="text-[10px] sm:text-xs text-muted-foreground mb-1.5">52-Week Range</div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-10 sm:w-14">
+            {/* 52-Week Range Slider */}
+            <div className="flex items-center gap-2 sm:min-w-[200px] lg:min-w-[240px]">
+              <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">52W</span>
+              <span className="text-[10px] sm:text-xs font-mono text-muted-foreground whitespace-nowrap">
                 ${quote.fiftyTwoWeekLow.toFixed(0)}
               </span>
-              <div className="flex-1 relative h-1.5">
+              <div className="flex-1 relative h-1.5 min-w-[80px]">
                 <div className="absolute inset-0 bg-muted rounded-full" />
                 <div
                   className="absolute left-0 top-0 h-full bg-accent/30 rounded-full"
@@ -123,7 +124,7 @@ export function HeaderSection({ data }: HeaderSectionProps) {
                   style={{ left: `calc(${rangePosition}% - 5px)` }}
                 />
               </div>
-              <span className="text-[10px] sm:text-xs font-mono text-muted-foreground w-10 sm:w-14 text-right">
+              <span className="text-[10px] sm:text-xs font-mono text-muted-foreground whitespace-nowrap">
                 ${quote.fiftyTwoWeekHigh.toFixed(0)}
               </span>
             </div>

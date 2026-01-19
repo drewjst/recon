@@ -64,7 +64,7 @@ func mapRatios(e *FundamentalsResponse) *models.Ratios {
 		ROE:             e.Highlights.ReturnOnEquityTTM * 100,
 		ROA:             e.Highlights.ReturnOnAssetsTTM * 100,
 
-		// Growth metrics from EODHD
+		// Growth metrics from EODHD (QuarterlyEarningsGrowthYOY is TTM EPS growth)
 		EPSEstimateCurrent: e.Highlights.EPSEstimateCurrentYear,
 		EPSEstimateNext:    e.Highlights.EPSEstimateNextYear,
 		RevenueGrowthYoY:   e.Highlights.QuarterlyRevenueGrowthYOY * 100,
@@ -75,10 +75,8 @@ func mapRatios(e *FundamentalsResponse) *models.Ratios {
 		FullTimeEmployees: e.General.FullTimeEmployees,
 	}
 
-	// Calculate projected EPS growth
-	if e.Highlights.EarningsShare > 0 && e.Highlights.EPSEstimateNextYear > 0 {
-		ratios.EPSGrowthYoY = ((e.Highlights.EPSEstimateNextYear - e.Highlights.EarningsShare) / e.Highlights.EarningsShare) * 100
-	}
+	// Calculate balance sheet ratios from latest financial statements
+	calculateBalanceSheetRatios(e, ratios)
 
 	// Calculate per-employee metrics
 	if e.General.FullTimeEmployees > 0 {
@@ -95,7 +93,65 @@ func mapRatios(e *FundamentalsResponse) *models.Ratios {
 	ratios.FreeCashFlowTTM = fcfTTM
 	ratios.CashFlowGrowthYoY = fcfGrowth
 
+	// Calculate Price/FCF ratio
+	if fcfTTM > 0 && e.Highlights.MarketCapitalization > 0 {
+		ratios.PriceToFCF = e.Highlights.MarketCapitalization / fcfTTM
+	}
+
 	return ratios
+}
+
+// calculateBalanceSheetRatios calculates financial health ratios from balance sheet data.
+func calculateBalanceSheetRatios(e *FundamentalsResponse, ratios *models.Ratios) {
+	dates := getSortedPeriods(e.Financials.BalanceSheet.Yearly)
+	if len(dates) == 0 {
+		return
+	}
+
+	latest := e.Financials.BalanceSheet.Yearly[dates[0]]
+
+	// Debt to Equity = Total Debt / Stockholders Equity
+	totalDebt := float64(latest.TotalDebt)
+	if totalDebt == 0 {
+		totalDebt = float64(latest.ShortTermDebt + latest.LongTermDebt)
+	}
+	equity := float64(latest.TotalStockholderEquity)
+	if equity > 0 {
+		ratios.DebtToEquity = totalDebt / equity
+	}
+
+	// Current Ratio = Current Assets / Current Liabilities
+	currentAssets := float64(latest.TotalCurrentAssets)
+	currentLiabilities := float64(latest.TotalCurrentLiabilities)
+	if currentLiabilities > 0 {
+		ratios.CurrentRatio = currentAssets / currentLiabilities
+	}
+
+	// Quick Ratio = (Current Assets - Inventory) / Current Liabilities
+	inventory := float64(latest.Inventory)
+	if currentLiabilities > 0 {
+		ratios.QuickRatio = (currentAssets - inventory) / currentLiabilities
+	}
+
+	// Asset Turnover = Revenue / Total Assets
+	totalAssets := float64(latest.TotalAssets)
+	if totalAssets > 0 && e.Highlights.RevenueTTM > 0 {
+		ratios.AssetTurnover = e.Highlights.RevenueTTM / totalAssets
+	}
+
+	// ROIC = NOPAT / Invested Capital
+	// NOPAT ≈ Operating Income * (1 - Tax Rate), simplified to Operating Income * 0.75
+	// Invested Capital = Total Assets - Current Liabilities (or Equity + Net Debt)
+	incomeDates := getSortedPeriods(e.Financials.IncomeStatement.Yearly)
+	if len(incomeDates) > 0 {
+		income := e.Financials.IncomeStatement.Yearly[incomeDates[0]]
+		operatingIncome := float64(income.OperatingIncome)
+		investedCapital := totalAssets - currentLiabilities
+		if investedCapital > 0 && operatingIncome != 0 {
+			nopat := operatingIncome * 0.75 // Approximate 25% tax rate
+			ratios.ROIC = (nopat / investedCapital) * 100
+		}
+	}
 }
 
 // calculateGrossMargin calculates gross margin from revenue and gross profit.

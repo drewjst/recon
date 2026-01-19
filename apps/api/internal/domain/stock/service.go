@@ -782,8 +782,28 @@ func calculatePerformance(prices []models.PriceBar, currentPrice, yearHigh float
 	perf.Day1Change = getPriceChange(1)
 	perf.Week1Change = getPriceChange(5)
 	perf.Month1Change = getPriceChange(21)
+
+	// Calculate YTD change - find the first trading day of the current year
+	currentYear := time.Now().Year()
+	for i := len(prices) - 1; i >= 0; i-- {
+		if prices[i].Date.Year() == currentYear {
+			// Found the first trading day of current year (earliest date in current year)
+			if prices[i].Close > 0 {
+				perf.YTDChange = ((currentPrice - prices[i].Close) / prices[i].Close) * 100
+			}
+			break
+		}
+	}
+
+	// Calculate 1-year change - use the oldest available price up to ~252 trading days
 	if len(prices) > 250 {
 		perf.Year1Change = getPriceChange(252)
+	} else if len(prices) > 1 {
+		// Use the oldest available price if we don't have a full year
+		oldestIdx := len(prices) - 1
+		if prices[oldestIdx].Close > 0 {
+			perf.Year1Change = ((currentPrice - prices[oldestIdx].Close) / prices[oldestIdx].Close) * 100
+		}
 	}
 
 	return perf

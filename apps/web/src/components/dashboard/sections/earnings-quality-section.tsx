@@ -85,7 +85,7 @@ export function EarningsQualitySection({ data }: EarningsQualitySectionProps) {
 
   return (
     <MetricSection
-      title="Operating Metrics & Earnings Quality"
+      title="Operating Metrics"
       ticker={company.ticker}
       metrics={metrics}
       topN={5}

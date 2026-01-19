@@ -104,36 +104,37 @@ export function StockDashboard({ ticker }: StockDashboardProps) {
     return <ETFView data={data} />;
   }
 
-  // Stock view
+  // Stock view - Modern minimalist layout with strategic pairing
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="w-full max-w-4xl mx-auto space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header with price & performance */}
       <HeaderSection data={data} />
 
-      <DashboardDivider />
-      <ConvictionScoresSection data={data} />
+      {/* Row 1: Signals + Scores - Quick overview at a glance */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <SignalsSection data={data} />
+        <ConvictionScoresSection data={data} />
+      </div>
 
-      <DashboardDivider />
-      <SignalsSection data={data} />
-
-      <DashboardDivider />
-      <ValuationSection data={data} />
-
-      <DashboardDivider />
-      <ProfitabilitySection data={data} />
-
-      <DashboardDivider />
-      <FinancialHealthSection data={data} />
-
-      <DashboardDivider />
-      <GrowthSection data={data} />
-
-      <DashboardDivider />
-      <EarningsQualitySection data={data} />
-
-      <DashboardDivider />
+      {/* Row 2: Smart Money - Institutional & Insider activity */}
       <SmartMoneySection data={data} />
 
-      <DashboardDivider />
+      {/* Row 3: Valuation - Full width for detailed metrics */}
+      <ValuationSection data={data} />
+
+      {/* Row 4: Growth - Full width for growth story */}
+      <GrowthSection data={data} />
+
+      {/* Row 5: Profitability - Margins & Returns */}
+      <ProfitabilitySection data={data} />
+
+      {/* Row 6: Operating Metrics - Efficiency indicators */}
+      <EarningsQualitySection data={data} />
+
+      {/* Row 7: Balance Sheet - Debt & Liquidity */}
+      <FinancialHealthSection data={data} />
+
+      {/* Footer */}
       <FooterSection data={data} />
     </div>
   );

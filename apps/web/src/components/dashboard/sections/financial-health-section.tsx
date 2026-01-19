@@ -66,7 +66,7 @@ export function FinancialHealthSection({ data }: FinancialHealthSectionProps) {
 
   return (
     <MetricSection
-      title="Financial Health"
+      title="Balance Sheet"
       ticker={company.ticker}
       metrics={metrics}
       topN={5}

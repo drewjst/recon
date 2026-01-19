@@ -86,6 +86,8 @@ func (p *Provider) GetFinancials(ctx context.Context, ticker string, periods int
 
 // GetRatios implements FundamentalsProvider.
 func (p *Provider) GetRatios(ctx context.Context, ticker string) (*models.Ratios, error) {
+	var ratios *models.Ratios
+
 	// Try TTM first for most current data
 	ratiosTTM, err := p.client.GetRatiosTTM(ctx, ticker)
 	if err != nil {
@@ -98,25 +100,75 @@ func (p *Provider) GetRatios(ctx context.Context, ticker string) (*models.Ratios
 		if len(metricsTTM) > 0 {
 			metrics = &metricsTTM[0]
 		}
-		return mapRatiosTTM(&ratiosTTM[0], metrics), nil
+		ratios = mapRatiosTTM(&ratiosTTM[0], metrics)
 	}
 
-	// Fall back to annual ratios
-	ratios, err := p.client.GetRatios(ctx, ticker, 1)
+	// Fall back to annual ratios if TTM not available
+	if ratios == nil {
+		annualRatios, err := p.client.GetRatios(ctx, ticker, 1)
+		if err != nil {
+			return nil, fmt.Errorf("fetching ratios: %w", err)
+		}
+		if len(annualRatios) == 0 {
+			return nil, nil
+		}
+
+		metrics, _ := p.client.GetKeyMetrics(ctx, ticker, 1)
+		var keyMetrics *KeyMetrics
+		if len(metrics) > 0 {
+			keyMetrics = &metrics[0]
+		}
+		ratios = mapRatios(&annualRatios[0], keyMetrics)
+	}
+
+	// Fetch income statements to calculate growth metrics
+	income, err := p.client.GetIncomeStatement(ctx, ticker, 2)
 	if err != nil {
-		return nil, fmt.Errorf("fetching ratios: %w", err)
-	}
-	if len(ratios) == 0 {
-		return nil, nil
+		slog.Debug("failed to fetch income for growth calculation", "ticker", ticker, "error", err)
+	} else if len(income) >= 2 {
+		// Calculate YoY growth from income statements
+		current := income[0]
+		prior := income[1]
+
+		// Revenue growth
+		if prior.Revenue > 0 {
+			ratios.RevenueGrowthYoY = ((current.Revenue - prior.Revenue) / prior.Revenue) * 100
+		}
+
+		// EPS growth (using diluted EPS)
+		if prior.EPSDiluted != 0 {
+			ratios.EPSGrowthYoY = ((current.EPSDiluted - prior.EPSDiluted) / abs(prior.EPSDiluted)) * 100
+		}
+
+		// Set revenue TTM for other calculations
+		ratios.RevenueTTM = current.Revenue
+		ratios.NetIncomeTTM = current.NetIncome
 	}
 
-	metrics, _ := p.client.GetKeyMetrics(ctx, ticker, 1)
-	var keyMetrics *KeyMetrics
-	if len(metrics) > 0 {
-		keyMetrics = &metrics[0]
+	// Fetch cash flow statements for FCF metrics
+	cashFlow, err := p.client.GetCashFlowStatement(ctx, ticker, 2)
+	if err != nil {
+		slog.Debug("failed to fetch cash flow for FCF calculation", "ticker", ticker, "error", err)
+	} else if len(cashFlow) >= 1 {
+		current := cashFlow[0]
+		ratios.FreeCashFlowTTM = current.FreeCashFlow
+
+		// Calculate FCF growth if we have prior year
+		if len(cashFlow) >= 2 && cashFlow[1].FreeCashFlow != 0 {
+			prior := cashFlow[1]
+			ratios.CashFlowGrowthYoY = ((current.FreeCashFlow - prior.FreeCashFlow) / abs(prior.FreeCashFlow)) * 100
+		}
 	}
 
-	return mapRatios(&ratios[0], keyMetrics), nil
+	return ratios, nil
+}
+
+// abs returns the absolute value of a float64.
+func abs(x float64) float64 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // GetInstitutionalHolders implements FundamentalsProvider.

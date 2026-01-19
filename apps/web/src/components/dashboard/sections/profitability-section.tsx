@@ -95,7 +95,7 @@ export function ProfitabilitySection({ data }: ProfitabilitySectionProps) {
 
   return (
     <MetricSection
-      title="Profitability"
+      title="Margins & Returns"
       ticker={company.ticker}
       metrics={metrics}
       topN={5}

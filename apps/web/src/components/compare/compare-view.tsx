@@ -127,30 +127,6 @@ export function CompareView({ tickers }: CompareViewProps) {
         layout="table"
       />
 
-      {/* Financials Comparison */}
-      <MetricTable
-        title="Financials"
-        stocks={validStocks}
-        metrics={COMPARE_METRICS.financials}
-        layout="table"
-      />
-
-      {/* Profitability Comparison */}
-      <MetricTable
-        title="Profitability"
-        stocks={validStocks}
-        metrics={COMPARE_METRICS.profitability}
-        layout="table"
-      />
-
-      {/* Financial Health Comparison */}
-      <MetricTable
-        title="Financial Health"
-        stocks={validStocks}
-        metrics={COMPARE_METRICS.financialHealth}
-        layout="table"
-      />
-
       {/* Growth Comparison */}
       <MetricTable
         title="Growth"
@@ -159,11 +135,43 @@ export function CompareView({ tickers }: CompareViewProps) {
         layout="table"
       />
 
-      {/* Earnings Quality Comparison */}
+      {/* Profitability Comparison */}
       <MetricTable
-        title="Earnings Quality"
+        title="Margins & Returns"
+        stocks={validStocks}
+        metrics={COMPARE_METRICS.profitability}
+        layout="table"
+      />
+
+      {/* Financial Health Comparison */}
+      <MetricTable
+        title="Balance Sheet"
+        stocks={validStocks}
+        metrics={COMPARE_METRICS.financialHealth}
+        layout="table"
+      />
+
+      {/* Operating Metrics Comparison */}
+      <MetricTable
+        title="Operating Metrics"
         stocks={validStocks}
         metrics={COMPARE_METRICS.earningsQuality}
+        layout="table"
+      />
+
+      {/* Smart Money Comparison */}
+      <MetricTable
+        title="Smart Money"
+        stocks={validStocks}
+        metrics={COMPARE_METRICS.smartMoney}
+        layout="table"
+      />
+
+      {/* Analyst Estimates Comparison */}
+      <MetricTable
+        title="Analyst Estimates"
+        stocks={validStocks}
+        metrics={COMPARE_METRICS.analyst}
         layout="table"
       />
 

@@ -122,32 +122,35 @@ if score > PiotroskiStrongSignal {
 
 ### Data Providers
 
-We use two external data sources:
+We use multiple external data sources:
 
 | Provider | Purpose | Key Endpoints |
 |----------|---------|---------------|
-| **EODHD** | Fundamentals, financials, ratios, holdings, insider trades | `/fundamentals/{ticker}.US` |
+| **FMP** (Primary) | Fundamentals, financials, ratios, holdings, insider trades, analyst estimates | `/stable/profile`, `/stable/ratios-ttm`, `/stable/income-statement` |
 | **Polygon.io** | Ticker search, company metadata | `/v3/reference/tickers` |
+| **EODHD** (Fallback) | ETF holdings fallback, legacy support | `/fundamentals/{ticker}.US` |
 
 **Provider Architecture:**
 ```
 internal/infrastructure/providers/
 ├── interfaces.go       # FundamentalsProvider, QuoteProvider, SearchProvider
 ├── factory.go          # Provider creation based on config
-├── eodhd/
+├── fmp/                # Primary provider
 │   ├── client.go       # HTTP client, auth, rate limiting
 │   ├── provider.go     # Interface implementation
-│   ├── mapper.go       # EODHD response → canonical models
-│   └── types.go        # EODHD-specific response types
-└── fmp/                # Legacy provider (optional)
+│   ├── adapter.go      # FMP response → canonical models
+│   └── types.go        # FMP-specific response types
+└── eodhd/              # Fallback provider (ETF holdings, legacy)
     └── ...
 ```
 
 **Key patterns:**
+- FMP is the **default and recommended** provider
 - Providers implement interfaces defined in `interfaces.go`
 - All external data maps to canonical models in `internal/domain/models/`
 - Services depend on interfaces, not concrete providers
-- Provider selection via `FUNDAMENTALS_PROVIDER` environment variable
+- Provider selection via `FUNDAMENTALS_PROVIDER` environment variable (default: `fmp`)
+- EODHD is used as fallback for ETF holdings (FMP requires premium tier)
 
 ### Caching Strategy
 
@@ -155,13 +158,13 @@ Data is cached in PostgreSQL to minimize external API calls:
 
 | Data Type | Source | Cache TTL | Rationale |
 |-----------|--------|-----------|-----------|
-| Company Profile | EODHD | 24 hours | Rarely changes |
-| Financial Statements | EODHD | 24 hours | Updates quarterly |
-| Ratios/Metrics | EODHD | 24 hours | Derived from financials |
-| Institutional Holdings | EODHD | 24 hours | Updates quarterly (13F) |
-| Insider Trades | EODHD | 24 hours | Updates with SEC filings |
-| Technical Metrics | EODHD | 24 hours | Beta, moving averages |
-| Short Interest | EODHD | 24 hours | Updates bi-monthly |
+| Company Profile | FMP | 24 hours | Rarely changes |
+| Financial Statements | FMP | 24 hours | Updates quarterly |
+| Ratios/Metrics | FMP | 24 hours | Derived from financials |
+| Institutional Holdings | FMP | 24 hours | Updates quarterly (13F) |
+| Insider Trades | FMP | 24 hours | Updates with SEC filings |
+| Technical Metrics | FMP | 24 hours | Beta, moving averages |
+| Analyst Estimates | FMP | 24 hours | Updates with new analyst coverage |
 
 Cache is stored as JSONB in the `stock_cache` table, keyed by ticker.
 
@@ -187,11 +190,12 @@ func (p *Provider) GetDCF(ctx context.Context, ticker string) (*models.DCF, erro
 ### Environment Variables
 
 **Required API keys:**
-- `EODHD_API_KEY` — EODHD API key ([eodhd.com](https://eodhd.com))
-- `POLYGON_API_KEY` — Polygon.io API key ([polygon.io](https://polygon.io))
+- `FMP_API_KEY` — Financial Modeling Prep API key ([financialmodelingprep.com](https://financialmodelingprep.com)) — Primary data source
+- `POLYGON_API_KEY` — Polygon.io API key ([polygon.io](https://polygon.io)) — Ticker search
 
 **Optional:**
-- `FUNDAMENTALS_PROVIDER` — `"eodhd"` (default) or `"fmp"`
+- `EODHD_API_KEY` — EODHD API key ([eodhd.com](https://eodhd.com)) — Fallback for ETF holdings
+- `FUNDAMENTALS_PROVIDER` — `"fmp"` (default) or `"eodhd"`
 - `DATABASE_URL` — PostgreSQL connection (enables caching)
 
 ---
