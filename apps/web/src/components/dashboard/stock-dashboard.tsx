@@ -1,8 +1,10 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { useStock } from '@/hooks/use-stock';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   HeaderSection,
@@ -76,6 +78,7 @@ interface StockDashboardProps {
 }
 
 export function StockDashboard({ ticker }: StockDashboardProps) {
+  const router = useRouter();
   const { data, isLoading, error } = useStock(ticker);
 
   if (isLoading) {
@@ -89,12 +92,23 @@ export function StockDashboard({ ticker }: StockDashboardProps) {
 
   if (error || !data) {
     return (
-      <div className="flex flex-col items-center justify-center py-24">
-        <AlertTriangle className="h-12 w-12 text-destructive" />
-        <h2 className="mt-4 text-xl font-semibold">Failed to load stock data</h2>
-        <p className="mt-2 text-muted-foreground">
-          {error instanceof Error ? error.message : 'Unable to fetch data for this ticker'}
+      <div className="flex flex-col items-center justify-center py-24 animate-in fade-in zoom-in-95 duration-300">
+        <div className="p-4 rounded-full bg-destructive/10 mb-4">
+          <AlertTriangle className="h-8 w-8 text-destructive" />
+        </div>
+        <h2 className="text-xl font-semibold">Unable to load stock data</h2>
+        <p className="mt-2 text-muted-foreground text-center max-w-md mx-auto">
+          {error instanceof Error
+            ? error.message
+            : `We couldn't retrieve data for ${ticker}. It might be delisted or invalid.`}
         </p>
+        <Button
+          variant="outline"
+          onClick={() => router.push('/')}
+          className="mt-6"
+        >
+          Search Again
+        </Button>
       </div>
     );
   }
