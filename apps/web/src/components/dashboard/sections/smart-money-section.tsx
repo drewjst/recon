@@ -26,10 +26,24 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
   const trades = insiderActivity?.trades ?? [];
   const hasInsiderActivity = buyCount > 0 || sellCount > 0;
 
-  const institutionalPct = holdings.totalInstitutionalOwnership > 0
-    ? `${(holdings.totalInstitutionalOwnership * 100).toFixed(1)}%`
-    : 'N/A';
-  const shareText = `${company.ticker} Smart Money: ${institutionalPct} institutional ownership, ${buyCount} insider buys / ${sellCount} sells (90d)`;
+  // Build rich share text
+  const shareMetrics: string[] = [];
+
+  if (holdings.totalInstitutionalOwnership > 0) {
+    shareMetrics.push(`Institutional Ownership: ${(holdings.totalInstitutionalOwnership * 100).toFixed(1)}%`);
+  }
+  if (holdings.netChangeShares !== 0) {
+    const sign = holdings.netChangeShares >= 0 ? '+' : '';
+    shareMetrics.push(`Net Change: ${sign}${(holdings.netChangeShares / 1e6).toFixed(1)}M shares`);
+  }
+  if (hasInsiderActivity) {
+    shareMetrics.push(`Insider Activity (90d): ${buyCount} buys, ${sellCount} sells`);
+    if (netValue !== 0) {
+      shareMetrics.push(`Net Insider Value: ${netValue >= 0 ? '+' : ''}${formatValue(netValue)}`);
+    }
+  }
+
+  const shareText = `$${company.ticker} Smart Money\n\n${shareMetrics.join('\n')}`;
 
   return (
     <SectionCard title="Smart Money" shareTicker={company.ticker} shareText={shareText}>

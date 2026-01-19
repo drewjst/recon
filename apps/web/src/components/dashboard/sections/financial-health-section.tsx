@@ -61,8 +61,20 @@ export function FinancialHealthSection({ data }: FinancialHealthSectionProps) {
     }),
   ];
 
-  // Build share text
-  const shareText = `${company.ticker} Financial Health: D/E ${financialHealth.debtToEquity?.value?.toFixed(2) ?? 'N/A'}, Current Ratio ${financialHealth.currentRatio?.value?.toFixed(2) ?? 'N/A'}x`;
+  // Build rich share text
+  const shareMetrics: string[] = [];
+
+  if (financialHealth.debtToEquity?.value != null) {
+    shareMetrics.push(`Debt/Equity: ${financialHealth.debtToEquity.value.toFixed(2)}x`);
+  }
+  if (financialHealth.currentRatio?.value != null) {
+    shareMetrics.push(`Current Ratio: ${financialHealth.currentRatio.value.toFixed(2)}x`);
+  }
+  if (financialHealth.assetTurnover?.value != null) {
+    shareMetrics.push(`Asset Turnover: ${financialHealth.assetTurnover.value.toFixed(2)}x`);
+  }
+
+  const shareText = `$${company.ticker} Balance Sheet\n\n${shareMetrics.join('\n')}`;
 
   return (
     <MetricSection

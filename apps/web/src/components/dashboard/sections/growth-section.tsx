@@ -90,8 +90,24 @@ export function GrowthSection({ data }: GrowthSectionProps) {
     );
   }
 
-  // Build share text
-  const shareText = `${company.ticker} Growth: Revenue ${growth.revenueGrowthYoY?.value?.toFixed(1) ?? 'N/A'}% YoY, EPS ${growth.epsGrowthYoY?.value?.toFixed(1) ?? 'N/A'}% YoY`;
+  // Build rich share text
+  const shareMetrics: string[] = [];
+  const formatGrowth = (v: number | undefined) => v != null ? `${v >= 0 ? '+' : ''}${v.toFixed(1)}%` : null;
+
+  if (growth.revenueGrowthYoY?.value != null) {
+    shareMetrics.push(`Revenue Growth: ${formatGrowth(growth.revenueGrowthYoY.value)}`);
+  }
+  if (growth.epsGrowthYoY?.value != null) {
+    shareMetrics.push(`EPS Growth: ${formatGrowth(growth.epsGrowthYoY.value)}`);
+  }
+  if (growth.projectedEpsGrowth?.value != null) {
+    shareMetrics.push(`Projected EPS: ${formatGrowth(growth.projectedEpsGrowth.value)}`);
+  }
+  if (growth.cashFlowGrowthYoY?.value != null) {
+    shareMetrics.push(`Cash Flow Growth: ${formatGrowth(growth.cashFlowGrowthYoY.value)}`);
+  }
+
+  const shareText = `$${company.ticker} Growth Metrics\n\n${shareMetrics.join('\n')}`;
 
   return (
     <MetricSection

@@ -90,8 +90,25 @@ export function ProfitabilitySection({ data }: ProfitabilitySectionProps) {
     })
   );
 
-  // Build share text
-  const shareText = `${company.ticker} Profitability: Gross Margin ${profitability.grossMargin?.value?.toFixed(1) ?? 'N/A'}%, Operating Margin ${profitability.operatingMargin?.value?.toFixed(1) ?? 'N/A'}%, ROE ${profitability.roe?.value?.toFixed(1) ?? 'N/A'}%`;
+  // Build rich share text
+  const shareMetrics: string[] = [];
+  if (profitability.grossMargin?.value != null) {
+    shareMetrics.push(`Gross Margin: ${profitability.grossMargin.value.toFixed(1)}%`);
+  }
+  if (profitability.operatingMargin?.value != null) {
+    shareMetrics.push(`Operating Margin: ${profitability.operatingMargin.value.toFixed(1)}%`);
+  }
+  if (profitability.netMargin?.value != null) {
+    shareMetrics.push(`Net Margin: ${profitability.netMargin.value.toFixed(1)}%`);
+  }
+  if (profitability.roe?.value != null) {
+    shareMetrics.push(`ROE: ${profitability.roe.value.toFixed(1)}%`);
+  }
+  if (profitability.roic?.value != null) {
+    shareMetrics.push(`ROIC: ${profitability.roic.value.toFixed(1)}%`);
+  }
+
+  const shareText = `$${company.ticker} Margins & Returns\n\n${shareMetrics.join('\n')}`;
 
   return (
     <MetricSection

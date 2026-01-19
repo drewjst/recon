@@ -116,7 +116,7 @@ export function CompareView({ tickers }: CompareViewProps) {
       {/* Rankings Summary */}
       <RankingSummary rankings={rankings} />
 
-      {/* Score Comparison */}
+      {/* Financial Health Scores - matches Conviction Scores in single stock view */}
       <ScoreComparison stocks={validStocks} layout="table" />
 
       {/* Valuation Comparison */}
@@ -135,7 +135,7 @@ export function CompareView({ tickers }: CompareViewProps) {
         layout="table"
       />
 
-      {/* Profitability Comparison */}
+      {/* Margins & Returns - matches Profitability in single stock view */}
       <MetricTable
         title="Margins & Returns"
         stocks={validStocks}
@@ -143,19 +143,19 @@ export function CompareView({ tickers }: CompareViewProps) {
         layout="table"
       />
 
-      {/* Financial Health Comparison */}
-      <MetricTable
-        title="Balance Sheet"
-        stocks={validStocks}
-        metrics={COMPARE_METRICS.financialHealth}
-        layout="table"
-      />
-
-      {/* Operating Metrics Comparison */}
+      {/* Operating Metrics - matches Earnings Quality in single stock view */}
       <MetricTable
         title="Operating Metrics"
         stocks={validStocks}
         metrics={COMPARE_METRICS.earningsQuality}
+        layout="table"
+      />
+
+      {/* Balance Sheet - matches Financial Health in single stock view */}
+      <MetricTable
+        title="Balance Sheet"
+        stocks={validStocks}
+        metrics={COMPARE_METRICS.financialHealth}
         layout="table"
       />
 

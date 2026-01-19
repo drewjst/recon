@@ -1,7 +1,6 @@
 'use client';
 
 import { memo } from 'react';
-import { Trophy } from 'lucide-react';
 import { SectionCard } from '@/components/dashboard/sections/section-card';
 import {
   Table,
@@ -37,45 +36,34 @@ export const MetricTable = memo(function MetricTable({ title, stocks, metrics, l
                   {ticker}
                 </TableHead>
               ))}
-              {layout === 'table' && (
-                <TableHead className="text-center text-muted-foreground w-[80px]">
-                  Best
-                </TableHead>
-              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {metrics.map((metric) => {
               const values = stocks.map((s) => getNestedValue(s, metric.path));
-              const winnerIdx = findWinner(values, metric.higherIsBetter);
+              const winnerIdx = findWinner(values, metric.higherIsBetter, metric.excludeNonPositive);
 
               return (
                 <TableRow key={metric.key} className="border-border/30 hover:bg-secondary/30">
                   <TableCell className="font-medium">{metric.label}</TableCell>
-                  {values.map((value, idx) => (
-                    <TableCell
-                      key={tickers[idx]}
-                      className={cn(
-                        'text-center font-mono',
-                        winnerIdx === idx && 'text-green-600 font-semibold'
-                      )}
-                    >
-                      {value !== null ? metric.format(value) : '-'}
-                      {winnerIdx === idx && layout === 'side-by-side' && (
-                        <Trophy className="inline-block ml-1 h-3 w-3 text-amber-500" />
-                      )}
-                    </TableCell>
-                  ))}
-                  {layout === 'table' && (
-                    <TableCell className="text-center">
-                      {winnerIdx !== null && (
-                        <span className="inline-flex items-center gap-1 text-green-600 font-medium text-sm">
-                          <Trophy className="h-3 w-3 text-amber-500" />
-                          {tickers[winnerIdx]}
-                        </span>
-                      )}
-                    </TableCell>
-                  )}
+                  {values.map((value, idx) => {
+                    // Check if this value is the winner (and is valid)
+                    const isWinner = winnerIdx === idx;
+                    // For display, show the value even if it's 0 (but it won't be highlighted as winner)
+                    const displayValue = value !== null ? metric.format(value) : '-';
+
+                    return (
+                      <TableCell
+                        key={tickers[idx]}
+                        className={cn(
+                          'text-center font-mono',
+                          isWinner && 'text-green-600 font-semibold'
+                        )}
+                      >
+                        {displayValue}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               );
             })}

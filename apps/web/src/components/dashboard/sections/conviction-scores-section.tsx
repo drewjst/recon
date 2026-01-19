@@ -183,8 +183,24 @@ function ConvictionScoresSectionComponent({ data }: ConvictionScoresSectionProps
   const { company, scores, analystEstimates, quote } = data;
   if (!scores) return null;
 
-  const ruleOf40Emoji = scores.ruleOf40.passed ? '✓' : '✗';
-  const shareText = `${company.ticker} Piotroski: ${scores.piotroski.score}/9, Rule of 40: ${scores.ruleOf40.score.toFixed(0)}% ${ruleOf40Emoji}`;
+  // Build rich share text
+  const piotroskiVerdict = scores.piotroski.score >= 7 ? 'Strong' : scores.piotroski.score >= 4 ? 'Moderate' : 'Weak';
+  const ruleOf40Verdict = scores.ruleOf40.passed ? 'Passed' : 'Failed';
+  const altmanVerdict = scores.altmanZ.zone === 'safe' ? 'Safe' : scores.altmanZ.zone === 'gray' ? 'Gray Zone' : 'Distress';
+
+  const shareMetrics = [
+    `Piotroski F-Score: ${scores.piotroski.score}/9 (${piotroskiVerdict})`,
+    `Rule of 40: ${scores.ruleOf40.score.toFixed(0)}% (${ruleOf40Verdict})`,
+    `Altman Z-Score: ${scores.altmanZ.score.toFixed(2)} (${altmanVerdict})`,
+  ];
+
+  if (analystEstimates && analystEstimates.analystCount > 0) {
+    const buyCount = analystEstimates.strongBuyCount + analystEstimates.buyCount;
+    const sellCount = analystEstimates.sellCount + analystEstimates.strongSellCount;
+    shareMetrics.push(`Analyst Rating: ${buyCount} Buy / ${analystEstimates.holdCount} Hold / ${sellCount} Sell`);
+  }
+
+  const shareText = `$${company.ticker} Financial Health\n\n${shareMetrics.join('\n')}`;
 
   return (
     <SectionCard

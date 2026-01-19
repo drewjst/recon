@@ -10,6 +10,8 @@ export interface MetricConfig {
   path: string;
   higherIsBetter: boolean;
   format: (v: number) => string;
+  /** If true, values <= 0 are treated as invalid/missing data and excluded from winner calculation */
+  excludeNonPositive?: boolean;
 }
 
 /**
@@ -38,13 +40,6 @@ export const COMPARE_METRICS: Record<string, MetricConfig[]> = {
       higherIsBetter: true,
       format: (v) => v.toFixed(2),
     },
-    {
-      key: 'dcf',
-      label: 'DCF Upside',
-      path: 'scores.dcfValuation.differencePercent',
-      higherIsBetter: true,
-      format: (v) => `${v > 0 ? '+' : ''}${v.toFixed(0)}%`,
-    },
   ],
   valuation: [
     {
@@ -53,6 +48,7 @@ export const COMPARE_METRICS: Record<string, MetricConfig[]> = {
       path: 'valuation.pe.value',
       higherIsBetter: false,
       format: (v) => v.toFixed(1),
+      excludeNonPositive: true,
     },
     {
       key: 'forwardPe',
@@ -60,6 +56,7 @@ export const COMPARE_METRICS: Record<string, MetricConfig[]> = {
       path: 'valuation.forwardPe.value',
       higherIsBetter: false,
       format: (v) => v.toFixed(1),
+      excludeNonPositive: true,
     },
     {
       key: 'peg',
@@ -67,6 +64,7 @@ export const COMPARE_METRICS: Record<string, MetricConfig[]> = {
       path: 'valuation.peg.value',
       higherIsBetter: false,
       format: (v) => v.toFixed(2),
+      excludeNonPositive: true,
     },
     {
       key: 'evToEbitda',
@@ -74,6 +72,7 @@ export const COMPARE_METRICS: Record<string, MetricConfig[]> = {
       path: 'valuation.evToEbitda.value',
       higherIsBetter: false,
       format: (v) => v.toFixed(1),
+      excludeNonPositive: true,
     },
     {
       key: 'priceToFcf',
@@ -81,6 +80,7 @@ export const COMPARE_METRICS: Record<string, MetricConfig[]> = {
       path: 'valuation.priceToFcf.value',
       higherIsBetter: false,
       format: (v) => v.toFixed(1),
+      excludeNonPositive: true,
     },
     {
       key: 'priceToBook',
@@ -88,6 +88,7 @@ export const COMPARE_METRICS: Record<string, MetricConfig[]> = {
       path: 'valuation.priceToBook.value',
       higherIsBetter: false,
       format: (v) => v.toFixed(2),
+      excludeNonPositive: true,
     },
   ],
   performance: [
@@ -332,14 +333,24 @@ export function getNestedValue(obj: unknown, path: string): number | null {
 
 /**
  * Find the index of the winning value in an array.
- * Returns null if all values are null.
+ * Returns null if all values are null or invalid.
+ *
+ * @param values - Array of values to compare
+ * @param higherIsBetter - If true, highest value wins; if false, lowest wins
+ * @param excludeNonPositive - If true, values <= 0 are treated as invalid (useful for valuation ratios)
  */
 export function findWinner(
   values: (number | null)[],
-  higherIsBetter: boolean
+  higherIsBetter: boolean,
+  excludeNonPositive?: boolean
 ): number | null {
   const validIndices = values
-    .map((v, i) => (v !== null ? i : -1))
+    .map((v, i) => {
+      if (v === null) return -1;
+      // Exclude non-positive values if specified (for valuation ratios where 0 means missing data)
+      if (excludeNonPositive && v <= 0) return -1;
+      return i;
+    })
     .filter((i) => i >= 0);
 
   if (validIndices.length === 0) return null;
@@ -374,7 +385,7 @@ export function calculateRankings(stocks: StockDetailResponse[]): RankingResult[
 
   allMetrics.forEach((metric) => {
     const values = stocks.map((s) => getNestedValue(s, metric.path));
-    const winner = findWinner(values, metric.higherIsBetter);
+    const winner = findWinner(values, metric.higherIsBetter, metric.excludeNonPositive);
     if (winner !== null) {
       wins[winner]++;
     }

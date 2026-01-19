@@ -80,8 +80,28 @@ export function EarningsQualitySection({ data }: EarningsQualitySectionProps) {
     })
   );
 
-  // Build share text
-  const shareText = `${company.ticker} Operating Metrics: Revenue/Employee $${earningsQuality.revenuePerEmployee?.value ? (earningsQuality.revenuePerEmployee.value / 1000).toFixed(0) + 'K' : 'N/A'}`;
+  // Build rich share text
+  const shareMetrics: string[] = [];
+  const formatCurrency = (v: number) => {
+    if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
+    if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
+    return `$${v.toFixed(0)}`;
+  };
+
+  if (earningsQuality.revenuePerEmployee?.value != null) {
+    shareMetrics.push(`Revenue/Employee: ${formatCurrency(earningsQuality.revenuePerEmployee.value)}`);
+  }
+  if (earningsQuality.incomePerEmployee?.value != null) {
+    shareMetrics.push(`Income/Employee: ${formatCurrency(earningsQuality.incomePerEmployee.value)}`);
+  }
+  if (earningsQuality.accrualRatio?.value != null) {
+    shareMetrics.push(`Accrual Ratio: ${earningsQuality.accrualRatio.value.toFixed(1)}%`);
+  }
+  if (earningsQuality.buybackYield?.value != null) {
+    shareMetrics.push(`Buyback Yield: ${earningsQuality.buybackYield.value.toFixed(2)}%`);
+  }
+
+  const shareText = `$${company.ticker} Operating Metrics\n\n${shareMetrics.join('\n')}`;
 
   return (
     <MetricSection

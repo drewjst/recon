@@ -7,10 +7,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
   formatMarketCap,
-  formatShareChange,
   formatSignedCurrency,
   determineWinner,
 } from '@/lib/compare-utils';
+
+function formatCurrencyCompact(v: number): string {
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
+  return `$${v.toFixed(0)}`;
+}
 import type { StockDetailResponse, RankingResult } from '@recon/shared';
 
 interface TwoStockCompareProps {
@@ -35,34 +40,8 @@ export const TwoStockCompare = memo(function TwoStockCompare({
       {/* Comparison Sections */}
       <Card>
         <CardContent className="p-0">
-          {/* Valuation Section */}
-          <CompareSection title="VALUATION">
-            <ValuationRow
-              label="P/E"
-              leftValue={left.valuation?.pe.value}
-              rightValue={right.valuation?.pe.value}
-              format={(v) => v.toFixed(1)}
-              lowerIsBetter
-            />
-            <ValuationRow
-              label="Fwd P/E"
-              leftValue={left.valuation?.forwardPe.value}
-              rightValue={right.valuation?.forwardPe.value}
-              format={(v) => v.toFixed(1)}
-              lowerIsBetter
-            />
-            <ValuationRow
-              label="EV/EBITDA"
-              leftValue={left.valuation?.evToEbitda.value}
-              rightValue={right.valuation?.evToEbitda.value}
-              format={(v) => v.toFixed(1)}
-              lowerIsBetter
-            />
-            <DCFRow left={left} right={right} />
-          </CompareSection>
-
-          {/* Scores Section */}
-          <CompareSection title="SCORES">
+          {/* Financial Health Scores - matches Conviction Scores in single stock view */}
+          <CompareSection title="FINANCIAL HEALTH SCORES">
             <ScoreBarRow
               label="Piotroski"
               leftValue={left.scores?.piotroski.score}
@@ -86,66 +65,159 @@ export const TwoStockCompare = memo(function TwoStockCompare({
             />
           </CompareSection>
 
-          {/* Growth Section */}
-          <CompareSection title="GROWTH">
-            <GrowthRow
-              label="Revenue YoY"
-              leftValue={left.financials?.revenueGrowthYoY}
-              rightValue={right.financials?.revenueGrowthYoY}
-              format={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`}
+          {/* Valuation Section */}
+          <CompareSection title="VALUATION">
+            <MetricRow
+              label="P/E"
+              leftValue={left.valuation?.pe.value}
+              rightValue={right.valuation?.pe.value}
+              format={(v) => v.toFixed(1)}
+              lowerIsBetter
             />
-            <GrowthRow
-              label="Gross Margin"
-              leftValue={left.financials?.grossMargin}
-              rightValue={right.financials?.grossMargin}
-              format={(v) => `${v.toFixed(1)}%`}
+            <MetricRow
+              label="Forward P/E"
+              leftValue={left.valuation?.forwardPe.value}
+              rightValue={right.valuation?.forwardPe.value}
+              format={(v) => v.toFixed(1)}
+              lowerIsBetter
             />
-            <GrowthRow
-              label="Net Margin"
-              leftValue={left.financials?.netMargin}
-              rightValue={right.financials?.netMargin}
-              format={(v) => `${v.toFixed(1)}%`}
+            <MetricRow
+              label="PEG Ratio"
+              leftValue={left.valuation?.peg.value}
+              rightValue={right.valuation?.peg.value}
+              format={(v) => v.toFixed(2)}
+              lowerIsBetter
+            />
+            <MetricRow
+              label="EV/EBITDA"
+              leftValue={left.valuation?.evToEbitda.value}
+              rightValue={right.valuation?.evToEbitda.value}
+              format={(v) => v.toFixed(1)}
+              lowerIsBetter
+            />
+            <MetricRow
+              label="Price/FCF"
+              leftValue={left.valuation?.priceToFcf.value}
+              rightValue={right.valuation?.priceToFcf.value}
+              format={(v) => v.toFixed(1)}
+              lowerIsBetter
+            />
+            <MetricRow
+              label="Price/Book"
+              leftValue={left.valuation?.priceToBook.value}
+              rightValue={right.valuation?.priceToBook.value}
+              format={(v) => v.toFixed(2)}
+              lowerIsBetter
             />
           </CompareSection>
 
-          {/* Profitability Section */}
-          <CompareSection title="PROFITABILITY">
-            <GrowthRow
-              label="ROIC"
-              leftValue={left.profitability?.roic.value}
-              rightValue={right.profitability?.roic.value}
+          {/* Growth Section */}
+          <CompareSection title="GROWTH">
+            <MetricRow
+              label="Revenue YoY"
+              leftValue={left.growth?.revenueGrowthYoY.value}
+              rightValue={right.growth?.revenueGrowthYoY.value}
+              format={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
+            <MetricRow
+              label="EPS YoY"
+              leftValue={left.growth?.epsGrowthYoY.value}
+              rightValue={right.growth?.epsGrowthYoY.value}
+              format={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
+            <MetricRow
+              label="Proj. EPS Growth"
+              leftValue={left.growth?.projectedEpsGrowth?.value}
+              rightValue={right.growth?.projectedEpsGrowth?.value}
+              format={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
+            <MetricRow
+              label="Cash Flow YoY"
+              leftValue={left.growth?.cashFlowGrowthYoY?.value}
+              rightValue={right.growth?.cashFlowGrowthYoY?.value}
+              format={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
+          </CompareSection>
+
+          {/* Margins & Returns Section */}
+          <CompareSection title="MARGINS & RETURNS">
+            <MetricRow
+              label="Gross Margin"
+              leftValue={left.profitability?.grossMargin?.value}
+              rightValue={right.profitability?.grossMargin?.value}
               format={(v) => `${v.toFixed(1)}%`}
             />
-            <GrowthRow
-              label="ROE"
-              leftValue={left.profitability?.roe.value}
-              rightValue={right.profitability?.roe.value}
-              format={(v) => `${v.toFixed(1)}%`}
-            />
-            <GrowthRow
+            <MetricRow
               label="Op. Margin"
               leftValue={left.profitability?.operatingMargin.value}
               rightValue={right.profitability?.operatingMargin.value}
               format={(v) => `${v.toFixed(1)}%`}
             />
+            <MetricRow
+              label="Net Margin"
+              leftValue={left.profitability?.netMargin?.value}
+              rightValue={right.profitability?.netMargin?.value}
+              format={(v) => `${v.toFixed(1)}%`}
+            />
+            <MetricRow
+              label="ROE"
+              leftValue={left.profitability?.roe.value}
+              rightValue={right.profitability?.roe.value}
+              format={(v) => `${v.toFixed(1)}%`}
+            />
+            <MetricRow
+              label="ROIC"
+              leftValue={left.profitability?.roic.value}
+              rightValue={right.profitability?.roic.value}
+              format={(v) => `${v.toFixed(1)}%`}
+            />
           </CompareSection>
 
-          {/* Financial Health Section */}
-          <CompareSection title="FINANCIAL HEALTH">
-            <GrowthRow
+          {/* Operating Metrics Section */}
+          <CompareSection title="OPERATING METRICS">
+            <MetricRow
+              label="Rev/Employee"
+              leftValue={left.earningsQuality?.revenuePerEmployee?.value}
+              rightValue={right.earningsQuality?.revenuePerEmployee?.value}
+              format={(v) => formatCurrencyCompact(v)}
+            />
+            <MetricRow
+              label="Income/Employee"
+              leftValue={left.earningsQuality?.incomePerEmployee?.value}
+              rightValue={right.earningsQuality?.incomePerEmployee?.value}
+              format={(v) => formatCurrencyCompact(v)}
+            />
+            <MetricRow
+              label="Accrual Ratio"
+              leftValue={left.earningsQuality?.accrualRatio.value}
+              rightValue={right.earningsQuality?.accrualRatio.value}
+              format={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`}
+              lowerIsBetter
+            />
+            <MetricRow
+              label="Buyback Yield"
+              leftValue={left.earningsQuality?.buybackYield.value}
+              rightValue={right.earningsQuality?.buybackYield.value}
+              format={(v) => `${v.toFixed(2)}%`}
+            />
+          </CompareSection>
+
+          {/* Balance Sheet Section */}
+          <CompareSection title="BALANCE SHEET">
+            <MetricRow
               label="Debt/Equity"
               leftValue={left.financialHealth?.debtToEquity.value}
               rightValue={right.financialHealth?.debtToEquity.value}
               format={(v) => `${v.toFixed(2)}x`}
               lowerIsBetter
             />
-            <GrowthRow
+            <MetricRow
               label="Current Ratio"
               leftValue={left.financialHealth?.currentRatio.value}
               rightValue={right.financialHealth?.currentRatio.value}
               format={(v) => `${v.toFixed(2)}x`}
             />
-            <GrowthRow
+            <MetricRow
               label="Asset Turnover"
               leftValue={left.financialHealth?.assetTurnover.value}
               rightValue={right.financialHealth?.assetTurnover.value}
@@ -155,13 +227,13 @@ export const TwoStockCompare = memo(function TwoStockCompare({
 
           {/* Smart Money Section */}
           <CompareSection title="SMART MONEY">
-            <GrowthRow
+            <MetricRow
               label="Inst. Ownership"
               leftValue={left.holdings?.totalInstitutionalOwnership}
               rightValue={right.holdings?.totalInstitutionalOwnership}
-              format={(v) => `${v.toFixed(1)}%`}
+              format={(v) => `${(v * 100).toFixed(1)}%`}
             />
-            <GrowthRow
+            <MetricRow
               label="Accum. Quarters"
               leftValue={left.holdings?.netChangeQuarters}
               rightValue={right.holdings?.netChangeQuarters}
@@ -172,51 +244,69 @@ export const TwoStockCompare = memo(function TwoStockCompare({
 
           {/* Analyst Estimates Section */}
           <CompareSection title="ANALYST ESTIMATES">
-            <GrowthRow
+            <MetricRow
               label="Rating Score"
               leftValue={left.analystEstimates?.ratingScore}
               rightValue={right.analystEstimates?.ratingScore}
               format={(v) => v.toFixed(1)}
             />
-            <GrowthRow
+            <MetricRow
               label="Analyst Count"
               leftValue={left.analystEstimates?.analystCount}
               rightValue={right.analystEstimates?.analystCount}
               format={(v) => v.toFixed(0)}
             />
-            <GrowthRow
+            <MetricRow
               label="EPS Growth Est."
               leftValue={left.analystEstimates?.epsGrowthNextYear}
               rightValue={right.analystEstimates?.epsGrowthNextYear}
+              format={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
+            <MetricRow
+              label="Rev Growth Est."
+              leftValue={left.analystEstimates?.revenueGrowthNextYear}
+              rightValue={right.analystEstimates?.revenueGrowthNextYear}
               format={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`}
             />
           </CompareSection>
 
           {/* Performance Section */}
           <CompareSection title="PERFORMANCE">
-            <GrowthRow
+            <MetricRow
               label="1D Change"
               leftValue={left.performance?.day1Change}
               rightValue={right.performance?.day1Change}
               format={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
             />
-            <GrowthRow
+            <MetricRow
+              label="1W Change"
+              leftValue={left.performance?.week1Change}
+              rightValue={right.performance?.week1Change}
+              format={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
+            <MetricRow
               label="1M Change"
               leftValue={left.performance?.month1Change}
               rightValue={right.performance?.month1Change}
               format={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
             />
-            <GrowthRow
+            <MetricRow
               label="YTD Return"
               leftValue={left.performance?.ytdChange}
               rightValue={right.performance?.ytdChange}
               format={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
             />
-            <GrowthRow
+            <MetricRow
               label="1Y Return"
               leftValue={left.performance?.year1Change}
               rightValue={right.performance?.year1Change}
               format={(v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
+            />
+            <MetricRow
+              label="% of 52W High"
+              leftValue={left.performance?.percentOf52WeekHigh}
+              rightValue={right.performance?.percentOf52WeekHigh}
+              format={(v) => `${v.toFixed(0)}%`}
             />
           </CompareSection>
         </CardContent>
@@ -273,7 +363,7 @@ function CompareSection({ title, children }: { title: string; children: React.Re
   );
 }
 
-interface ValuationRowProps {
+interface MetricRowProps {
   label: string;
   leftValue: number | null | undefined;
   rightValue: number | null | undefined;
@@ -281,7 +371,7 @@ interface ValuationRowProps {
   lowerIsBetter?: boolean;
 }
 
-function ValuationRow({ label, leftValue, rightValue, format, lowerIsBetter }: ValuationRowProps) {
+function MetricRow({ label, leftValue, rightValue, format, lowerIsBetter }: MetricRowProps) {
   const winner = determineWinner(leftValue, rightValue, !lowerIsBetter);
   const leftWins = winner === 'left';
   const rightWins = winner === 'right';
@@ -302,40 +392,6 @@ function ValuationRow({ label, leftValue, rightValue, format, lowerIsBetter }: V
       )}>
         {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
         {rightValue != null ? format(rightValue) : '-'}
-      </div>
-    </div>
-  );
-}
-
-function DCFRow({ left, right }: { left: StockDetailResponse; right: StockDetailResponse }) {
-  const leftDcf = left.scores?.dcfValuation;
-  const rightDcf = right.scores?.dcfValuation;
-
-  const leftWins = leftDcf && rightDcf && leftDcf.differencePercent > rightDcf.differencePercent;
-  const rightWins = leftDcf && rightDcf && rightDcf.differencePercent > leftDcf.differencePercent;
-
-  const formatDcf = (dcf: typeof leftDcf) => {
-    if (!dcf) return '-';
-    const sign = dcf.differencePercent >= 0 ? '+' : '';
-    return `$${dcf.intrinsicValue.toFixed(0)} (${sign}${dcf.differencePercent.toFixed(0)}%)`;
-  };
-
-  return (
-    <div className="grid grid-cols-[1fr_120px_1fr] items-center py-3 px-4">
-      <div className={cn(
-        'text-right font-mono text-sm',
-        leftWins && 'text-green-600 font-semibold'
-      )}>
-        {formatDcf(leftDcf)}
-        {leftWins && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
-      </div>
-      <div className="text-center text-sm text-muted-foreground">DCF Value</div>
-      <div className={cn(
-        'text-left font-mono text-sm',
-        rightWins && 'text-green-600 font-semibold'
-      )}>
-        {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
-        {formatDcf(rightDcf)}
       </div>
     </div>
   );
@@ -405,39 +461,6 @@ function ScoreBarRow({ label, leftValue, rightValue, maxValue, format }: ScoreBa
   );
 }
 
-interface GrowthRowProps {
-  label: string;
-  leftValue: number | null | undefined;
-  rightValue: number | null | undefined;
-  format: (v: number) => string;
-  lowerIsBetter?: boolean;
-}
-
-function GrowthRow({ label, leftValue, rightValue, format, lowerIsBetter }: GrowthRowProps) {
-  const winner = determineWinner(leftValue, rightValue, !lowerIsBetter);
-  const leftWins = winner === 'left';
-  const rightWins = winner === 'right';
-
-  return (
-    <div className="grid grid-cols-[1fr_120px_1fr] items-center py-3 px-4">
-      <div className={cn(
-        'text-right font-mono',
-        leftWins && 'text-green-600 font-semibold'
-      )}>
-        {leftValue != null ? format(leftValue) : '-'}
-        {leftWins && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
-      </div>
-      <div className="text-center text-sm text-muted-foreground">{label}</div>
-      <div className={cn(
-        'text-left font-mono',
-        rightWins && 'text-green-600 font-semibold'
-      )}>
-        {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
-        {rightValue != null ? format(rightValue) : '-'}
-      </div>
-    </div>
-  );
-}
 
 function InsiderRow({ left, right }: { left: StockDetailResponse; right: StockDetailResponse }) {
   const leftActivity = left.insiderActivity;

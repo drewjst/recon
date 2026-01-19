@@ -79,12 +79,23 @@ export function ValuationSection({ data }: ValuationSectionProps) {
     }),
   ];
 
-  // Build share text
-  const pe = valuation.pe.value;
-  const sectorPe = valuation.pe.sectorMedian;
-  const shareText = pe && sectorPe
-    ? `${company.ticker} trades at ${pe.toFixed(1)}x P/E vs industry avg ${sectorPe.toFixed(1)}x`
-    : `${company.ticker} valuation analysis on Cruxit`;
+  // Build rich share text
+  const shareMetrics: string[] = [];
+  if (valuation.pe.value != null) {
+    const vs = valuation.pe.sectorMedian ? ` (sector: ${valuation.pe.sectorMedian.toFixed(1)}x)` : '';
+    shareMetrics.push(`P/E: ${valuation.pe.value.toFixed(1)}x${vs}`);
+  }
+  if (valuation.peg.value != null) {
+    shareMetrics.push(`PEG: ${valuation.peg.value.toFixed(2)}`);
+  }
+  if (valuation.evToEbitda.value != null) {
+    shareMetrics.push(`EV/EBITDA: ${valuation.evToEbitda.value.toFixed(1)}x`);
+  }
+  if (valuation.priceToFcf.value != null) {
+    shareMetrics.push(`P/FCF: ${valuation.priceToFcf.value.toFixed(1)}x`);
+  }
+
+  const shareText = `$${company.ticker} Valuation\n\n${shareMetrics.join('\n')}`;
 
   return (
     <MetricSection
