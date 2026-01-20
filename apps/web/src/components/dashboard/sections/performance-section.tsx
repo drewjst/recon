@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { SectionCard } from './section-card';
 import type { StockDetailResponse } from '@recon/shared';
 
@@ -7,7 +8,7 @@ interface PerformanceSectionProps {
   data: StockDetailResponse;
 }
 
-export function PerformanceSection({ data }: PerformanceSectionProps) {
+export const PerformanceSection = memo(function PerformanceSection({ data }: PerformanceSectionProps) {
   const { quote, performance } = data;
 
   const performanceMetrics = [
@@ -53,4 +54,4 @@ export function PerformanceSection({ data }: PerformanceSectionProps) {
       </div>
     </SectionCard>
   );
-}
+});

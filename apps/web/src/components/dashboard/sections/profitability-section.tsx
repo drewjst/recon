@@ -1,37 +1,11 @@
 'use client';
 
 import { MetricSection, type Metric } from './metric-section';
-import type { StockDetailResponse, SectorMetric } from '@recon/shared';
+import { toMetric, buildShareText } from '@/lib/metric-helpers';
+import type { StockDetailResponse } from '@recon/shared';
 
 interface ProfitabilitySectionProps {
   data: StockDetailResponse;
-}
-
-/**
- * Helper to convert SectorMetric to Metric format
- */
-function toMetric(
-  key: string,
-  label: string,
-  sm: SectorMetric | undefined,
-  options: {
-    format: Metric['format'];
-    higherIsBetter: boolean;
-    info?: string;
-    learnMoreUrl?: string;
-  }
-): Metric {
-  return {
-    key,
-    label,
-    value: sm?.value ?? null,
-    industryAverage: sm?.sectorMedian ?? null,
-    percentile: sm?.percentile ?? null,
-    format: options.format,
-    higherIsBetter: options.higherIsBetter,
-    info: options.info,
-    learnMoreUrl: options.learnMoreUrl,
-  };
 }
 
 export function ProfitabilitySection({ data }: ProfitabilitySectionProps) {
@@ -90,25 +64,14 @@ export function ProfitabilitySection({ data }: ProfitabilitySectionProps) {
     })
   );
 
-  // Build rich share text
-  const shareMetrics: string[] = [];
-  if (profitability.grossMargin?.value != null) {
-    shareMetrics.push(`Gross Margin: ${profitability.grossMargin.value.toFixed(1)}%`);
-  }
-  if (profitability.operatingMargin?.value != null) {
-    shareMetrics.push(`Operating Margin: ${profitability.operatingMargin.value.toFixed(1)}%`);
-  }
-  if (profitability.netMargin?.value != null) {
-    shareMetrics.push(`Net Margin: ${profitability.netMargin.value.toFixed(1)}%`);
-  }
-  if (profitability.roe?.value != null) {
-    shareMetrics.push(`ROE: ${profitability.roe.value.toFixed(1)}%`);
-  }
-  if (profitability.roic?.value != null) {
-    shareMetrics.push(`ROIC: ${profitability.roic.value.toFixed(1)}%`);
-  }
-
-  const shareText = `$${company.ticker} Margins & Returns\n\n${shareMetrics.join('\n')}`;
+  // Build share text
+  const shareText = buildShareText(company.ticker, 'Margins & Returns', [
+    { label: 'Gross Margin', value: profitability.grossMargin?.value != null ? `${profitability.grossMargin.value.toFixed(1)}%` : null },
+    { label: 'Operating Margin', value: profitability.operatingMargin?.value != null ? `${profitability.operatingMargin.value.toFixed(1)}%` : null },
+    { label: 'Net Margin', value: profitability.netMargin?.value != null ? `${profitability.netMargin.value.toFixed(1)}%` : null },
+    { label: 'ROE', value: profitability.roe?.value != null ? `${profitability.roe.value.toFixed(1)}%` : null },
+    { label: 'ROIC', value: profitability.roic?.value != null ? `${profitability.roic.value.toFixed(1)}%` : null },
+  ]);
 
   return (
     <MetricSection

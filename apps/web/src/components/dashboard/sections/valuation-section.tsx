@@ -1,37 +1,11 @@
 'use client';
 
 import { MetricSection, type Metric } from './metric-section';
-import type { StockDetailResponse, ValuationMetric } from '@recon/shared';
+import { toMetric, buildShareText } from '@/lib/metric-helpers';
+import type { StockDetailResponse } from '@recon/shared';
 
 interface ValuationSectionProps {
   data: StockDetailResponse;
-}
-
-/**
- * Helper to convert ValuationMetric to Metric format
- */
-function toMetric(
-  key: string,
-  label: string,
-  vm: ValuationMetric | undefined,
-  options: {
-    format: Metric['format'];
-    higherIsBetter: boolean;
-    info?: string;
-    learnMoreUrl?: string;
-  }
-): Metric {
-  return {
-    key,
-    label,
-    value: vm?.value ?? null,
-    industryAverage: vm?.sectorMedian ?? null,
-    percentile: vm?.percentile ?? null,
-    format: options.format,
-    higherIsBetter: options.higherIsBetter,
-    info: options.info,
-    learnMoreUrl: options.learnMoreUrl,
-  };
 }
 
 export function ValuationSection({ data }: ValuationSectionProps) {
@@ -79,23 +53,13 @@ export function ValuationSection({ data }: ValuationSectionProps) {
     }),
   ];
 
-  // Build rich share text
-  const shareMetrics: string[] = [];
-  if (valuation.pe.value != null) {
-    const vs = valuation.pe.sectorMedian ? ` (sector: ${valuation.pe.sectorMedian.toFixed(1)}x)` : '';
-    shareMetrics.push(`P/E: ${valuation.pe.value.toFixed(1)}x${vs}`);
-  }
-  if (valuation.peg.value != null) {
-    shareMetrics.push(`PEG: ${valuation.peg.value.toFixed(2)}`);
-  }
-  if (valuation.evToEbitda.value != null) {
-    shareMetrics.push(`EV/EBITDA: ${valuation.evToEbitda.value.toFixed(1)}x`);
-  }
-  if (valuation.priceToFcf.value != null) {
-    shareMetrics.push(`P/FCF: ${valuation.priceToFcf.value.toFixed(1)}x`);
-  }
-
-  const shareText = `$${company.ticker} Valuation\n\n${shareMetrics.join('\n')}`;
+  // Build share text
+  const shareText = buildShareText(company.ticker, 'Valuation', [
+    { label: 'P/E', value: valuation.pe.value != null ? `${valuation.pe.value.toFixed(1)}x` : null },
+    { label: 'PEG', value: valuation.peg.value != null ? valuation.peg.value.toFixed(2) : null },
+    { label: 'EV/EBITDA', value: valuation.evToEbitda.value != null ? `${valuation.evToEbitda.value.toFixed(1)}x` : null },
+    { label: 'P/FCF', value: valuation.priceToFcf.value != null ? `${valuation.priceToFcf.value.toFixed(1)}x` : null },
+  ]);
 
   return (
     <MetricSection

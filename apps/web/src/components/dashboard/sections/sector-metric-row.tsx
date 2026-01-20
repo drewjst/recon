@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Info, ExternalLink } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { SectorMetric } from '@recon/shared';
@@ -91,7 +92,7 @@ function PositionBar({ metric }: { metric: SectorMetric }) {
   );
 }
 
-export function SectorMetricRow({
+export const SectorMetricRow = memo(function SectorMetricRow({
   label,
   metric,
   formatValue,
@@ -144,4 +145,4 @@ export function SectorMetricRow({
       <PositionBar metric={metric} />
     </div>
   );
-}
+});

@@ -1,37 +1,11 @@
 'use client';
 
 import { MetricSection, type Metric } from './metric-section';
-import type { StockDetailResponse, SectorMetric } from '@recon/shared';
+import { toMetric, buildShareText } from '@/lib/metric-helpers';
+import type { StockDetailResponse } from '@recon/shared';
 
 interface FinancialHealthSectionProps {
   data: StockDetailResponse;
-}
-
-/**
- * Helper to convert SectorMetric to Metric format
- */
-function toMetric(
-  key: string,
-  label: string,
-  sm: SectorMetric | undefined,
-  options: {
-    format: Metric['format'];
-    higherIsBetter: boolean;
-    info?: string;
-    learnMoreUrl?: string;
-  }
-): Metric {
-  return {
-    key,
-    label,
-    value: sm?.value ?? null,
-    industryAverage: sm?.sectorMedian ?? null,
-    percentile: sm?.percentile ?? null,
-    format: options.format,
-    higherIsBetter: options.higherIsBetter,
-    info: options.info,
-    learnMoreUrl: options.learnMoreUrl,
-  };
 }
 
 export function FinancialHealthSection({ data }: FinancialHealthSectionProps) {
@@ -61,20 +35,12 @@ export function FinancialHealthSection({ data }: FinancialHealthSectionProps) {
     }),
   ];
 
-  // Build rich share text
-  const shareMetrics: string[] = [];
-
-  if (financialHealth.debtToEquity?.value != null) {
-    shareMetrics.push(`Debt/Equity: ${financialHealth.debtToEquity.value.toFixed(2)}x`);
-  }
-  if (financialHealth.currentRatio?.value != null) {
-    shareMetrics.push(`Current Ratio: ${financialHealth.currentRatio.value.toFixed(2)}x`);
-  }
-  if (financialHealth.assetTurnover?.value != null) {
-    shareMetrics.push(`Asset Turnover: ${financialHealth.assetTurnover.value.toFixed(2)}x`);
-  }
-
-  const shareText = `$${company.ticker} Balance Sheet\n\n${shareMetrics.join('\n')}`;
+  // Build share text
+  const shareText = buildShareText(company.ticker, 'Balance Sheet', [
+    { label: 'Debt/Equity', value: financialHealth.debtToEquity?.value != null ? `${financialHealth.debtToEquity.value.toFixed(2)}x` : null },
+    { label: 'Current Ratio', value: financialHealth.currentRatio?.value != null ? `${financialHealth.currentRatio.value.toFixed(2)}x` : null },
+    { label: 'Asset Turnover', value: financialHealth.assetTurnover?.value != null ? `${financialHealth.assetTurnover.value.toFixed(2)}x` : null },
+  ]);
 
   return (
     <MetricSection

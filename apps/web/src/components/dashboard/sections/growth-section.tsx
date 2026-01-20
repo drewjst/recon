@@ -1,37 +1,11 @@
 'use client';
 
 import { MetricSection, type Metric } from './metric-section';
-import type { StockDetailResponse, SectorMetric } from '@recon/shared';
+import { toMetric } from '@/lib/metric-helpers';
+import type { StockDetailResponse } from '@recon/shared';
 
 interface GrowthSectionProps {
   data: StockDetailResponse;
-}
-
-/**
- * Helper to convert SectorMetric to Metric format
- */
-function toMetric(
-  key: string,
-  label: string,
-  sm: SectorMetric | undefined,
-  options: {
-    format: Metric['format'];
-    higherIsBetter: boolean;
-    info?: string;
-    learnMoreUrl?: string;
-  }
-): Metric {
-  return {
-    key,
-    label,
-    value: sm?.value ?? null,
-    industryAverage: sm?.sectorMedian ?? null,
-    percentile: sm?.percentile ?? null,
-    format: options.format,
-    higherIsBetter: options.higherIsBetter,
-    info: options.info,
-    learnMoreUrl: options.learnMoreUrl,
-  };
 }
 
 export function GrowthSection({ data }: GrowthSectionProps) {

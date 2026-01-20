@@ -1,37 +1,12 @@
 'use client';
 
 import { MetricSection, type Metric } from './metric-section';
-import type { StockDetailResponse, SectorMetric } from '@recon/shared';
+import { toMetric } from '@/lib/metric-helpers';
+import { formatCompactCurrency } from '@/lib/utils';
+import type { StockDetailResponse } from '@recon/shared';
 
 interface EarningsQualitySectionProps {
   data: StockDetailResponse;
-}
-
-/**
- * Helper to convert SectorMetric to Metric format
- */
-function toMetric(
-  key: string,
-  label: string,
-  sm: SectorMetric | undefined,
-  options: {
-    format: Metric['format'];
-    higherIsBetter: boolean;
-    info?: string;
-    learnMoreUrl?: string;
-  }
-): Metric {
-  return {
-    key,
-    label,
-    value: sm?.value ?? null,
-    industryAverage: sm?.sectorMedian ?? null,
-    percentile: sm?.percentile ?? null,
-    format: options.format,
-    higherIsBetter: options.higherIsBetter,
-    info: options.info,
-    learnMoreUrl: options.learnMoreUrl,
-  };
 }
 
 export function EarningsQualitySection({ data }: EarningsQualitySectionProps) {
@@ -80,19 +55,14 @@ export function EarningsQualitySection({ data }: EarningsQualitySectionProps) {
     })
   );
 
-  // Build rich share text
+  // Build share text
   const shareMetrics: string[] = [];
-  const formatCurrency = (v: number) => {
-    if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
-    if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
-    return `$${v.toFixed(0)}`;
-  };
 
   if (earningsQuality.revenuePerEmployee?.value != null) {
-    shareMetrics.push(`Revenue/Employee: ${formatCurrency(earningsQuality.revenuePerEmployee.value)}`);
+    shareMetrics.push(`Revenue/Employee: ${formatCompactCurrency(earningsQuality.revenuePerEmployee.value)}`);
   }
   if (earningsQuality.incomePerEmployee?.value != null) {
-    shareMetrics.push(`Income/Employee: ${formatCurrency(earningsQuality.incomePerEmployee.value)}`);
+    shareMetrics.push(`Income/Employee: ${formatCompactCurrency(earningsQuality.incomePerEmployee.value)}`);
   }
   if (earningsQuality.accrualRatio?.value != null) {
     shareMetrics.push(`Accrual Ratio: ${earningsQuality.accrualRatio.value.toFixed(1)}%`);

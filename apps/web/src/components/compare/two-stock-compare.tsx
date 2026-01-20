@@ -4,18 +4,12 @@ import { memo } from 'react';
 import Link from 'next/link';
 import { ArrowUp, ArrowDown, Trophy } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { cn, formatCompactCurrency } from '@/lib/utils';
 import {
   formatMarketCap,
   formatSignedCurrency,
   determineWinner,
 } from '@/lib/compare-utils';
-
-function formatCurrencyCompact(v: number): string {
-  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
-  if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
-  return `$${v.toFixed(0)}`;
-}
 import type { StockDetailResponse, RankingResult } from '@recon/shared';
 
 interface TwoStockCompareProps {
@@ -179,13 +173,13 @@ export const TwoStockCompare = memo(function TwoStockCompare({
               label="Rev/Employee"
               leftValue={left.earningsQuality?.revenuePerEmployee?.value}
               rightValue={right.earningsQuality?.revenuePerEmployee?.value}
-              format={(v) => formatCurrencyCompact(v)}
+              format={(v) => formatCompactCurrency(v)}
             />
             <MetricRow
               label="Income/Employee"
               leftValue={left.earningsQuality?.incomePerEmployee?.value}
               rightValue={right.earningsQuality?.incomePerEmployee?.value}
-              format={(v) => formatCurrencyCompact(v)}
+              format={(v) => formatCompactCurrency(v)}
             />
             <MetricRow
               label="Accrual Ratio"

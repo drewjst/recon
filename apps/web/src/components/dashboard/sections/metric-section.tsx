@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { SectionCard } from './section-card';
 import { MetricRow, type MetricFormat } from './metric-row';
@@ -45,7 +45,7 @@ interface MetricSectionProps {
  * A collapsible section displaying metrics in Fidelity-style format.
  * Shows topN metrics when collapsed, with "Show all" button to expand.
  */
-export function MetricSection({
+export const MetricSection = memo(function MetricSection({
   title,
   ticker,
   metrics,
@@ -129,4 +129,4 @@ export function MetricSection({
       )}
     </SectionCard>
   );
-}
+});

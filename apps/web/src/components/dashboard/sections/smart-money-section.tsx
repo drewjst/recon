@@ -1,23 +1,18 @@
 'use client';
 
+import { memo } from 'react';
 import { SectionCard } from './section-card';
 import { Badge } from '@/components/ui/badge';
+import { formatCompactCurrency } from '@/lib/utils';
 import type { StockDetailResponse } from '@recon/shared';
 
 interface SmartMoneySectionProps {
   data: StockDetailResponse;
 }
 
-export function SmartMoneySection({ data }: SmartMoneySectionProps) {
+export const SmartMoneySection = memo(function SmartMoneySection({ data }: SmartMoneySectionProps) {
   const { company, holdings, insiderActivity } = data;
   if (!holdings) return null;
-
-  const formatValue = (val: number) => {
-    const absVal = Math.abs(val);
-    if (absVal >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
-    if (absVal >= 1e3) return `$${(val / 1e3).toFixed(0)}K`;
-    return `$${val.toFixed(0)}`;
-  };
 
   // Defensive: ensure insiderActivity exists and has expected properties
   const buyCount = insiderActivity?.buyCount90d ?? 0;
@@ -39,7 +34,7 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
   if (hasInsiderActivity) {
     shareMetrics.push(`Insider Activity (90d): ${buyCount} buys, ${sellCount} sells`);
     if (netValue !== 0) {
-      shareMetrics.push(`Net Insider Value: ${netValue >= 0 ? '+' : ''}${formatValue(netValue)}`);
+      shareMetrics.push(`Net Insider Value: ${netValue >= 0 ? '+' : ''}${formatCompactCurrency(netValue)}`);
     }
   }
 
@@ -117,7 +112,7 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
               </div>
               <div className="ml-auto">
                 <span className={`text-sm font-medium font-mono ${netValue >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  Net: {netValue >= 0 ? '+' : ''}{formatValue(netValue)}
+                  Net: {netValue >= 0 ? '+' : ''}{formatCompactCurrency(netValue)}
                 </span>
               </div>
             </div>
@@ -130,7 +125,7 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
                     <div key={`${trade.tradeDate}-${trade.insiderName}-${trade.shares}`} className="flex items-center justify-between text-sm py-1 border-t border-border/30 first:border-t-0">
                       <span className="truncate max-w-[150px] md:max-w-[200px]">{trade.insiderName}</span>
                       <span className={`font-mono ${trade.tradeType === 'buy' ? 'text-success' : 'text-destructive'}`}>
-                        {trade.tradeType === 'buy' ? 'Buy' : 'Sell'} {formatValue(trade.value)}
+                        {trade.tradeType === 'buy' ? 'Buy' : 'Sell'} {formatCompactCurrency(trade.value)}
                       </span>
                     </div>
                   ))}
@@ -143,4 +138,4 @@ export function SmartMoneySection({ data }: SmartMoneySectionProps) {
       </div>
     </SectionCard>
   );
-}
+});
