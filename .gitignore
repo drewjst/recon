@@ -55,5 +55,6 @@ temp/
 
 # Package Managers
 pnpm-lock.yaml
-package-lock.json
 yarn.lock
+# Allow app lockfiles for Docker builds
+!apps/*/package-lock.json
