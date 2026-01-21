@@ -16,4 +16,6 @@ type ShortInterest struct {
 	ShortRatio            float64
 	ShortPercentFloat     float64
 	ShortPercentShares    float64
+	DaysToCover           float64
+	SettlementDate        string
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/drewjst/recon/apps/api/internal/domain/scores"
 	"github.com/drewjst/recon/apps/api/internal/domain/signals"
 	"github.com/drewjst/recon/apps/api/internal/infrastructure/db"
+	"github.com/drewjst/recon/apps/api/internal/infrastructure/external/polygon"
 	"github.com/drewjst/recon/apps/api/internal/infrastructure/providers"
 )
 
@@ -56,6 +57,9 @@ type Service struct {
 	fundamentals providers.FundamentalsProvider
 	quotes       providers.QuoteProvider
 
+	// Polygon client for short interest data
+	polygonClient *polygon.Client
+
 	// Cache repository (optional)
 	cacheRepo *db.Repository
 
@@ -96,6 +100,7 @@ func NewCachedService(
 	quotes providers.QuoteProvider,
 	cacheRepo *db.Repository,
 	cfg ServiceConfig,
+	polygonClient *polygon.Client,
 ) *Service {
 	return &Service{
 		fundamentals:  fundamentals,
@@ -103,6 +108,7 @@ func NewCachedService(
 		cacheRepo:     cacheRepo,
 		cacheTTL:      cfg.CacheTTL,
 		quoteCacheTTL: cfg.QuoteCacheTTL,
+		polygonClient: polygonClient,
 	}
 }
 
@@ -210,18 +216,19 @@ func (s *Service) GetStockDetail(ctx context.Context, ticker string) (*StockDeta
 // fetchAndBuildResponse fetches data from providers and builds the response.
 func (s *Service) fetchAndBuildResponse(ctx context.Context, ticker string) (*StockDetailResponse, error) {
 	var (
-		company          *models.Company
-		quote            *models.Quote
-		ratios           *models.Ratios
-		financials       []models.Financials
-		holders          []models.InstitutionalHolder
-		trades           []models.InsiderTrade
-		prices           []models.PriceBar
-		dcf              *models.DCF
-		technicalMetrics *models.TechnicalMetrics
-		shortInterest    *models.ShortInterest
-		analystEstimates *models.AnalystEstimates
-		etfData          *models.ETFData
+		company             *models.Company
+		quote               *models.Quote
+		ratios              *models.Ratios
+		financials          []models.Financials
+		holders             []models.InstitutionalHolder
+		trades              []models.InsiderTrade
+		prices              []models.PriceBar
+		dcf                 *models.DCF
+		technicalMetrics    *models.TechnicalMetrics
+		shortInterest       *models.ShortInterest
+		polygonShortInterst *polygon.ShortInterestResult
+		analystEstimates    *models.AnalystEstimates
+		etfData             *models.ETFData
 	)
 
 	// Fetch all data in parallel
@@ -315,10 +322,22 @@ func (s *Service) fetchAndBuildResponse(ctx context.Context, ticker string) (*St
 		var err error
 		shortInterest, err = s.fundamentals.GetShortInterest(gctx, ticker)
 		if err != nil {
-			slog.Warn("failed to fetch short interest", "ticker", ticker, "error", err)
+			slog.Warn("failed to fetch short interest from fundamentals provider", "ticker", ticker, "error", err)
 		}
 		return nil
 	})
+
+	// Fetch short interest from Polygon Massive API
+	if s.polygonClient != nil {
+		g.Go(func() error {
+			var err error
+			polygonShortInterst, err = s.polygonClient.GetShortInterest(gctx, ticker)
+			if err != nil {
+				slog.Warn("failed to fetch short interest from Polygon", "ticker", ticker, "error", err)
+			}
+			return nil
+		})
+	}
 
 	g.Go(func() error {
 		var err error
@@ -346,6 +365,26 @@ func (s *Service) fetchAndBuildResponse(ctx context.Context, ticker string) (*St
 	// If ETF data is present, build ETF response
 	if etfData != nil {
 		return s.buildETFResponseFromProviders(company, quote, prices, etfData), nil
+	}
+
+	// Merge Polygon short interest data if available
+	if polygonShortInterst != nil {
+		if shortInterest == nil {
+			shortInterest = &models.ShortInterest{}
+		}
+		shortInterest.SharesShort = polygonShortInterst.ShortInterest
+		shortInterest.DaysToCover = polygonShortInterst.DaysToCover
+		shortInterest.SettlementDate = polygonShortInterst.SettlementDate
+
+		// Calculate short percent of float using shares outstanding
+		// SharesOutstanding = MarketCap / Price
+		if quote != nil && quote.Price > 0 && quote.MarketCap > 0 {
+			sharesOutstanding := float64(quote.MarketCap) / quote.Price
+			if sharesOutstanding > 0 {
+				shortInterest.ShortPercentFloat = (float64(polygonShortInterst.ShortInterest) / sharesOutstanding) * 100
+				shortInterest.ShortPercentShares = shortInterest.ShortPercentFloat // Same calculation
+			}
+		}
 	}
 
 	// Build stock response from fetched data
@@ -399,6 +438,7 @@ func (s *Service) buildResponseFromProviders(
 	signalData := &signals.StockData{
 		Financials:      convertFinancialsForSignals(financials),
 		InsiderActivity: convertInsiderActivityForSignals(insiderActivity),
+		ShortInterest:   convertShortInterestForSignals(shortInterest),
 	}
 	generator := signals.NewGenerator()
 	signalList := generator.GenerateAll(signalData, stockScores.Piotroski, stockScores.AltmanZ)
@@ -685,6 +725,8 @@ func convertShortInterestFromModel(m *models.ShortInterest) *ShortInterest {
 		ShortRatio:            m.ShortRatio,
 		ShortPercentFloat:     m.ShortPercentFloat,
 		ShortPercentShares:    m.ShortPercentShares,
+		DaysToCover:           m.DaysToCover,
+		SettlementDate:        m.SettlementDate,
 	}
 }
 
@@ -1456,12 +1498,24 @@ func (s *Service) analyzeStock(data *stockData) (Scores, []signals.Signal) {
 	signalData := &signals.StockData{
 		Financials:      convertFinancials(data.financials),
 		InsiderActivity: convertInsiderActivityForSignals(data.insiderActivity),
+		ShortInterest:   convertDomainShortInterestForSignals(data.shortInterest),
 	}
 
 	generator := signals.NewGenerator()
 	signalList := generator.GenerateAll(signalData, stockScores.Piotroski, stockScores.AltmanZ)
 
 	return stockScores, signalList
+}
+
+// convertDomainShortInterestForSignals converts domain *ShortInterest to *signals.ShortInterestData.
+func convertDomainShortInterestForSignals(si *ShortInterest) *signals.ShortInterestData {
+	if si == nil {
+		return nil
+	}
+	return &signals.ShortInterestData{
+		ShortPercentFloat: si.ShortPercentFloat,
+		DaysToCover:       si.DaysToCover,
+	}
 }
 
 // buildStockResponse constructs the API response from analyzed data.
@@ -1564,6 +1618,17 @@ func convertFinancialsForSignals(f *Financials) *signals.FinancialsData {
 		OperatingMargin:  f.OperatingMargin,
 		DebtToEquity:     f.DebtToEquity,
 		ROIC:             f.ROIC,
+	}
+}
+
+// convertShortInterestForSignals converts *models.ShortInterest to *signals.ShortInterestData.
+func convertShortInterestForSignals(si *models.ShortInterest) *signals.ShortInterestData {
+	if si == nil {
+		return nil
+	}
+	return &signals.ShortInterestData{
+		ShortPercentFloat: si.ShortPercentFloat,
+		DaysToCover:       si.DaysToCover,
 	}
 }
 

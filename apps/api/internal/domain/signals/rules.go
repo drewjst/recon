@@ -19,6 +19,13 @@ func defaultRules() []Rule {
 		&NegativeMarginsRule{},
 		&HighDebtRule{},
 		&StrongROICRule{},
+		// Short interest rules
+		&LowShortInterestRule{},
+		&ElevatedShortInterestRule{},
+		&VeryHighShortInterestRule{},
+		&LowDaysToCoverRule{},
+		&ModerateDaysToCoverRule{},
+		&HighDaysToCoverRule{},
 	}
 }
 
@@ -217,6 +224,129 @@ func (r *StrongROICRule) Evaluate(ctx *RuleContext) *Signal {
 			Message:  fmt.Sprintf("Excellent ROIC of %.1f%% shows strong capital efficiency", ctx.Financials.ROIC),
 			Priority: 3,
 			Data:     map[string]interface{}{"roic": ctx.Financials.ROIC},
+		}
+	}
+	return nil
+}
+
+// Short Interest Rules
+// These rules analyze short selling activity to identify potential signals.
+
+// LowShortInterestRule generates a bullish signal for low short interest.
+type LowShortInterestRule struct{}
+
+func (r *LowShortInterestRule) Evaluate(ctx *RuleContext) *Signal {
+	if ctx.ShortInterest == nil || ctx.ShortInterest.ShortPercentFloat <= 0 {
+		return nil
+	}
+	// Bullish if short interest < 5% of float
+	if ctx.ShortInterest.ShortPercentFloat < 5 {
+		return &Signal{
+			Type:     SignalBullish,
+			Category: CategoryTechnical,
+			Message:  fmt.Sprintf("Low short interest at %.1f%% of float", ctx.ShortInterest.ShortPercentFloat),
+			Priority: 2,
+			Data:     map[string]interface{}{"shortPercent": ctx.ShortInterest.ShortPercentFloat},
+		}
+	}
+	return nil
+}
+
+// ElevatedShortInterestRule generates a bearish signal for elevated short interest.
+type ElevatedShortInterestRule struct{}
+
+func (r *ElevatedShortInterestRule) Evaluate(ctx *RuleContext) *Signal {
+	if ctx.ShortInterest == nil || ctx.ShortInterest.ShortPercentFloat <= 0 {
+		return nil
+	}
+	// Bearish if short interest 10-20% of float
+	if ctx.ShortInterest.ShortPercentFloat >= 10 && ctx.ShortInterest.ShortPercentFloat < 20 {
+		return &Signal{
+			Type:     SignalBearish,
+			Category: CategoryTechnical,
+			Message:  fmt.Sprintf("Elevated short interest at %.1f%% of float", ctx.ShortInterest.ShortPercentFloat),
+			Priority: 3,
+			Data:     map[string]interface{}{"shortPercent": ctx.ShortInterest.ShortPercentFloat},
+		}
+	}
+	return nil
+}
+
+// VeryHighShortInterestRule generates a warning for very high short interest.
+type VeryHighShortInterestRule struct{}
+
+func (r *VeryHighShortInterestRule) Evaluate(ctx *RuleContext) *Signal {
+	if ctx.ShortInterest == nil || ctx.ShortInterest.ShortPercentFloat <= 0 {
+		return nil
+	}
+	// Warning if short interest > 20% of float (potential squeeze)
+	if ctx.ShortInterest.ShortPercentFloat >= 20 {
+		return &Signal{
+			Type:     SignalWarning,
+			Category: CategoryTechnical,
+			Message:  fmt.Sprintf("Very high short interest at %.1f%% - potential squeeze", ctx.ShortInterest.ShortPercentFloat),
+			Priority: 4,
+			Data:     map[string]interface{}{"shortPercent": ctx.ShortInterest.ShortPercentFloat},
+		}
+	}
+	return nil
+}
+
+// LowDaysToCoverRule generates a bullish signal for low days to cover.
+type LowDaysToCoverRule struct{}
+
+func (r *LowDaysToCoverRule) Evaluate(ctx *RuleContext) *Signal {
+	if ctx.ShortInterest == nil || ctx.ShortInterest.DaysToCover <= 0 {
+		return nil
+	}
+	// Bullish if days to cover < 2 (minimal short pressure)
+	if ctx.ShortInterest.DaysToCover < 2 {
+		return &Signal{
+			Type:     SignalBullish,
+			Category: CategoryTechnical,
+			Message:  fmt.Sprintf("Low days to cover (%.1f) - minimal short pressure", ctx.ShortInterest.DaysToCover),
+			Priority: 2,
+			Data:     map[string]interface{}{"daysToCover": ctx.ShortInterest.DaysToCover},
+		}
+	}
+	return nil
+}
+
+// ModerateDaysToCoverRule generates a bearish signal for moderate days to cover.
+type ModerateDaysToCoverRule struct{}
+
+func (r *ModerateDaysToCoverRule) Evaluate(ctx *RuleContext) *Signal {
+	if ctx.ShortInterest == nil || ctx.ShortInterest.DaysToCover <= 0 {
+		return nil
+	}
+	// Bearish if days to cover 5-10 (building pressure)
+	if ctx.ShortInterest.DaysToCover >= 5 && ctx.ShortInterest.DaysToCover < 10 {
+		return &Signal{
+			Type:     SignalBearish,
+			Category: CategoryTechnical,
+			Message:  fmt.Sprintf("Days to cover at %.1f suggests building pressure", ctx.ShortInterest.DaysToCover),
+			Priority: 3,
+			Data:     map[string]interface{}{"daysToCover": ctx.ShortInterest.DaysToCover},
+		}
+	}
+	return nil
+}
+
+// HighDaysToCoverRule generates a warning for high days to cover.
+type HighDaysToCoverRule struct{}
+
+func (r *HighDaysToCoverRule) Evaluate(ctx *RuleContext) *Signal {
+	if ctx.ShortInterest == nil || ctx.ShortInterest.DaysToCover <= 0 {
+		return nil
+	}
+	// Warning if days to cover > 10 (potential squeeze setup)
+	if ctx.ShortInterest.DaysToCover >= 10 {
+		return &Signal{
+			Type:     SignalWarning,
+			Category: CategoryTechnical,
+			Message:  fmt.Sprintf("High days to cover (%.1f) - potential squeeze setup", ctx.ShortInterest.DaysToCover),
+			Priority: 4,
+			Data:     map[string]interface{}{"daysToCover": ctx.ShortInterest.DaysToCover},
 		}
 	}
 	return nil

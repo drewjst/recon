@@ -73,19 +73,20 @@ func run() error {
 		return err
 	}
 
-	// Initialize stock service with configured provider
+	// Initialize Polygon client (used for search and short interest)
+	polygonClient := polygon.NewClient(cfg.PolygonAPIKey)
+	polygonSearcher := search.NewPolygonSearcher(polygonClient)
+	slog.Info("polygon search initialized")
+
+	// Initialize stock service with configured provider and Polygon client
 	stockService := stock.NewCachedService(
 		dataProvider,
 		dataProvider,
 		cacheRepo,
 		stock.DefaultServiceConfig(),
+		polygonClient,
 	)
 	slog.Info("stock service initialized", "provider", cfg.FundamentalsProvider, "caching", cacheRepo != nil)
-
-	// Initialize Polygon client and search service
-	polygonClient := polygon.NewClient(cfg.PolygonAPIKey)
-	polygonSearcher := search.NewPolygonSearcher(polygonClient)
-	slog.Info("polygon search initialized")
 
 	// Initialize router
 	router := api.NewRouter(api.RouterDeps{

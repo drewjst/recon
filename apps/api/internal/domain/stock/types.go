@@ -129,6 +129,8 @@ type ShortInterest struct {
 	ShortRatio            float64 `json:"shortRatio"`
 	ShortPercentFloat     float64 `json:"shortPercentFloat"`
 	ShortPercentShares    float64 `json:"shortPercentShares"`
+	DaysToCover           float64 `json:"daysToCover"`
+	SettlementDate        string  `json:"settlementDate,omitempty"`
 }
 
 // Financials contains key financial metrics.

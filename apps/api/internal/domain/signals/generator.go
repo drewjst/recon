@@ -33,10 +33,17 @@ type InsiderActivityData struct {
 	NetValue90d  float64
 }
 
+// ShortInterestData contains short interest metrics for signal generation.
+type ShortInterestData struct {
+	ShortPercentFloat float64
+	DaysToCover       float64
+}
+
 // StockData contains all data needed for signal generation.
 type StockData struct {
 	Financials      *FinancialsData
 	InsiderActivity *InsiderActivityData
+	ShortInterest   *ShortInterestData
 }
 
 // GenerateAll generates signals from all available data sources.
@@ -48,6 +55,7 @@ func (g *Generator) GenerateAll(
 	ctx := &RuleContext{
 		Financials:      data.Financials,
 		InsiderActivity: data.InsiderActivity,
+		ShortInterest:   data.ShortInterest,
 		Piotroski:       piotroski,
 		AltmanZ:         altmanZ,
 	}
@@ -71,6 +79,7 @@ func (g *Generator) GenerateAll(
 type RuleContext struct {
 	Financials      *FinancialsData
 	InsiderActivity *InsiderActivityData
+	ShortInterest   *ShortInterestData
 	Piotroski       scores.PiotroskiResult
 	AltmanZ         scores.AltmanZResult
 }

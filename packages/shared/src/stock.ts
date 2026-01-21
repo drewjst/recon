@@ -740,6 +740,34 @@ export interface AnalystEstimates {
 }
 
 // =============================================================================
+// Short Interest Data
+// =============================================================================
+
+/**
+ * Short interest data for a stock.
+ *
+ * Short interest represents the total number of shares sold short that have
+ * not yet been covered. This data can indicate market sentiment and potential
+ * squeeze scenarios.
+ */
+export interface ShortInterest {
+  /** Number of shares currently sold short */
+  sharesShort: number;
+  /** Number of shares sold short in the prior month */
+  sharesShortPriorMonth: number;
+  /** Short ratio (short interest / avg daily volume) */
+  shortRatio: number;
+  /** Short interest as percentage of float */
+  shortPercentFloat: number;
+  /** Short interest as percentage of shares outstanding */
+  shortPercentShares: number;
+  /** Days to cover (short interest / avg daily volume) - how many days to cover all shorts */
+  daysToCover: number;
+  /** Settlement date of the short interest data (ISO 8601) */
+  settlementDate?: string;
+}
+
+// =============================================================================
 // API Response
 // =============================================================================
 
@@ -787,6 +815,8 @@ export interface StockDetailResponse {
   earningsQuality?: EarningsQuality;
   /** Analyst estimates, ratings, and price targets (only for stocks, primarily FMP provider) */
   analystEstimates?: AnalystEstimates;
+  /** Short interest data (only for stocks) */
+  shortInterest?: ShortInterest;
   /** ETF-specific data (only for ETFs) */
   etfData?: ETFData;
   /** Data freshness timestamps */

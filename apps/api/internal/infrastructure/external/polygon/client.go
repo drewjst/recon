@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"sort"
@@ -49,6 +50,21 @@ type tickersResponse struct {
 	RequestID string               `json:"request_id"`
 	Count     int                  `json:"count"`
 	NextURL   string               `json:"next_url"`
+}
+
+// ShortInterestResult represents short interest data from Polygon Massive API.
+type ShortInterestResult struct {
+	Ticker         string  `json:"ticker"`
+	ShortInterest  int64   `json:"short_interest"`
+	AvgDailyVolume int64   `json:"avg_daily_volume"`
+	DaysToCover    float64 `json:"days_to_cover"`
+	SettlementDate string  `json:"settlement_date"`
+}
+
+// shortInterestResponse is the Massive API response structure.
+type shortInterestResponse struct {
+	Results []ShortInterestResult `json:"results"`
+	Status  string                `json:"status"`
 }
 
 // SearchTickers searches for tickers matching the query.
@@ -132,4 +148,48 @@ func (c *Client) SearchTickers(ctx context.Context, query string, limit int) ([]
 	}
 
 	return filtered, nil
+}
+
+// GetShortInterest fetches short interest data from Polygon Massive API.
+// Returns nil, nil if no data is available for the ticker.
+func (c *Client) GetShortInterest(ctx context.Context, ticker string) (*ShortInterestResult, error) {
+	params := url.Values{}
+	params.Set("ticker", strings.ToUpper(ticker))
+	params.Set("apiKey", c.apiKey)
+
+	reqURL := fmt.Sprintf("%s/stocks/v1/short-interest?%s", baseURL, params.Encode())
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("executing request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 404 or no data is not an error - just no short interest data available
+	if resp.StatusCode == http.StatusNotFound {
+		slog.Debug("no short interest data available", "ticker", ticker)
+		return nil, nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var result shortInterestResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding response: %w", err)
+	}
+
+	// Return the most recent short interest data
+	if len(result.Results) == 0 {
+		slog.Debug("empty short interest results", "ticker", ticker)
+		return nil, nil
+	}
+
+	return &result.Results[0], nil
 }
