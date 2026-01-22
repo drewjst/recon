@@ -36,20 +36,20 @@ jobs:
         run: |
           gcloud builds submit . \
             --config=.github/cloudbuild-api.yaml \
-            --substitutions=_IMAGE_NAME=recon-api-dev,COMMIT_SHA=${{ github.sha }} \
+            --substitutions=_IMAGE_NAME=crux-dev-api,COMMIT_SHA=${{ github.sha }} \
             --suppress-logs
 
       - name: Deploy API to Cloud Run
         run: |
-          gcloud run deploy recon-api-dev \
-            --image gcr.io/${{ env.PROJECT_ID }}/recon-api-dev:${{ github.sha }} \
+          gcloud run deploy crux-dev-api \
+            --image gcr.io/${{ env.PROJECT_ID }}/crux-dev-api:${{ github.sha }} \
             --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \
             --port 8080 \
             --add-cloudsql-instances=recon-484118:us-central1:cruxit-db \
             --set-secrets=FMP_API_KEY=fmp-api-key:latest,POLYGON_API_KEY=polygon-api-key:latest,DATABASE_URL=database-url:latest \
-            --set-env-vars=ALLOWED_ORIGINS=https://recon-web-dev-273165967255.us-central1.run.app,FUNDAMENTALS_PROVIDER=fmp \
+            --set-env-vars=ALLOWED_ORIGINS=https://crux-dev-web-273165967255.us-central1.run.app,FUNDAMENTALS_PROVIDER=fmp \
             --memory 512Mi \
             --cpu 1 \
             --min-instances 0 \
@@ -80,13 +80,13 @@ jobs:
         run: |
           gcloud builds submit . \
             --config=.github/cloudbuild-web.yaml \
-            --substitutions=_IMAGE_NAME=recon-web-dev,_API_URL=https://recon-api-dev-273165967255.us-central1.run.app,COMMIT_SHA=${{ github.sha }} \
+            --substitutions=_IMAGE_NAME=crux-dev-web,_API_URL=https://crux-dev-api-273165967255.us-central1.run.app,COMMIT_SHA=${{ github.sha }} \
             --suppress-logs
 
       - name: Deploy Web to Cloud Run
         run: |
-          gcloud run deploy recon-web-dev \
-            --image gcr.io/${{ env.PROJECT_ID }}/recon-web-dev:${{ github.sha }} \
+          gcloud run deploy crux-dev-web \
+            --image gcr.io/${{ env.PROJECT_ID }}/crux-dev-web:${{ github.sha }} \
             --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \

@@ -54,20 +54,20 @@ jobs:
         run: |
           gcloud builds submit . \
             --config=.github/cloudbuild-api.yaml \
-            --substitutions=_IMAGE_NAME=recon-api-prod,COMMIT_SHA=${{ github.sha }} \
+            --substitutions=_IMAGE_NAME=crux-prod-api,COMMIT_SHA=${{ github.sha }} \
             --suppress-logs
 
       - name: Deploy API to Cloud Run
         run: |
-          gcloud run deploy recon-api-prod \
-            --image gcr.io/${{ env.PROJECT_ID }}/recon-api-prod:${{ github.sha }} \
+          gcloud run deploy crux-prod-api \
+            --image gcr.io/${{ env.PROJECT_ID }}/crux-prod-api:${{ github.sha }} \
             --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \
             --port 8080 \
             --add-cloudsql-instances=recon-484118:us-central1:cruxit-db \
             --set-secrets=FMP_API_KEY=fmp-api-key:latest,POLYGON_API_KEY=polygon-api-key:latest,DATABASE_URL=database-url:latest \
-            --set-env-vars="^@^ALLOWED_ORIGINS=https://cruxit.finance,https://recon-web-prod-273165967255.us-central1.run.app@FUNDAMENTALS_PROVIDER=fmp" \
+            --set-env-vars="^@^ALLOWED_ORIGINS=https://cruxit.finance,https://crux-prod-web-273165967255.us-central1.run.app@FUNDAMENTALS_PROVIDER=fmp" \
             --memory 512Mi \
             --cpu 1 \
             --min-instances 0 \
@@ -98,13 +98,13 @@ jobs:
         run: |
           gcloud builds submit . \
             --config=.github/cloudbuild-web.yaml \
-            --substitutions=_IMAGE_NAME=recon-web-prod,_API_URL=https://recon-api-prod-273165967255.us-central1.run.app,COMMIT_SHA=${{ github.sha }} \
+            --substitutions=_IMAGE_NAME=crux-prod-web,_API_URL=https://crux-prod-api-273165967255.us-central1.run.app,COMMIT_SHA=${{ github.sha }} \
             --suppress-logs
 
       - name: Deploy Web to Cloud Run
         run: |
-          gcloud run deploy recon-web-prod \
-            --image gcr.io/${{ env.PROJECT_ID }}/recon-web-prod:${{ github.sha }} \
+          gcloud run deploy crux-prod-web \
+            --image gcr.io/${{ env.PROJECT_ID }}/crux-prod-web:${{ github.sha }} \
             --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \

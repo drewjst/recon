@@ -22,15 +22,16 @@ Recon synthesizes financial data into conviction scores and actionable signals�
 | Frontend | Next.js 14, React 18, TanStack Query, Tailwind CSS, shadcn/ui |
 | Backend | Go 1.23, Chi Router, GORM |
 | Database | PostgreSQL (Cloud SQL) — caches fundamentals for 24h |
-| Data | EODHD API (fundamentals), Polygon.io API (search) |
+| Data | FMP (fundamentals), Polygon.io (search) |
 | Deployment | Google Cloud Run, GitHub Actions |
 
 ## Data Sources
 
-| Provider | Data Type | Update Frequency |
-|----------|-----------|------------------|
-| [EODHD](https://eodhd.com) | Fundamentals, ratios, financials, holdings, insider trades | Daily/Quarterly |
-| [Polygon.io](https://polygon.io) | Ticker search, company metadata | Real-time |
+| Provider | Data Type | Usage |
+|----------|-----------|-------|
+| [FMP](https://financialmodelingprep.com) | Fundamentals, ratios, financials, holdings, insider trades, estimates | Primary |
+| [Polygon.io](https://polygon.io) | Ticker search, company metadata | Search |
+| [EODHD](https://eodhd.com) | ETF holdings | Fallback |
 
 Data is cached in PostgreSQL for 24 hours to minimize API calls.
 
@@ -41,7 +42,7 @@ Data is cached in PostgreSQL for 24 hours to minimize API calls.
 - Node.js 20+
 - Go 1.23+
 - pnpm
-- [EODHD API key](https://eodhd.com/) (for fundamentals)
+- [FMP API key](https://financialmodelingprep.com/) (for fundamentals)
 - [Polygon API key](https://polygon.io/) (for ticker search)
 
 ### Quick Start
@@ -54,7 +55,7 @@ pnpm install
 
 # Configure backend
 cp apps/api/.env.example apps/api/.env
-# Add your EODHD_API_KEY and POLYGON_API_KEY to apps/api/.env
+# Add your FMP_API_KEY and POLYGON_API_KEY to apps/api/.env
 
 # Configure frontend
 cp apps/web/.env.example apps/web/.env.local
@@ -75,13 +76,12 @@ cd apps/web && pnpm dev
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `EODHD_API_KEY` | Yes* | EODHD API key (required unless using FMP) |
-| `POLYGON_API_KEY` | Yes | Polygon.io API key (for ticker search) |
-| `DATABASE_URL` | No | PostgreSQL connection string (enables caching) |
+| `FMP_API_KEY` | Yes | FMP API key (fundamentals) |
+| `POLYGON_API_KEY` | Yes | Polygon.io API key (ticker search) |
+| `DATABASE_URL` | No | PostgreSQL connection (enables caching) |
 | `PORT` | No | Server port (default: 8080) |
 | `ALLOWED_ORIGINS` | No | CORS origins (default: http://localhost:3000) |
-| `FUNDAMENTALS_PROVIDER` | No | "eodhd" (default) or "fmp" |
-| `FMP_API_KEY` | No | FMP API key (only if FUNDAMENTALS_PROVIDER=fmp) |
+| `EODHD_API_KEY` | No | EODHD API key (ETF holdings fallback) |
 
 **Frontend (`apps/web/.env.local`):**
 
@@ -143,7 +143,7 @@ recon/
 │   │   └── internal/
 │   │       ├── api/            # Router, handlers, middleware
 │   │       ├── domain/         # Business logic, models, services
-│   │       └── infrastructure/ # DB, providers (EODHD, Polygon)
+│   │       └── infrastructure/ # DB, providers (FMP, Polygon)
 │   │
 │   └── web/                    # Next.js frontend
 │       └── src/
