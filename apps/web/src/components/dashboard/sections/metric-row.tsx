@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Info, ExternalLink } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PercentileBar } from './percentile-bar';
@@ -77,7 +78,7 @@ function formatValue(value: number | null | undefined, format: MetricFormat): st
  * A single metric row in the Fidelity-style table format.
  * Shows: Label | Stock Value | Industry Average | Percentile Bar
  */
-export function MetricRow({
+function MetricRowComponent({
   label,
   value,
   industryAverage,
@@ -148,3 +149,5 @@ export function MetricRow({
     </tr>
   );
 }
+
+export const MetricRow = memo(MetricRowComponent);

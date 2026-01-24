@@ -14,10 +14,12 @@ import (
 )
 
 const (
-	// HistoricalQuarters is the number of quarters to fetch for 10-year history.
-	HistoricalQuarters = 40
-	// MaxPeers is the maximum number of peers to fetch P/E ratios for.
-	MaxPeers = 10
+	// HistoricalQuarters is the number of quarters to fetch for historical analysis.
+	// 20 quarters = 5 years of data, sufficient for percentile calculations.
+	HistoricalQuarters = 20
+	// MaxPeers is the maximum number of peers to fetch ratios for.
+	// Limited to 6 to reduce API calls (each peer requires 2-3 API calls).
+	MaxPeers = 6
 )
 
 // Service provides valuation analysis.
@@ -175,7 +177,16 @@ func (s *Service) GetDeepDive(ctx context.Context, ticker string) (*models.Valua
 			}
 		}
 	}
-	_ = industryPE // TODO: Use industry P/E as a fallback or additional data point
+
+	// Use industry P/E as fallback if sector P/E unavailable
+	if sectorPE == nil && industryPE != nil {
+		sectorPE = &models.SectorPE{
+			Date:     industryPE.Date,
+			Sector:   industryPE.Industry, // Use industry name as sector
+			Exchange: industryPE.Exchange,
+			PE:       industryPE.PE,
+		}
+	}
 
 	// Fetch peer P/E ratios
 	if len(peers) > 0 {
