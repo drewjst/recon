@@ -69,9 +69,20 @@ func run() error {
 		FMPAPIKey:   cfg.FMPAPIKey,
 		EODHDAPIKey: cfg.EODHDAPIKey,
 	}
-	dataProvider, err := providers.NewFullProvider(providerCfg)
+	rawProvider, err := providers.NewFullProvider(providerCfg)
 	if err != nil {
 		return err
+	}
+
+	// Wrap provider with caching layer if database is available
+	var fundamentalsProvider providers.FundamentalsProvider = rawProvider
+	if cacheRepo != nil {
+		fundamentalsProvider = providers.NewCachedFundamentalsProvider(
+			rawProvider,
+			cacheRepo,
+			cfg.FundamentalsProvider,
+		)
+		slog.Info("provider caching enabled")
 	}
 
 	// Initialize Polygon client (used for search and short interest)
@@ -79,19 +90,19 @@ func run() error {
 	polygonSearcher := search.NewPolygonSearcher(polygonClient)
 	slog.Info("polygon search initialized")
 
-	// Initialize stock service with configured provider and Polygon client
+	// Initialize stock service with cached provider and Polygon client
 	stockService := stock.NewCachedService(
-		dataProvider,
-		dataProvider,
+		fundamentalsProvider,
+		rawProvider, // QuoteProvider (not cached at provider level)
 		cacheRepo,
 		stock.DefaultServiceConfig(),
 		polygonClient,
 	)
 	slog.Info("stock service initialized", "provider", cfg.FundamentalsProvider, "caching", cacheRepo != nil)
 
-	// Initialize valuation service
-	valuationService := valuation.NewService(dataProvider, dataProvider)
-	slog.Info("valuation service initialized")
+	// Initialize valuation service with cached provider
+	valuationService := valuation.NewService(fundamentalsProvider, rawProvider)
+	slog.Info("valuation service initialized", "caching", cacheRepo != nil)
 
 	// Initialize router
 	router := api.NewRouter(api.RouterDeps{

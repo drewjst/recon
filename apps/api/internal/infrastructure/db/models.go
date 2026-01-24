@@ -40,3 +40,20 @@ func (StockCache) TableName() string {
 func (QuoteCache) TableName() string {
 	return "quote_cache"
 }
+
+// ProviderCache stores cached responses from data providers.
+// This enables granular caching of individual API responses.
+type ProviderCache struct {
+	// Composite key: data_type + key (e.g., "company:AAPL", "ratios:AAPL")
+	DataType  string         `gorm:"primaryKey;size:50"`
+	Key       string         `gorm:"primaryKey;size:100"`
+	Data      datatypes.JSON `gorm:"type:jsonb"`
+	Provider  string         `gorm:"size:20"`
+	UpdatedAt time.Time      `gorm:"index"`
+	ExpiresAt time.Time      `gorm:"index"`
+}
+
+// TableName returns the table name for ProviderCache.
+func (ProviderCache) TableName() string {
+	return "provider_cache"
+}

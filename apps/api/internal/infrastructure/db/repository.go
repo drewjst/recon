@@ -65,3 +65,53 @@ func (r *Repository) DeleteAllStocks() error {
 	}
 	return nil
 }
+
+// GetProviderCache retrieves a cached provider response.
+// Returns nil, nil if not found or expired.
+func (r *Repository) GetProviderCache(dataType, key string) (*ProviderCache, error) {
+	var cache ProviderCache
+	result := r.db.First(&cache, "data_type = ? AND key = ?", dataType, key)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("querying provider cache: %w", result.Error)
+	}
+
+	// Check if expired
+	if time.Now().After(cache.ExpiresAt) {
+		return nil, nil
+	}
+
+	return &cache, nil
+}
+
+// SetProviderCache stores a provider response in the cache.
+func (r *Repository) SetProviderCache(cache *ProviderCache) error {
+	cache.UpdatedAt = time.Now()
+
+	// Use upsert (ON CONFLICT DO UPDATE)
+	result := r.db.Save(cache)
+	if result.Error != nil {
+		return fmt.Errorf("upserting provider cache: %w", result.Error)
+	}
+	return nil
+}
+
+// DeleteProviderCache removes a cached provider response.
+func (r *Repository) DeleteProviderCache(dataType, key string) error {
+	result := r.db.Where("data_type = ? AND key = ?", dataType, key).Delete(&ProviderCache{})
+	if result.Error != nil {
+		return fmt.Errorf("deleting provider cache: %w", result.Error)
+	}
+	return nil
+}
+
+// DeleteExpiredProviderCache removes all expired cache entries.
+func (r *Repository) DeleteExpiredProviderCache() error {
+	result := r.db.Where("expires_at < ?", time.Now()).Delete(&ProviderCache{})
+	if result.Error != nil {
+		return fmt.Errorf("deleting expired provider cache: %w", result.Error)
+	}
+	return nil
+}
