@@ -13,6 +13,10 @@ interface CruxAIInsightProps {
 
 const INSIGHT_STALE_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
+const sectionLabels: Record<InsightSection, string> = {
+  'valuation-summary': 'Valuation Summary',
+};
+
 export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps) {
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['insight', ticker.toUpperCase(), section],
@@ -32,25 +36,25 @@ export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps
     return (
       <div
         className={cn(
-          'rounded-xl bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30',
-          'border border-purple-200/50 dark:border-purple-800/30',
+          'rounded-xl bg-card/50 backdrop-blur-sm',
+          'border border-border/50',
           'p-5',
           className
         )}
       >
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="h-4 w-4 text-purple-500 animate-pulse" />
-          <span className="text-xs font-semibold uppercase tracking-widest text-purple-600 dark:text-purple-400">
-            CRUX.AI
+          <Sparkles className="h-4 w-4 text-muted-foreground animate-pulse" />
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {sectionLabels[section] || section}
           </span>
-          <span className="text-xs text-purple-500/70 dark:text-purple-400/70">
+          <span className="text-xs text-muted-foreground/70">
             analyzing...
           </span>
         </div>
         <div className="space-y-2">
-          <div className="h-4 bg-purple-200/50 dark:bg-purple-800/30 rounded animate-pulse w-full" />
-          <div className="h-4 bg-purple-200/50 dark:bg-purple-800/30 rounded animate-pulse w-11/12" />
-          <div className="h-4 bg-purple-200/50 dark:bg-purple-800/30 rounded animate-pulse w-4/5" />
+          <div className="h-4 bg-muted rounded animate-pulse w-full" />
+          <div className="h-4 bg-muted rounded animate-pulse w-11/12" />
+          <div className="h-4 bg-muted rounded animate-pulse w-4/5" />
         </div>
       </div>
     );
@@ -73,8 +77,8 @@ export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps
   return (
     <div
       className={cn(
-        'rounded-xl bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30',
-        'border border-purple-200/50 dark:border-purple-800/30',
+        'rounded-xl bg-card/50 backdrop-blur-sm',
+        'border border-border/50',
         'p-5',
         className
       )}
@@ -82,17 +86,17 @@ export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-purple-500" />
-          <span className="text-xs font-semibold uppercase tracking-widest text-purple-600 dark:text-purple-400">
-            CRUX.AI
+          <Sparkles className="h-4 w-4 text-primary" />
+          <span className="text-xs font-semibold uppercase tracking-widest text-primary">
+            {sectionLabels[section] || section}
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 font-medium">
-            powered by Gemini
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+            CRUX.AI
           </span>
         </div>
         <div className="flex items-center gap-2">
           {data.cached && (
-            <span className="text-[10px] text-purple-500/70 dark:text-purple-400/60">
+            <span className="text-[10px] text-muted-foreground/70">
               {formattedTime}
             </span>
           )}
@@ -100,8 +104,8 @@ export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps
             onClick={() => refetch()}
             disabled={isFetching}
             className={cn(
-              'p-1 rounded-md hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors',
-              'text-purple-500/70 hover:text-purple-600 dark:text-purple-400/60 dark:hover:text-purple-400',
+              'p-1 rounded-md hover:bg-muted transition-colors',
+              'text-muted-foreground/70 hover:text-foreground',
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
             title="Refresh insight"
@@ -115,7 +119,7 @@ export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps
       </div>
 
       {/* Insight text */}
-      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+      <p className="text-sm text-foreground/80 leading-relaxed">
         {data.insight}
       </p>
     </div>

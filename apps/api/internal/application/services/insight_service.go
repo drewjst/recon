@@ -102,6 +102,8 @@ type valuationData struct {
 	estimates  *models.AnalystEstimates
 	historical []models.QuarterlyRatio
 	sectorPE   *models.SectorPE
+	industryPE *models.IndustryPE
+	dcf        *models.DCF
 }
 
 func (s *InsightService) generateValuationSummary(ctx context.Context, ticker string) (*models.InsightResponse, error) {
@@ -172,7 +174,6 @@ func (s *InsightService) fetchValuationData(ctx context.Context, ticker string) 
 		estimates, err := s.fundamentals.GetAnalystEstimates(gctx, ticker)
 		if err != nil {
 			slog.Warn("failed to fetch analyst estimates", "ticker", ticker, "error", err)
-			// Non-fatal: estimates are optional
 		}
 		data.estimates = estimates
 		return nil
@@ -183,9 +184,18 @@ func (s *InsightService) fetchValuationData(ctx context.Context, ticker string) 
 		historical, err := s.fundamentals.GetQuarterlyRatios(gctx, ticker, 20)
 		if err != nil {
 			slog.Warn("failed to fetch historical ratios", "ticker", ticker, "error", err)
-			// Non-fatal: historical data is optional
 		}
 		data.historical = historical
+		return nil
+	})
+
+	// Fetch DCF valuation
+	g.Go(func() error {
+		dcf, err := s.fundamentals.GetDCF(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch DCF", "ticker", ticker, "error", err)
+		}
+		data.dcf = dcf
 		return nil
 	})
 
@@ -193,13 +203,33 @@ func (s *InsightService) fetchValuationData(ctx context.Context, ticker string) 
 		return nil, err
 	}
 
-	// Fetch sector P/E (depends on company data)
-	if data.company != nil && data.company.Sector != "" {
-		sectorPE, err := s.fundamentals.GetSectorPE(ctx, data.company.Sector, data.company.Exchange)
-		if err != nil {
-			slog.Warn("failed to fetch sector PE", "sector", data.company.Sector, "error", err)
+	// Fetch sector and industry P/E (depends on company data)
+	if data.company != nil {
+		g2, gctx2 := errgroup.WithContext(ctx)
+
+		if data.company.Sector != "" {
+			g2.Go(func() error {
+				sectorPE, err := s.fundamentals.GetSectorPE(gctx2, data.company.Sector, data.company.Exchange)
+				if err != nil {
+					slog.Warn("failed to fetch sector PE", "sector", data.company.Sector, "error", err)
+				}
+				data.sectorPE = sectorPE
+				return nil
+			})
 		}
-		data.sectorPE = sectorPE
+
+		if data.company.Industry != "" {
+			g2.Go(func() error {
+				industryPE, err := s.fundamentals.GetIndustryPE(gctx2, data.company.Industry, data.company.Exchange)
+				if err != nil {
+					slog.Warn("failed to fetch industry PE", "industry", data.company.Industry, "error", err)
+				}
+				data.industryPE = industryPE
+				return nil
+			})
+		}
+
+		_ = g2.Wait() // Ignore errors, these are optional
 	}
 
 	return data, nil
@@ -213,30 +243,56 @@ func (s *InsightService) buildValuationPromptData(data *valuationData) ai.Prompt
 		pd.Ticker = data.company.Ticker
 		pd.CompanyName = data.company.Name
 		pd.Sector = data.company.Sector
+		pd.Industry = data.company.Industry
 	}
 
 	if data.quote != nil {
 		pd.Price = data.quote.Price
+		pd.MarketCap = formatMarketCap(data.quote.MarketCap)
 	}
 
-	// Valuation ratios
+	// Valuation ratios and profitability
 	if data.ratios != nil {
 		pd.PE = data.ratios.PE
 		pd.ForwardPE = data.ratios.ForwardPE
 		pd.EVToEBITDA = data.ratios.EVToEBITDA
 		pd.PS = data.ratios.PS
 		pd.PFCF = data.ratios.PriceToFCF
+		pd.PB = data.ratios.PB
 		pd.PEG = data.ratios.PEG
+
+		// Profitability
+		pd.GrossMargin = data.ratios.GrossMargin * 100
+		pd.OperatingMargin = data.ratios.OperatingMargin * 100
+		pd.NetMargin = data.ratios.NetMargin * 100
+		pd.ROE = data.ratios.ROE * 100
+		pd.ROIC = data.ratios.ROIC * 100
+		pd.FCFMargin = data.ratios.FCFMargin * 100
+		pd.RevenueGrowth = data.ratios.RevenueGrowthYoY * 100
+
+		// Risk
+		pd.DebtToEquity = data.ratios.DebtToEquity
+		pd.CurrentRatio = data.ratios.CurrentRatio
 	}
 
 	// Analyst estimates
 	if data.estimates != nil {
 		pd.TargetPrice = data.estimates.PriceTargetAverage
 		pd.EPSGrowth = data.estimates.EPSGrowthNextY
+		pd.AnalystRating = data.estimates.Rating
+		pd.AnalystCount = data.estimates.AnalystCount
 
 		// Calculate upside/downside
 		if data.quote != nil && data.estimates.PriceTargetAverage > 0 {
 			pd.Upside, pd.UpsideDirection = calculateUpside(data.quote.Price, data.estimates.PriceTargetAverage)
+		}
+	}
+
+	// DCF valuation
+	if data.dcf != nil && data.dcf.DCFValue > 0 {
+		pd.DCFValue = data.dcf.DCFValue
+		if data.quote != nil && data.quote.Price > 0 {
+			pd.DCFUpside, pd.DCFDirection = calculateDCFUpside(data.quote.Price, data.dcf.DCFValue)
 		}
 	}
 
@@ -249,9 +305,12 @@ func (s *InsightService) buildValuationPromptData(data *valuationData) ai.Prompt
 		}
 	}
 
-	// Sector P/E
+	// Sector and Industry P/E
 	if data.sectorPE != nil {
 		pd.SectorPE = data.sectorPE.PE
+	}
+	if data.industryPE != nil {
+		pd.IndustryPE = data.industryPE.PE
 	}
 
 	// Recalculate PEG if we have better data
@@ -276,7 +335,6 @@ func calculatePercentile(current float64, historical []models.QuarterlyRatio) in
 		return 0
 	}
 
-	// Extract valid PE values
 	var peValues []float64
 	for _, h := range historical {
 		if h.PE > 0 {
@@ -288,7 +346,6 @@ func calculatePercentile(current float64, historical []models.QuarterlyRatio) in
 		return 0
 	}
 
-	// Count how many historical values are below current
 	belowCount := 0
 	for _, pe := range peValues {
 		if pe < current {
@@ -312,6 +369,19 @@ func calculateUpside(price, target float64) (float64, string) {
 	return -pctChange, "downside"
 }
 
+// calculateDCFUpside returns the percentage difference from DCF fair value.
+func calculateDCFUpside(price, dcfValue float64) (float64, string) {
+	if price <= 0 {
+		return 0, "undervalued"
+	}
+
+	pctDiff := ((dcfValue - price) / price) * 100
+	if pctDiff >= 0 {
+		return pctDiff, "undervalued"
+	}
+	return -pctDiff, "overvalued"
+}
+
 // calculate5YAvgPE returns the average P/E over the historical period.
 func calculate5YAvgPE(historical []models.QuarterlyRatio) float64 {
 	var sum float64
@@ -328,6 +398,25 @@ func calculate5YAvgPE(historical []models.QuarterlyRatio) float64 {
 		return 0
 	}
 	return sum / float64(count)
+}
+
+// formatMarketCap formats market cap as human-readable string.
+func formatMarketCap(marketCap int64) string {
+	if marketCap <= 0 {
+		return ""
+	}
+
+	mc := float64(marketCap)
+	switch {
+	case mc >= 1e12:
+		return fmt.Sprintf("$%.1fT", mc/1e12)
+	case mc >= 1e9:
+		return fmt.Sprintf("$%.1fB", mc/1e9)
+	case mc >= 1e6:
+		return fmt.Sprintf("$%.0fM", mc/1e6)
+	default:
+		return fmt.Sprintf("$%.0f", mc)
+	}
 }
 
 // InsightCacheAdapter adapts the db.Repository for insight caching.
