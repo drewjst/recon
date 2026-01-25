@@ -47,3 +47,24 @@ export async function searchTickers(query: string): Promise<SearchResponse> {
 export async function fetchValuation(ticker: string): Promise<ValuationDeepDive> {
   return fetchApi<ValuationDeepDive>(`/api/stock/${ticker.toUpperCase()}/valuation`);
 }
+
+// CruxAI Insight types
+export type InsightSection = 'valuation-summary';
+
+export interface InsightResponse {
+  ticker: string;
+  section: InsightSection;
+  insight: string;
+  generatedAt: string;
+  expiresAt: string;
+  cached: boolean;
+}
+
+export async function fetchInsight(
+  ticker: string,
+  section: InsightSection
+): Promise<InsightResponse> {
+  return fetchApi<InsightResponse>(
+    `/api/v1/insights/${section}?ticker=${ticker.toUpperCase()}`
+  );
+}

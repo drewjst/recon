@@ -3,8 +3,19 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
+
+// CruxAIConfig holds configuration for the CruxAI insight generator.
+type CruxAIConfig struct {
+	Enabled     bool
+	ProjectID   string
+	Location    string
+	Model       string
+	Temperature float32
+	MaxTokens   int32
+}
 
 type Config struct {
 	Port                 string
@@ -15,6 +26,7 @@ type Config struct {
 	PolygonAPIKey        string
 	DatabaseURL          string
 	AllowedOrigins       []string
+	CruxAI               CruxAIConfig
 }
 
 func Load() (*Config, error) {
@@ -26,6 +38,7 @@ func Load() (*Config, error) {
 		FundamentalsProvider: getEnv("FUNDAMENTALS_PROVIDER", "fmp"),
 		PolygonAPIKey:        os.Getenv("POLYGON_API_KEY"),
 		DatabaseURL:          os.Getenv("DATABASE_URL"),
+		CruxAI:               loadCruxAIConfig(),
 	}
 
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
@@ -56,6 +69,11 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("POLYGON_API_KEY environment variable is required")
 	}
 
+	// Validate CruxAI config when enabled
+	if cfg.CruxAI.Enabled && cfg.CruxAI.ProjectID == "" {
+		return nil, fmt.Errorf("GCP_PROJECT_ID environment variable is required when CRUX_AI_ENABLED=true")
+	}
+
 	return cfg, nil
 }
 
@@ -64,4 +82,33 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func loadCruxAIConfig() CruxAIConfig {
+	enabled := strings.ToLower(getEnv("CRUX_AI_ENABLED", "false")) == "true"
+
+	// Parse temperature with default
+	temperature := float32(0.7)
+	if tempStr := os.Getenv("CRUX_AI_TEMPERATURE"); tempStr != "" {
+		if parsed, err := strconv.ParseFloat(tempStr, 32); err == nil {
+			temperature = float32(parsed)
+		}
+	}
+
+	// Parse max tokens with default
+	maxTokens := int32(300)
+	if tokensStr := os.Getenv("CRUX_AI_MAX_TOKENS"); tokensStr != "" {
+		if parsed, err := strconv.ParseInt(tokensStr, 10, 32); err == nil {
+			maxTokens = int32(parsed)
+		}
+	}
+
+	return CruxAIConfig{
+		Enabled:     enabled,
+		ProjectID:   os.Getenv("GCP_PROJECT_ID"),
+		Location:    getEnv("GCP_LOCATION", "us-central1"),
+		Model:       getEnv("CRUX_AI_MODEL", "gemini-1.5-flash"),
+		Temperature: temperature,
+		MaxTokens:   maxTokens,
+	}
 }

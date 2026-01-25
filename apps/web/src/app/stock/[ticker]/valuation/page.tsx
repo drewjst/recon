@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useValuation } from '@/hooks/use-valuation';
+import { CruxAIInsight } from '@/components/cruxai';
 import { ValuationHeroSection } from '@/components/valuation/valuation-hero-section';
 import { KeyMetricsSection } from '@/components/valuation/key-metrics-section';
 import { HistoricalChartSection } from '@/components/valuation/historical-chart-section';
@@ -70,6 +71,9 @@ export default function ValuationPage({ params }: PageProps) {
           </h1>
           <p className="text-muted-foreground">{data.companyName}</p>
         </div>
+
+        {/* CruxAI Valuation Summary */}
+        <CruxAIInsight ticker={ticker} section="valuation-summary" />
 
         {/* 1. Valuation Verdict Hero */}
         <ValuationHeroSection data={data} />

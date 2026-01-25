@@ -2,10 +2,13 @@
 package api
 
 import (
+	"log/slog"
+
 	"github.com/go-chi/chi/v5"
 
 	"github.com/drewjst/crux/apps/api/internal/api/handlers"
 	"github.com/drewjst/crux/apps/api/internal/api/middleware"
+	"github.com/drewjst/crux/apps/api/internal/application/services"
 	"github.com/drewjst/crux/apps/api/internal/domain/search"
 	"github.com/drewjst/crux/apps/api/internal/domain/stock"
 	"github.com/drewjst/crux/apps/api/internal/domain/valuation"
@@ -13,10 +16,11 @@ import (
 
 // RouterDeps contains all dependencies needed by the router.
 type RouterDeps struct {
-	StockService      *stock.Service
-	ValuationService  *valuation.Service
-	PolygonSearcher   *search.PolygonSearcher
-	AllowedOrigins    []string
+	StockService     *stock.Service
+	ValuationService *valuation.Service
+	InsightService   *services.InsightService
+	PolygonSearcher  *search.PolygonSearcher
+	AllowedOrigins   []string
 }
 
 // NewRouter creates and configures the Chi router with all routes and middleware.
@@ -45,6 +49,17 @@ func NewRouter(deps RouterDeps) *chi.Mux {
 		r.Get("/stock/{ticker}", stockHandler.GetStock)
 		r.Get("/stock/{ticker}/valuation", valuationHandler.GetValuation)
 		r.Get("/search", searchHandler.Search)
+
+		// CruxAI insight routes (v1)
+		if deps.InsightService != nil {
+			insightHandler := handlers.NewInsightHandler(deps.InsightService)
+			r.Route("/v1/insights", func(r chi.Router) {
+				r.Get("/{section}", insightHandler.GetInsight)
+			})
+			slog.Info("CruxAI insight routes registered", "path", "/api/v1/insights/{section}")
+		} else {
+			slog.Info("CruxAI insight routes not registered (service disabled)")
+		}
 	})
 
 	return r

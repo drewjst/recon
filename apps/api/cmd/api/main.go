@@ -11,12 +11,15 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"gorm.io/datatypes"
 
 	"github.com/drewjst/crux/apps/api/internal/api"
+	"github.com/drewjst/crux/apps/api/internal/application/services"
 	"github.com/drewjst/crux/apps/api/internal/config"
 	"github.com/drewjst/crux/apps/api/internal/domain/search"
 	"github.com/drewjst/crux/apps/api/internal/domain/stock"
 	"github.com/drewjst/crux/apps/api/internal/domain/valuation"
+	"github.com/drewjst/crux/apps/api/internal/infrastructure/ai"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/db"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/external/polygon"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/providers"
@@ -104,10 +107,63 @@ func run() error {
 	valuationService := valuation.NewService(fundamentalsProvider, rawProvider)
 	slog.Info("valuation service initialized", "caching", cacheRepo != nil)
 
+	// Initialize CruxAI client and insight service
+	var insightService *services.InsightService
+	if cfg.CruxAI.Enabled {
+		cruxClient, err := ai.NewCruxClient(context.Background(), ai.CruxConfig{
+			ProjectID:   cfg.CruxAI.ProjectID,
+			Location:    cfg.CruxAI.Location,
+			Model:       cfg.CruxAI.Model,
+			Temperature: cfg.CruxAI.Temperature,
+			MaxTokens:   cfg.CruxAI.MaxTokens,
+		})
+		if err != nil {
+			slog.Warn("failed to initialize CruxAI client, insights disabled", "error", err)
+		} else {
+			// Create insight cache adapter if database is available
+			var insightCache services.InsightCache
+			if cacheRepo != nil {
+				insightCache = services.NewInsightCacheAdapter(
+					func(dataType, key string) ([]byte, error) {
+						cache, err := cacheRepo.GetProviderCache(dataType, key)
+						if err != nil || cache == nil {
+							return nil, err
+						}
+						return cache.Data, nil
+					},
+					func(dataType, key string, data []byte, expiresAt time.Time) error {
+						return cacheRepo.SetProviderCache(&db.ProviderCache{
+							DataType:  dataType,
+							Key:       key,
+							Data:      datatypes.JSON(data),
+							Provider:  "cruxai",
+							ExpiresAt: expiresAt,
+						})
+					},
+				)
+			}
+
+			insightService = services.NewInsightService(
+				cruxClient,
+				fundamentalsProvider,
+				rawProvider,
+				insightCache,
+				true,
+			)
+			slog.Info("CruxAI insight service initialized",
+				"model", cfg.CruxAI.Model,
+				"caching", cacheRepo != nil,
+			)
+		}
+	} else {
+		slog.Info("CruxAI insights disabled")
+	}
+
 	// Initialize router
 	router := api.NewRouter(api.RouterDeps{
 		StockService:     stockService,
 		ValuationService: valuationService,
+		InsightService:   insightService,
 		PolygonSearcher:  polygonSearcher,
 		AllowedOrigins:   cfg.AllowedOrigins,
 	})
