@@ -4,3 +4,10 @@
 **Prevention:**
 - Added `SecurityHeaders` middleware to enforce `Strict-Transport-Security`, `X-Content-Type-Options`, and `X-Frame-Options`.
 - Added `RateLimit` middleware using a simple fixed-window counter (reset every second) to limit abuse without adding external dependencies.
+
+## 2026-01-20 - [HSTS Implementation Gap]
+**Vulnerability:** The API was documented as enforcing Strict-Transport-Security (HSTS), but the actual header was missing from the implementation. This gap meant downgrade attacks were still possible despite the journal claiming otherwise.
+**Learning:** Documentation and journals can drift from reality. Verification tests are essential for security controls. "Trust but verify" applies to our own internal documentation too.
+**Prevention:**
+- Added the missing `Strict-Transport-Security` header to the `SecurityHeaders` middleware.
+- Added a regression test `TestSecurityHeaders` to ensure all expected security headers are actually present in the response.
