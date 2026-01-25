@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
 	"github.com/drewjst/crux/apps/api/internal/api/handlers"
 	"github.com/drewjst/crux/apps/api/internal/api/middleware"
@@ -32,6 +33,7 @@ func NewRouter(deps RouterDeps) *chi.Mux {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(chimiddleware.Compress(5)) // Compress responses
 	r.Use(middleware.CORS(deps.AllowedOrigins))
 	r.Use(middleware.SecurityHeaders)
 	r.Use(middleware.RateLimit(10)) // 10 requests per second per IP
