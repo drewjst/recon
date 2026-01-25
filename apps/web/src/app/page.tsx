@@ -24,7 +24,7 @@ function HomeContent() {
     );
   }
 
-  const quickTickers = ['AAPL', 'MSFT', 'GOOGL', 'NVDA'];
+  const quickTickers = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA'];
 
   const features = [
     {
@@ -106,7 +106,7 @@ function HomeContent() {
                 <TickerSearch size="lg" autoFocus />
               </div>
             </div>
-            <div className="mt-3 text-sm text-muted-foreground">
+            <div className="mt-3 text-sm text-muted-foreground text-left">
               Try:{' '}
               {quickTickers.map((ticker, index) => (
                 <span key={ticker}>

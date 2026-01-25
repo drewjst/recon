@@ -12,6 +12,7 @@ import {
   DashboardDivider,
 } from './sections';
 import { ETFView } from './etf-view';
+import { CruxAIInsight } from '@/components/cruxai/cruxai-insight';
 
 // Skeleton for loading sections
 const SectionSkeleton = () => (
@@ -123,6 +124,9 @@ export function StockDashboard({ ticker }: StockDashboardProps) {
     <div className="w-full max-w-4xl mx-auto space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header with price & performance */}
       <HeaderSection data={data} />
+
+      {/* CruxAI Position Summary */}
+      <CruxAIInsight ticker={ticker} section="position-summary" />
 
       {/* Row 1: Signals + Scores - Quick overview at a glance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">

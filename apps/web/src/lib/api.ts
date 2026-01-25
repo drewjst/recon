@@ -49,7 +49,7 @@ export async function fetchValuation(ticker: string): Promise<ValuationDeepDive>
 }
 
 // CruxAI Insight types
-export type InsightSection = 'valuation-summary';
+export type InsightSection = 'valuation-summary' | 'position-summary';
 
 export interface InsightResponse {
   ticker: string;

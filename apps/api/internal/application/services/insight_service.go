@@ -76,6 +76,8 @@ func (s *InsightService) GetInsight(ctx context.Context, req models.InsightReque
 	switch req.Section {
 	case models.InsightSectionValuationSummary:
 		resp, err = s.generateValuationSummary(ctx, req.Ticker)
+	case models.InsightSectionPositionSummary:
+		resp, err = s.generatePositionSummary(ctx, req.Ticker)
 	default:
 		return nil, fmt.Errorf("no generator for section: %s", req.Section)
 	}
@@ -319,6 +321,366 @@ func (s *InsightService) buildValuationPromptData(data *valuationData) ai.Prompt
 	}
 
 	return pd
+}
+
+// positionData holds all data needed for position summary generation.
+type positionData struct {
+	company    *models.Company
+	quote      *models.Quote
+	ratios     *models.Ratios
+	estimates  *models.AnalystEstimates
+	dcf        *models.DCF
+	prices     []models.PriceBar
+	financials []models.Financials
+}
+
+func (s *InsightService) generatePositionSummary(ctx context.Context, ticker string) (*models.InsightResponse, error) {
+	data, err := s.fetchPositionData(ctx, ticker)
+	if err != nil {
+		return nil, fmt.Errorf("fetching position data: %w", err)
+	}
+
+	promptData := s.buildPositionPromptData(data)
+
+	prompt, err := ai.BuildPrompt(models.InsightSectionPositionSummary, promptData)
+	if err != nil {
+		return nil, fmt.Errorf("building prompt: %w", err)
+	}
+
+	insight, err := s.cruxAI.GenerateInsight(ctx, prompt)
+	if err != nil {
+		return nil, fmt.Errorf("generating insight: %w", err)
+	}
+
+	now := time.Now()
+	return &models.InsightResponse{
+		Ticker:      ticker,
+		Section:     models.InsightSectionPositionSummary,
+		Insight:     insight,
+		GeneratedAt: now,
+		ExpiresAt:   now.Add(models.InsightSectionPositionSummary.CacheTTL()),
+		Cached:      false,
+	}, nil
+}
+
+func (s *InsightService) fetchPositionData(ctx context.Context, ticker string) (*positionData, error) {
+	data := &positionData{}
+	g, gctx := errgroup.WithContext(ctx)
+
+	// Fetch company profile
+	g.Go(func() error {
+		company, err := s.fundamentals.GetCompany(gctx, ticker)
+		if err != nil {
+			return fmt.Errorf("fetching company: %w", err)
+		}
+		data.company = company
+		return nil
+	})
+
+	// Fetch current quote
+	g.Go(func() error {
+		quote, err := s.quotes.GetQuote(gctx, ticker)
+		if err != nil {
+			return fmt.Errorf("fetching quote: %w", err)
+		}
+		data.quote = quote
+		return nil
+	})
+
+	// Fetch TTM ratios
+	g.Go(func() error {
+		ratios, err := s.fundamentals.GetRatios(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch ratios", "ticker", ticker, "error", err)
+		}
+		data.ratios = ratios
+		return nil
+	})
+
+	// Fetch analyst estimates
+	g.Go(func() error {
+		estimates, err := s.fundamentals.GetAnalystEstimates(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch analyst estimates", "ticker", ticker, "error", err)
+		}
+		data.estimates = estimates
+		return nil
+	})
+
+	// Fetch DCF valuation
+	g.Go(func() error {
+		dcf, err := s.fundamentals.GetDCF(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch DCF", "ticker", ticker, "error", err)
+		}
+		data.dcf = dcf
+		return nil
+	})
+
+	// Fetch historical prices (for YTD, 52-week calculations)
+	g.Go(func() error {
+		prices, err := s.quotes.GetHistoricalPrices(gctx, ticker, 365)
+		if err != nil {
+			slog.Warn("failed to fetch historical prices", "ticker", ticker, "error", err)
+		}
+		data.prices = prices
+		return nil
+	})
+
+	// Fetch financials for score calculations
+	g.Go(func() error {
+		financials, err := s.fundamentals.GetFinancials(gctx, ticker, 2)
+		if err != nil {
+			slog.Warn("failed to fetch financials", "ticker", ticker, "error", err)
+		}
+		data.financials = financials
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (s *InsightService) buildPositionPromptData(data *positionData) ai.PromptData {
+	pd := ai.PromptData{}
+
+	// Common fields
+	if data.company != nil {
+		pd.Ticker = data.company.Ticker
+		pd.CompanyName = data.company.Name
+		pd.Sector = data.company.Sector
+		pd.Industry = data.company.Industry
+	}
+
+	if data.quote != nil {
+		pd.Price = data.quote.Price
+		pd.MarketCap = formatMarketCap(data.quote.MarketCap)
+		pd.Week52High = data.quote.High
+		pd.Week52Low = data.quote.Low
+
+		// Calculate 52-week percentages
+		if data.quote.High > 0 {
+			pd.PctFrom52High = ((data.quote.High - data.quote.Price) / data.quote.High) * 100
+		}
+		if data.quote.Low > 0 && data.quote.Price > data.quote.Low {
+			pd.PctFrom52Low = ((data.quote.Price - data.quote.Low) / data.quote.Low) * 100
+		}
+	}
+
+	// Calculate YTD return from historical prices
+	if len(data.prices) > 0 && data.quote != nil {
+		pd.YTDReturn = calculateYTDReturn(data.prices, data.quote.Price)
+	}
+
+	// Calculate scores from financials
+	if len(data.financials) > 0 {
+		piotroski, ruleOf40, altmanZ := calculateScoresFromFinancials(data.financials, data.quote)
+		pd.PiotroskiScore = piotroski.Score
+		pd.RuleOf40Score = ruleOf40.Score
+		pd.RuleOf40Passed = ruleOf40.Passed
+		pd.AltmanZScore = altmanZ.Score
+		pd.AltmanZZone = altmanZ.Zone
+	}
+
+	// Valuation ratios and profitability
+	if data.ratios != nil {
+		pd.PE = data.ratios.PE
+		pd.ForwardPE = data.ratios.ForwardPE
+		pd.EVToEBITDA = data.ratios.EVToEBITDA
+		pd.PFCF = data.ratios.PriceToFCF
+
+		// Profitability
+		pd.GrossMargin = data.ratios.GrossMargin * 100
+		pd.OperatingMargin = data.ratios.OperatingMargin * 100
+		pd.NetMargin = data.ratios.NetMargin * 100
+		pd.ROE = data.ratios.ROE * 100
+		pd.ROIC = data.ratios.ROIC * 100
+		pd.RevenueGrowth = data.ratios.RevenueGrowthYoY * 100
+
+		// Financial health
+		pd.DebtToEquity = data.ratios.DebtToEquity
+		pd.CurrentRatio = data.ratios.CurrentRatio
+	}
+
+	// DCF valuation
+	if data.dcf != nil && data.dcf.DCFValue > 0 {
+		pd.DCFValue = data.dcf.DCFValue
+		if data.quote != nil && data.quote.Price > 0 {
+			pd.DCFUpside, pd.DCFDirection = calculateDCFUpside(data.quote.Price, data.dcf.DCFValue)
+		}
+	}
+
+	// Analyst estimates
+	if data.estimates != nil {
+		pd.TargetPrice = data.estimates.PriceTargetAverage
+		pd.EPSGrowth = data.estimates.EPSGrowthNextY
+		pd.AnalystRating = data.estimates.Rating
+		pd.AnalystCount = data.estimates.AnalystCount
+
+		// Calculate upside/downside
+		if data.quote != nil && data.estimates.PriceTargetAverage > 0 {
+			pd.Upside, pd.UpsideDirection = calculateUpside(data.quote.Price, data.estimates.PriceTargetAverage)
+		}
+	}
+
+	return pd
+}
+
+// calculateYTDReturn calculates year-to-date return from historical prices.
+func calculateYTDReturn(prices []models.PriceBar, currentPrice float64) float64 {
+	if len(prices) == 0 || currentPrice <= 0 {
+		return 0
+	}
+
+	currentYear := time.Now().Year()
+	for i := len(prices) - 1; i >= 0; i-- {
+		if prices[i].Date.Year() == currentYear && prices[i].Close > 0 {
+			return ((currentPrice - prices[i].Close) / prices[i].Close) * 100
+		}
+	}
+	return 0
+}
+
+// ScoreResults holds calculated score results for reuse.
+type ScoreResults struct {
+	Piotroski PiotroskiResult
+	RuleOf40  RuleOf40Result
+	AltmanZ   AltmanZResult
+}
+
+// PiotroskiResult simplified for internal use.
+type PiotroskiResult struct {
+	Score int
+}
+
+// RuleOf40Result simplified for internal use.
+type RuleOf40Result struct {
+	Score  float64
+	Passed bool
+}
+
+// AltmanZResult simplified for internal use.
+type AltmanZResult struct {
+	Score float64
+	Zone  string
+}
+
+// calculateScoresFromFinancials calculates Piotroski, Rule of 40, and Altman Z scores.
+func calculateScoresFromFinancials(financials []models.Financials, quote *models.Quote) (PiotroskiResult, RuleOf40Result, AltmanZResult) {
+	piotroski := PiotroskiResult{}
+	ruleOf40 := RuleOf40Result{}
+	altmanZ := AltmanZResult{Zone: "unknown"}
+
+	if len(financials) == 0 {
+		return piotroski, ruleOf40, altmanZ
+	}
+
+	current := financials[0]
+	var prior models.Financials
+	if len(financials) > 1 {
+		prior = financials[1]
+	}
+
+	// Piotroski F-Score (simplified calculation)
+	score := 0
+
+	// Profitability
+	if current.NetIncome > 0 {
+		score++ // Positive net income
+	}
+	if current.TotalAssets > 0 && float64(current.NetIncome)/float64(current.TotalAssets) > 0 {
+		score++ // Positive ROA
+	}
+	if current.OperatingCashFlow > 0 {
+		score++ // Positive operating cash flow
+	}
+	if current.OperatingCashFlow > current.NetIncome {
+		score++ // Cash flow > net income (quality)
+	}
+
+	// Leverage & Liquidity (need prior year data)
+	if prior.Debt > 0 && current.Debt < prior.Debt {
+		score++ // Lower long-term debt
+	}
+	if prior.TotalAssets > 0 && prior.Debt > 0 && current.TotalAssets > 0 && current.Debt > 0 {
+		priorCurrent := float64(prior.Cash) / float64(prior.Debt)
+		currentCurrent := float64(current.Cash) / float64(current.Debt)
+		if currentCurrent > priorCurrent {
+			score++ // Higher current ratio
+		}
+	}
+	// Shares outstanding check would need additional data
+
+	// Operating Efficiency
+	if prior.Revenue > 0 && prior.GrossProfit > 0 && current.Revenue > 0 && current.GrossProfit > 0 {
+		priorGM := float64(prior.GrossProfit) / float64(prior.Revenue)
+		currentGM := float64(current.GrossProfit) / float64(current.Revenue)
+		if currentGM > priorGM {
+			score++ // Higher gross margin
+		}
+	}
+	if prior.Revenue > 0 && prior.TotalAssets > 0 && current.Revenue > 0 && current.TotalAssets > 0 {
+		priorAT := float64(prior.Revenue) / float64(prior.TotalAssets)
+		currentAT := float64(current.Revenue) / float64(current.TotalAssets)
+		if currentAT > priorAT {
+			score++ // Higher asset turnover
+		}
+	}
+
+	piotroski.Score = score
+
+	// Rule of 40
+	revenueGrowth := 0.0
+	if prior.Revenue > 0 {
+		revenueGrowth = (float64(current.Revenue-prior.Revenue) / float64(prior.Revenue)) * 100
+	}
+	profitMargin := 0.0
+	if current.Revenue > 0 {
+		// Use FCF margin or operating margin
+		if current.FreeCashFlow != 0 {
+			profitMargin = (float64(current.FreeCashFlow) / float64(current.Revenue)) * 100
+		} else if current.OperatingIncome != 0 {
+			profitMargin = (float64(current.OperatingIncome) / float64(current.Revenue)) * 100
+		}
+	}
+	ruleOf40.Score = revenueGrowth + profitMargin
+	ruleOf40.Passed = ruleOf40.Score >= 40
+
+	// Altman Z-Score
+	if current.TotalAssets > 0 && current.TotalLiabilities > 0 {
+		ta := float64(current.TotalAssets)
+		tl := float64(current.TotalLiabilities)
+
+		workingCapital := float64(current.Cash) - float64(current.Debt)
+		// Simplified retained earnings estimate
+		retainedEarnings := float64(current.TotalEquity) * 0.8
+
+		x1 := workingCapital / ta
+		x2 := retainedEarnings / ta
+		x3 := float64(current.OperatingIncome) / ta
+
+		marketCap := 0.0
+		if quote != nil {
+			marketCap = float64(quote.MarketCap)
+		}
+		x4 := marketCap / tl
+		x5 := float64(current.Revenue) / ta
+
+		altmanZ.Score = 1.2*x1 + 1.4*x2 + 3.3*x3 + 0.6*x4 + 1.0*x5
+
+		if altmanZ.Score > 2.99 {
+			altmanZ.Zone = "safe"
+		} else if altmanZ.Score > 1.81 {
+			altmanZ.Zone = "gray"
+		} else {
+			altmanZ.Zone = "distress"
+		}
+	}
+
+	return piotroski, ruleOf40, altmanZ
 }
 
 // calculatePEG computes the PEG ratio.

@@ -10,7 +10,8 @@ type InsightSection string
 
 // Insight section types.
 const (
-	InsightSectionValuationSummary InsightSection = "valuation-summary"
+	InsightSectionValuationSummary  InsightSection = "valuation-summary"
+	InsightSectionPositionSummary   InsightSection = "position-summary"
 	// Future sections:
 	// InsightSectionGrowthAnalysis   InsightSection = "growth-analysis"
 	// InsightSectionSmartMoneySignals InsightSection = "smart-money-signals"
@@ -53,6 +54,8 @@ func (s InsightSection) CacheTTL() time.Duration {
 	switch s {
 	case InsightSectionValuationSummary:
 		return 24 * time.Hour
+	case InsightSectionPositionSummary:
+		return 24 * time.Hour
 	// Future sections can have different TTLs:
 	// case InsightSectionEarningsPreview:
 	// 	return 12 * time.Hour
@@ -64,7 +67,7 @@ func (s InsightSection) CacheTTL() time.Duration {
 // IsValid checks if the insight section is a known valid type.
 func (s InsightSection) IsValid() bool {
 	switch s {
-	case InsightSectionValuationSummary:
+	case InsightSectionValuationSummary, InsightSectionPositionSummary:
 		return true
 	default:
 		return false

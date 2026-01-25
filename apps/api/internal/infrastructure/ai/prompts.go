@@ -84,6 +84,18 @@ type PromptData struct {
 	EPS             string
 	RevVsEst        float64
 	EPSVsEst        float64
+
+	// Position Summary fields
+	YTDReturn       float64
+	Week52High      float64
+	Week52Low       float64
+	PctFrom52High   float64 // How far below 52-week high
+	PctFrom52Low    float64 // How far above 52-week low
+	PiotroskiScore  int
+	AltmanZScore    float64
+	AltmanZZone     string // "safe", "gray", "distress"
+	RuleOf40Score   float64
+	RuleOf40Passed  bool
 }
 
 var promptTemplates = map[models.InsightSection]string{
@@ -130,6 +142,61 @@ TASK: Write a 3-4 sentence valuation summary that:
 1. States whether the stock appears expensive, fairly valued, or cheap - with specific numbers as evidence
 2. Explains what growth or quality factors might justify or contradict the current valuation
 3. Identifies the key risk if buying at current prices OR the key opportunity if the market is mispricing
+
+Be direct, specific, and actionable. Avoid generic statements. Reference specific metrics.`,
+
+	models.InsightSectionPositionSummary: `You are a concise equity analyst providing a position summary. Be specific and data-driven.
+
+COMPANY: {{.Ticker}} - {{.CompanyName}}
+SECTOR: {{.Sector}}{{if .Industry}} | INDUSTRY: {{.Industry}}{{end}}
+PRICE: ${{printf "%.2f" .Price}}{{if .MarketCap}} | MARKET CAP: {{.MarketCap}}{{end}}
+
+═══════════════════════════════════════════════════════════════════
+PRICE CONTEXT
+═══════════════════════════════════════════════════════════════════
+52-Week High: ${{printf "%.2f" .Week52High}} ({{printf "%.1f" .PctFrom52High}}% below)
+52-Week Low:  ${{printf "%.2f" .Week52Low}} ({{printf "%.1f" .PctFrom52Low}}% above)
+YTD Return:   {{printf "%.1f" .YTDReturn}}%
+
+═══════════════════════════════════════════════════════════════════
+QUALITY SIGNALS
+═══════════════════════════════════════════════════════════════════
+Piotroski F-Score: {{.PiotroskiScore}}/9 {{if ge .PiotroskiScore 7}}(Strong){{else if ge .PiotroskiScore 4}}(Neutral){{else}}(Weak){{end}}
+Altman Z-Score:    {{printf "%.2f" .AltmanZScore}} ({{.AltmanZZone}})
+Rule of 40:        {{printf "%.1f" .RuleOf40Score}}% {{if .RuleOf40Passed}}(PASSED){{else}}(FAILED){{end}}
+
+═══════════════════════════════════════════════════════════════════
+VALUATION SNAPSHOT
+═══════════════════════════════════════════════════════════════════
+P/E (TTM):   {{printf "%.1f" .PE}}x     | Forward P/E: {{printf "%.1f" .ForwardPE}}x
+EV/EBITDA:   {{printf "%.1f" .EVToEBITDA}}x  | P/FCF:       {{printf "%.1f" .PFCF}}x
+{{if gt .DCFValue 0}}DCF Value:   ${{printf "%.2f" .DCFValue}} → {{printf "%.0f" .DCFUpside}}% {{.DCFDirection}}{{end}}
+
+═══════════════════════════════════════════════════════════════════
+PROFITABILITY & GROWTH
+═══════════════════════════════════════════════════════════════════
+Gross Margin: {{printf "%.1f" .GrossMargin}}% | Operating Margin: {{printf "%.1f" .OperatingMargin}}% | Net Margin: {{printf "%.1f" .NetMargin}}%
+ROE: {{printf "%.1f" .ROE}}% | ROIC: {{printf "%.1f" .ROIC}}%
+Revenue Growth (YoY): {{printf "%.1f" .RevenueGrowth}}%{{if gt .EPSGrowth 0}} | EPS Growth Est: {{printf "%.0f" .EPSGrowth}}%{{end}}
+
+═══════════════════════════════════════════════════════════════════
+FINANCIAL HEALTH
+═══════════════════════════════════════════════════════════════════
+Debt/Equity:   {{printf "%.2f" .DebtToEquity}}
+Current Ratio: {{printf "%.2f" .CurrentRatio}}
+{{if gt .TargetPrice 0}}
+═══════════════════════════════════════════════════════════════════
+ANALYST CONSENSUS
+═══════════════════════════════════════════════════════════════════
+Rating: {{.AnalystRating}} ({{.AnalystCount}} analysts)
+Price Target: ${{printf "%.2f" .TargetPrice}} → {{printf "%.0f" .Upside}}% {{.UpsideDirection}}
+{{end}}
+═══════════════════════════════════════════════════════════════════
+
+TASK: Write a 3-4 sentence executive summary that:
+1. Summarizes the investment case - is this a quality company at an attractive price, or are there concerns?
+2. Highlights the most important signal (positive or negative) from the quality scores and valuation metrics
+3. Identifies one key factor an investor should monitor going forward
 
 Be direct, specific, and actionable. Avoid generic statements. Reference specific metrics.`,
 }
