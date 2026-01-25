@@ -206,7 +206,7 @@ function CompareContent() {
         {tickers.length >= MIN_TICKERS && (
           <ShareButton
             ticker={tickers[0]}
-            text={`Comparing ${tickers.join(' vs ')} on Cruxit`}
+            text={`Comparing ${tickers.join(' vs ')} on Crux`}
             url={`${BASE_URL}/compare/${tickers.join('/')}`}
             size="sm"
           />

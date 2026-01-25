@@ -101,7 +101,7 @@ export async function GET(
             </div>
           </div>
 
-          {/* Cruxit branding */}
+          {/* Crux branding */}
           <div
             style={{
               display: 'flex',

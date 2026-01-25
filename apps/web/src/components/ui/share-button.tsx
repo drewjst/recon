@@ -79,7 +79,7 @@ export function ShareButton({
   className,
   ...props
 }: ShareButtonProps) {
-  const shareText = text ?? `Check out $${ticker} analysis on Cruxit`;
+  const shareText = text ?? `Check out $${ticker} analysis on Crux`;
   const sharePageUrl = url ?? `${BASE_URL}/?ticker=${ticker}`;
 
   const handleShareX = (e: React.MouseEvent) => {

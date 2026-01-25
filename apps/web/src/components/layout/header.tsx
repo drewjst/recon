@@ -165,7 +165,7 @@ export function Header() {
               <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-50" />
             </div>
             <span className="font-semibold text-xl tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
-              Cruxit
+              Crux
             </span>
           </Link>
 

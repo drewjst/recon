@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const piotroski = data?.scores?.piotroski.score ?? 0;
   const ruleOf40 = data?.scores?.ruleOf40.score ?? 0;
 
-  const title = `${ticker} Stock Analysis | Cruxit`;
+  const title = `${ticker} Stock Analysis | Crux`;
   const description = `${companyName} scores ${grade}. Piotroski: ${piotroski}/9, Rule of 40: ${ruleOf40.toFixed(0)}%`;
 
   return {
@@ -67,15 +67,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title,
     description,
     openGraph: {
-      title: `${ticker} Analysis | Cruxit`,
+      title: `${ticker} Analysis | Crux`,
       description: `${companyName} fundamental analysis - Grade: ${grade}`,
       url: `${BASE_URL}/stock/${ticker}`,
-      siteName: 'Cruxit',
+      siteName: 'Crux',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${ticker} Analysis | Cruxit`,
+      title: `${ticker} Analysis | Crux`,
       description: `Piotroski: ${piotroski}/9 • Rule of 40: ${ruleOf40.toFixed(0)}% • Grade: ${grade}`,
     },
   };

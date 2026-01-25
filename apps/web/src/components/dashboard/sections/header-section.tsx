@@ -22,7 +22,7 @@ export function HeaderSection({ data }: HeaderSectionProps) {
 
   const piotroskiScore = scores?.piotroski.score ?? 0;
   const grade = getPiotroskiGrade(piotroskiScore);
-  const shareText = `${company.ticker} scores ${grade} on Cruxit - Piotroski: ${piotroskiScore}/9`;
+  const shareText = `${company.ticker} scores ${grade} on Crux - Piotroski: ${piotroskiScore}/9`;
 
   const performanceMetrics = [
     { label: '1D', value: performance.day1Change },

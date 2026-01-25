@@ -67,7 +67,7 @@ export const MetricSection = memo(function MetricSection({
   const hiddenCount = validMetrics.length - topN;
 
   // Generate share text if not provided
-  const defaultShareText = `${ticker} ${title.toLowerCase()} metrics on Cruxit`;
+  const defaultShareText = `${ticker} ${title.toLowerCase()} metrics on Crux`;
 
   return (
     <SectionCard title={title} shareTicker={ticker} shareText={shareText || defaultShareText}>

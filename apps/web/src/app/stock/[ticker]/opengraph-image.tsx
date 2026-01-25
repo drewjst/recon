@@ -271,7 +271,7 @@ export default async function Image({ params }: { params: { ticker: string } }) 
               gap: '12px',
             }}
           >
-            {/* Cruxit wordmark */}
+            {/* Crux wordmark */}
             <div
               style={{
                 fontSize: '32px',
