@@ -27,7 +27,7 @@ func TestCalculatePiotroskiScore_AllCriteriaPassing(t *testing.T) {
 		Revenue:            5000000,
 	}
 
-	result := CalculatePiotroskiScore(current, previous)
+	result := CalculatePiotroskiScore(&current, &previous)
 
 	if result.Score != 9 {
 		t.Errorf("expected score 9, got %d", result.Score)
@@ -49,7 +49,7 @@ func TestCalculatePiotroskiScore_PositiveNetIncome(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			current := FinancialData{NetIncome: tt.netIncome}
-			result := CalculatePiotroskiScore(current, FinancialData{})
+			result := CalculatePiotroskiScore(&current, &FinancialData{})
 
 			if result.Breakdown.PositiveNetIncome != tt.want {
 				t.Errorf("PositiveNetIncome = %v, want %v", result.Breakdown.PositiveNetIncome, tt.want)
@@ -77,7 +77,7 @@ func TestCalculatePiotroskiScore_PositiveROA(t *testing.T) {
 				NetIncome:   tt.netIncome,
 				TotalAssets: tt.totalAssets,
 			}
-			result := CalculatePiotroskiScore(current, FinancialData{})
+			result := CalculatePiotroskiScore(&current, &FinancialData{})
 
 			if result.Breakdown.PositiveROA != tt.want {
 				t.Errorf("PositiveROA = %v, want %v", result.Breakdown.PositiveROA, tt.want)
@@ -104,7 +104,7 @@ func TestCalculatePiotroskiScore_CashFlowGreaterThanNetIncome(t *testing.T) {
 				OperatingCashFlow: tt.operatingCashFlow,
 				NetIncome:         tt.netIncome,
 			}
-			result := CalculatePiotroskiScore(current, FinancialData{})
+			result := CalculatePiotroskiScore(&current, &FinancialData{})
 
 			if result.Breakdown.CashFlowGreaterThanNetIncome != tt.want {
 				t.Errorf("CashFlowGreaterThanNetIncome = %v, want %v",
@@ -137,7 +137,7 @@ func TestCalculatePiotroskiScore_LowerLongTermDebt(t *testing.T) {
 				LongTermDebt: tt.previousDebt,
 				TotalAssets:  tt.assets,
 			}
-			result := CalculatePiotroskiScore(current, previous)
+			result := CalculatePiotroskiScore(&current, &previous)
 
 			if result.Breakdown.LowerLongTermDebt != tt.want {
 				t.Errorf("LowerLongTermDebt = %v, want %v", result.Breakdown.LowerLongTermDebt, tt.want)
@@ -163,7 +163,7 @@ func TestCalculatePiotroskiScore_NoNewShares(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			current := FinancialData{SharesOutstanding: tt.currentShares}
 			previous := FinancialData{SharesOutstanding: tt.previousShares}
-			result := CalculatePiotroskiScore(current, previous)
+			result := CalculatePiotroskiScore(&current, &previous)
 
 			if result.Breakdown.NoNewShares != tt.want {
 				t.Errorf("NoNewShares = %v, want %v", result.Breakdown.NoNewShares, tt.want)
@@ -196,7 +196,7 @@ func TestCalculatePiotroskiScore_ZeroScore(t *testing.T) {
 		Revenue:            1000,
 	}
 
-	result := CalculatePiotroskiScore(current, previous)
+	result := CalculatePiotroskiScore(&current, &previous)
 
 	// Note: CashFlowGreaterThanNetIncome will be true (-200 > -100 is false)
 	// Actually: -200 > -100 is false, so this should be false
@@ -232,7 +232,7 @@ func TestCalculatePiotroskiScore_PartialScore(t *testing.T) {
 		Revenue:            1000, // Same turnover -> fail
 	}
 
-	result := CalculatePiotroskiScore(current, previous)
+	result := CalculatePiotroskiScore(&current, &previous)
 
 	// Expected passing:
 	// 1. PositiveNetIncome: true

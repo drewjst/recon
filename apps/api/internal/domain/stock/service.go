@@ -1687,10 +1687,10 @@ func (s *Service) calculateScores(data []scores.FinancialData, dcf *DCFValuation
 	var altmanZResult scores.AltmanZResult
 
 	if len(data) >= 2 {
-		piotroskiResult = scores.CalculatePiotroskiScore(data[0], data[1])
+		piotroskiResult = scores.CalculatePiotroskiScore(&data[0], &data[1])
 		ruleOf40Result = scores.CalculateRuleOf40WithGrowth(data[0], data[1])
 	} else if len(data) == 1 {
-		piotroskiResult = scores.CalculatePiotroskiScore(data[0], scores.FinancialData{})
+		piotroskiResult = scores.CalculatePiotroskiScore(&data[0], &scores.FinancialData{})
 		ruleOf40Result = scores.CalculateRuleOf40(data[0])
 	}
 
@@ -1783,10 +1783,10 @@ func (s *Service) calculateScoresFromData(data []scores.FinancialData, dcf *mode
 	var altmanZResult scores.AltmanZResult
 
 	if len(data) >= 2 {
-		piotroskiResult = scores.CalculatePiotroskiScore(data[0], data[1])
+		piotroskiResult = scores.CalculatePiotroskiScore(&data[0], &data[1])
 		ruleOf40Result = scores.CalculateRuleOf40WithGrowth(data[0], data[1])
 	} else if len(data) == 1 {
-		piotroskiResult = scores.CalculatePiotroskiScore(data[0], scores.FinancialData{})
+		piotroskiResult = scores.CalculatePiotroskiScore(&data[0], &scores.FinancialData{})
 		ruleOf40Result = scores.CalculateRuleOf40(data[0])
 	}
 

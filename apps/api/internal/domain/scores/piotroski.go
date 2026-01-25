@@ -6,7 +6,7 @@ package scores
 // Each of the 9 criteria scores 1 point if passed.
 // Score >= 7 indicates strong financial health.
 // Score <= 3 indicates potential weakness.
-func CalculatePiotroskiScore(current, previous FinancialData) PiotroskiResult {
+func CalculatePiotroskiScore(current, previous *FinancialData) PiotroskiResult {
 	result := PiotroskiResult{
 		Breakdown: PiotroskiBreakdown{},
 	}
@@ -33,7 +33,7 @@ func CalculatePiotroskiScore(current, previous FinancialData) PiotroskiResult {
 }
 
 // calculateROA returns Return on Assets (Net Income / Total Assets).
-func calculateROA(data FinancialData) float64 {
+func calculateROA(data *FinancialData) float64 {
 	if data.TotalAssets == 0 {
 		return 0
 	}
@@ -41,7 +41,7 @@ func calculateROA(data FinancialData) float64 {
 }
 
 // hasLowerLongTermDebt checks if long-term debt ratio decreased YoY.
-func hasLowerLongTermDebt(current, previous FinancialData) bool {
+func hasLowerLongTermDebt(current, previous *FinancialData) bool {
 	if previous.TotalAssets == 0 || current.TotalAssets == 0 {
 		return false
 	}
@@ -51,7 +51,7 @@ func hasLowerLongTermDebt(current, previous FinancialData) bool {
 }
 
 // hasHigherCurrentRatio checks if current ratio increased YoY.
-func hasHigherCurrentRatio(current, previous FinancialData) bool {
+func hasHigherCurrentRatio(current, previous *FinancialData) bool {
 	currentRatio := calculateCurrentRatio(current)
 	previousRatio := calculateCurrentRatio(previous)
 
@@ -62,7 +62,7 @@ func hasHigherCurrentRatio(current, previous FinancialData) bool {
 }
 
 // calculateCurrentRatio returns Current Assets / Current Liabilities.
-func calculateCurrentRatio(data FinancialData) float64 {
+func calculateCurrentRatio(data *FinancialData) float64 {
 	if data.CurrentLiabilities == 0 {
 		return 0
 	}
@@ -70,7 +70,7 @@ func calculateCurrentRatio(data FinancialData) float64 {
 }
 
 // hasNoNewShares checks if shares outstanding didn't increase.
-func hasNoNewShares(current, previous FinancialData) bool {
+func hasNoNewShares(current, previous *FinancialData) bool {
 	if previous.SharesOutstanding == 0 {
 		return true // No previous data, assume no dilution
 	}
@@ -78,7 +78,7 @@ func hasNoNewShares(current, previous FinancialData) bool {
 }
 
 // hasHigherGrossMargin checks if gross margin increased YoY.
-func hasHigherGrossMargin(current, previous FinancialData) bool {
+func hasHigherGrossMargin(current, previous *FinancialData) bool {
 	currentMargin := calculateGrossMargin(current)
 	previousMargin := calculateGrossMargin(previous)
 
@@ -89,7 +89,7 @@ func hasHigherGrossMargin(current, previous FinancialData) bool {
 }
 
 // calculateGrossMargin returns Gross Profit / Revenue.
-func calculateGrossMargin(data FinancialData) float64 {
+func calculateGrossMargin(data *FinancialData) float64 {
 	if data.Revenue == 0 {
 		return 0
 	}
@@ -97,7 +97,7 @@ func calculateGrossMargin(data FinancialData) float64 {
 }
 
 // hasHigherAssetTurnover checks if asset turnover increased YoY.
-func hasHigherAssetTurnover(current, previous FinancialData) bool {
+func hasHigherAssetTurnover(current, previous *FinancialData) bool {
 	currentTurnover := calculateAssetTurnover(current)
 	previousTurnover := calculateAssetTurnover(previous)
 
@@ -108,7 +108,7 @@ func hasHigherAssetTurnover(current, previous FinancialData) bool {
 }
 
 // calculateAssetTurnover returns Revenue / Total Assets.
-func calculateAssetTurnover(data FinancialData) float64 {
+func calculateAssetTurnover(data *FinancialData) float64 {
 	if data.TotalAssets == 0 {
 		return 0
 	}
