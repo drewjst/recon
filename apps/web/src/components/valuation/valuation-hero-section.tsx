@@ -109,18 +109,6 @@ const DotMeter = memo(function DotMeter({
 });
 
 function ValuationHeroSectionComponent({ data }: ValuationHeroSectionProps) {
-  const sentimentColors = {
-    cheap: 'border-success/30 bg-success/5',
-    fair: 'border-warning/30 bg-warning/5',
-    expensive: 'border-destructive/30 bg-destructive/5',
-  };
-
-  const sentimentTextColors = {
-    cheap: 'text-success',
-    fair: 'text-warning',
-    expensive: 'text-destructive',
-  };
-
   const historicalContext = data.historicalContext
     ? `${data.historicalContext.percentile.toFixed(0)}th percentile of 5Y range`
     : '';
@@ -134,16 +122,11 @@ function ValuationHeroSectionComponent({ data }: ValuationHeroSectionProps) {
     : '';
 
   return (
-    <Card className={cn('border-2 transition-all', sentimentColors[data.sentiment])}>
-      <CardContent className="p-6 space-y-6">
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold uppercase tracking-wider text-muted-foreground">
-            Valuation Verdict
-          </h2>
-          <p className={cn('text-xl font-semibold', sentimentTextColors[data.sentiment])}>
-            {data.verdict}
-          </p>
-        </div>
+    <Card>
+      <CardContent className="p-6 space-y-4">
+        <h2 className="text-lg font-semibold uppercase tracking-wider text-muted-foreground">
+          Valuation Metrics
+        </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <DotMeter
