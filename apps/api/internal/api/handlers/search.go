@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	defaultSearchLimit = 10
-	maxSearchLimit     = 50
+	defaultSearchLimit   = 10
+	maxSearchLimit       = 50
+	maxSearchQueryLength = 100
 )
 
 // SearchHandler handles ticker search requests.
@@ -35,6 +36,11 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	if query == "" {
 		writeError(w, http.StatusBadRequest, ErrCodeBadRequest, "Query parameter 'q' is required")
+		return
+	}
+
+	if len(query) > maxSearchQueryLength {
+		writeError(w, http.StatusBadRequest, ErrCodeBadRequest, "Query parameter 'q' is too long")
 		return
 	}
 

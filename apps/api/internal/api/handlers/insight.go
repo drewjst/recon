@@ -41,6 +41,15 @@ func (h *InsightHandler) GetInsight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate ticker format
+	if !isValidTicker(ticker) {
+		writeErrorWithDetails(w, http.StatusBadRequest, ErrCodeInvalidTicker,
+			"Invalid ticker format",
+			map[string]string{"ticker": ticker},
+		)
+		return
+	}
+
 	// Build request
 	req := models.InsightRequest{
 		Ticker:  ticker,

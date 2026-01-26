@@ -11,3 +11,11 @@
 **Prevention:**
 - Added the missing `Strict-Transport-Security` header to the `SecurityHeaders` middleware.
 - Added a regression test `TestSecurityHeaders` to ensure all expected security headers are actually present in the response.
+
+## 2026-01-26 - [Input Validation for API Handlers]
+**Vulnerability:** The API lacked input validation for `SearchHandler` (unbounded query length) and `InsightHandler` (unvalidated ticker format). This exposed the system to DoS attacks (long queries) and potential resource exhaustion/abuse of the AI service (invalid tickers).
+**Learning:** Reusing existing unexported validation helpers (like `isValidTicker` from `stock.go`) within the same package is a valid Go pattern that avoids code duplication, but can be confusing during code review if the reviewer only sees the diff.
+**Prevention:**
+- Added 100-character length limit to `SearchHandler` query.
+- Added regex validation (`^[A-Z]{1,5}$`) to `InsightHandler` ticker using shared `isValidTicker`.
+- Added regression tests in `handlers_test.go` to verify validation logic.
