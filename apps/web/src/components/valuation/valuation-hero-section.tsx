@@ -130,22 +130,22 @@ function ValuationHeroSectionComponent({ data }: ValuationHeroSectionProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <DotMeter
-            label="vs History"
+            label="P/E vs History"
             contextLabel={historicalContext}
             score={data.historicalScore}
             tooltip="Where current P/E sits within its 5-year historical range. Lower = cheaper than historical average."
           />
           <DotMeter
-            label="vs Sector"
+            label="P/E vs Sector"
             contextLabel={sectorContext}
             score={data.sectorScore}
             tooltip="Where current P/E sits compared to sector peers. Lower = cheaper than peers."
           />
           <DotMeter
-            label="Growth Justified"
+            label="PEG Ratio"
             contextLabel={growthContext}
             score={data.growthScore}
-            tooltip="Based on PEG ratio. Lower score = valuation more justified by expected growth."
+            tooltip="Price/Earnings to Growth ratio. Lower = valuation more justified by expected earnings growth."
             invertColors
           />
         </div>
