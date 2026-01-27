@@ -53,16 +53,6 @@ export function formatMarketCap(value: number): string {
   return formatCompactCurrency(value);
 }
 
-export function formatNumber(value: number, compact = false): string {
-  if (compact) {
-    return new Intl.NumberFormat('en-US', {
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(value);
-  }
-  return new Intl.NumberFormat('en-US').format(value);
-}
-
 export function formatPercent(value: number, decimals = 2): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
 }
@@ -73,21 +63,6 @@ export function formatDate(date: string | Date): string {
     day: 'numeric',
     year: 'numeric',
   }).format(new Date(date));
-}
-
-export function formatRelativeTime(date: string | Date): string {
-  const now = new Date();
-  const then = new Date(date);
-  const diffMs = now.getTime() - then.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return formatDate(date);
 }
 
 // eslint-disable-next-line

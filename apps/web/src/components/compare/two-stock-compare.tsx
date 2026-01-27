@@ -9,6 +9,9 @@ import {
   formatMarketCap,
   formatSignedCurrency,
   determineWinner,
+  COMPARE_METRICS,
+  getNestedValue,
+  findWinner,
 } from '@/lib/compare-utils';
 import type { StockDetailResponse, RankingResult } from '@recon/shared';
 
@@ -30,6 +33,9 @@ export const TwoStockCompare = memo(function TwoStockCompare({
         <StockHeader stock={left} align="right" />
         <StockHeader stock={right} align="left" />
       </div>
+
+      {/* Summary at top */}
+      <SummarySection left={left} right={right} rankings={rankings} />
 
       {/* Comparison Sections */}
       <Card>
@@ -59,6 +65,9 @@ export const TwoStockCompare = memo(function TwoStockCompare({
             />
           </CompareSection>
 
+          {/* Signals Summary */}
+          <SignalsSummary left={left} right={right} />
+
           {/* Valuation Section */}
           <CompareSection title="VALUATION">
             <MetricRow
@@ -67,6 +76,7 @@ export const TwoStockCompare = memo(function TwoStockCompare({
               rightValue={right.valuation?.pe.value}
               format={(v) => v.toFixed(1)}
               lowerIsBetter
+              showUnprofitableForNegative
             />
             <MetricRow
               label="Forward P/E"
@@ -74,6 +84,7 @@ export const TwoStockCompare = memo(function TwoStockCompare({
               rightValue={right.valuation?.forwardPe.value}
               format={(v) => v.toFixed(1)}
               lowerIsBetter
+              showUnprofitableForNegative
             />
             <MetricRow
               label="PEG Ratio"
@@ -81,6 +92,7 @@ export const TwoStockCompare = memo(function TwoStockCompare({
               rightValue={right.valuation?.peg.value}
               format={(v) => v.toFixed(2)}
               lowerIsBetter
+              showUnprofitableForNegative
             />
             <MetricRow
               label="EV/EBITDA"
@@ -88,6 +100,7 @@ export const TwoStockCompare = memo(function TwoStockCompare({
               rightValue={right.valuation?.evToEbitda.value}
               format={(v) => v.toFixed(1)}
               lowerIsBetter
+              showUnprofitableForNegative
             />
             <MetricRow
               label="Price/FCF"
@@ -95,6 +108,7 @@ export const TwoStockCompare = memo(function TwoStockCompare({
               rightValue={right.valuation?.priceToFcf.value}
               format={(v) => v.toFixed(1)}
               lowerIsBetter
+              showUnprofitableForNegative
             />
             <MetricRow
               label="Price/Book"
@@ -102,6 +116,7 @@ export const TwoStockCompare = memo(function TwoStockCompare({
               rightValue={right.valuation?.priceToBook.value}
               format={(v) => v.toFixed(2)}
               lowerIsBetter
+              showUnprofitableForNegative
             />
           </CompareSection>
 
@@ -237,19 +252,10 @@ export const TwoStockCompare = memo(function TwoStockCompare({
           </CompareSection>
 
           {/* Analyst Estimates Section */}
-          <CompareSection title="ANALYST ESTIMATES">
-            <MetricRow
-              label="Rating Score"
-              leftValue={left.analystEstimates?.ratingScore}
-              rightValue={right.analystEstimates?.ratingScore}
-              format={(v) => v.toFixed(1)}
-            />
-            <MetricRow
-              label="Analyst Count"
-              leftValue={left.analystEstimates?.analystCount}
-              rightValue={right.analystEstimates?.analystCount}
-              format={(v) => v.toFixed(0)}
-            />
+          <CompareSection title="ANALYST CONSENSUS">
+            <AnalystRatingRow left={left} right={right} />
+            <AnalystBreakdownRow left={left} right={right} />
+            <TargetUpsideRow left={left} right={right} />
             <MetricRow
               label="EPS Growth Est."
               leftValue={left.analystEstimates?.epsGrowthNextYear}
@@ -305,13 +311,6 @@ export const TwoStockCompare = memo(function TwoStockCompare({
           </CompareSection>
         </CardContent>
       </Card>
-
-      {/* Summary */}
-      <SummarySection
-        left={left}
-        right={right}
-        rankings={rankings}
-      />
     </div>
   );
 });
@@ -363,20 +362,38 @@ interface MetricRowProps {
   rightValue: number | null | undefined;
   format: (v: number) => string;
   lowerIsBetter?: boolean;
+  /** If true, negative values are shown as "—" with "(unprofitable)" label */
+  showUnprofitableForNegative?: boolean;
 }
 
-function MetricRow({ label, leftValue, rightValue, format, lowerIsBetter }: MetricRowProps) {
-  const winner = determineWinner(leftValue, rightValue, !lowerIsBetter);
+function MetricRow({ label, leftValue, rightValue, format, lowerIsBetter, showUnprofitableForNegative }: MetricRowProps) {
+  // For metrics where negative is invalid (like P/E), treat them as null for winner calculation
+  const effectiveLeft = showUnprofitableForNegative && leftValue != null && leftValue <= 0 ? null : leftValue;
+  const effectiveRight = showUnprofitableForNegative && rightValue != null && rightValue <= 0 ? null : rightValue;
+
+  const winner = determineWinner(effectiveLeft, effectiveRight, !lowerIsBetter);
   const leftWins = winner === 'left';
   const rightWins = winner === 'right';
 
+  const formatValue = (value: number | null | undefined, isWinner: boolean) => {
+    if (value == null) return '-';
+    if (showUnprofitableForNegative && value <= 0) {
+      return (
+        <span className="text-muted-foreground">
+          — <span className="text-xs">(unprofitable)</span>
+        </span>
+      );
+    }
+    return format(value);
+  };
+
   return (
-    <div className="grid grid-cols-[1fr_120px_1fr] items-center py-3 px-4">
+    <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
       <div className={cn(
         'text-right font-mono',
         leftWins && 'text-green-600 font-semibold'
       )}>
-        {leftValue != null ? format(leftValue) : '-'}
+        {formatValue(leftValue, leftWins)}
         {leftWins && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
       </div>
       <div className="text-center text-sm text-muted-foreground">{label}</div>
@@ -385,7 +402,7 @@ function MetricRow({ label, leftValue, rightValue, format, lowerIsBetter }: Metr
         rightWins && 'text-green-600 font-semibold'
       )}>
         {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
-        {rightValue != null ? format(rightValue) : '-'}
+        {formatValue(rightValue, rightWins)}
       </div>
     </div>
   );
@@ -407,8 +424,8 @@ function ScoreBarRow({ label, leftValue, rightValue, maxValue, format }: ScoreBa
   const rightWins = leftValue != null && rightValue != null && rightValue > leftValue;
 
   return (
-    <div className="py-3 px-4">
-      <div className="text-center text-sm text-muted-foreground mb-2">{label}</div>
+    <div className="py-2 px-4">
+      <div className="text-center text-sm text-muted-foreground mb-1">{label}</div>
       <div className="grid grid-cols-[1fr_40px_1fr] items-center gap-2">
         {/* Left bar (grows right-to-left) */}
         <div className="flex items-center justify-end gap-2">
@@ -477,11 +494,175 @@ function InsiderRow({ left, right }: { left: StockDetailResponse; right: StockDe
   };
 
   return (
-    <div className="grid grid-cols-[1fr_120px_1fr] items-center py-3 px-4">
+    <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
       <div className="text-right">{formatInsider(leftActivity)}</div>
       <div className="text-center text-sm text-muted-foreground">Insider 90d</div>
       <div className="text-left">{formatInsider(rightActivity)}</div>
     </div>
+  );
+}
+
+function AnalystRatingRow({ left, right }: { left: StockDetailResponse; right: StockDetailResponse }) {
+  const getRatingColor = (score: number | undefined) => {
+    if (!score) return 'text-muted-foreground';
+    if (score >= 4) return 'text-green-600';
+    if (score >= 3) return 'text-amber-600';
+    return 'text-red-600';
+  };
+
+  const leftScore = left.analystEstimates?.ratingScore;
+  const rightScore = right.analystEstimates?.ratingScore;
+  const leftWins = leftScore && rightScore && leftScore > rightScore;
+  const rightWins = rightScore && leftScore && rightScore > leftScore;
+
+  return (
+    <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
+      <div className={cn('text-right', leftWins && 'font-semibold')}>
+        {left.analystEstimates ? (
+          <span className={getRatingColor(leftScore)}>
+            {left.analystEstimates.rating}
+            {leftWins && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
+          </span>
+        ) : '-'}
+      </div>
+      <div className="text-center text-sm text-muted-foreground">Rating</div>
+      <div className={cn('text-left', rightWins && 'font-semibold')}>
+        {right.analystEstimates ? (
+          <span className={getRatingColor(rightScore)}>
+            {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
+            {right.analystEstimates.rating}
+          </span>
+        ) : '-'}
+      </div>
+    </div>
+  );
+}
+
+function AnalystBreakdownRow({ left, right }: { left: StockDetailResponse; right: StockDetailResponse }) {
+  const formatBreakdown = (estimates: typeof left.analystEstimates) => {
+    if (!estimates) return '-';
+    const buy = (estimates.strongBuyCount || 0) + (estimates.buyCount || 0);
+    const hold = estimates.holdCount || 0;
+    const sell = (estimates.sellCount || 0) + (estimates.strongSellCount || 0);
+    return (
+      <span className="text-xs">
+        <span className="text-green-600">{buy}</span>
+        <span className="text-muted-foreground">/</span>
+        <span className="text-amber-600">{hold}</span>
+        <span className="text-muted-foreground">/</span>
+        <span className="text-red-600">{sell}</span>
+      </span>
+    );
+  };
+
+  return (
+    <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
+      <div className="text-right font-mono">{formatBreakdown(left.analystEstimates)}</div>
+      <div className="text-center text-sm text-muted-foreground">Buy/Hold/Sell</div>
+      <div className="text-left font-mono">{formatBreakdown(right.analystEstimates)}</div>
+    </div>
+  );
+}
+
+function TargetUpsideRow({ left, right }: { left: StockDetailResponse; right: StockDetailResponse }) {
+  const calcUpside = (stock: StockDetailResponse) => {
+    const target = stock.analystEstimates?.priceTargetAverage;
+    const price = stock.quote.price;
+    if (!target || !price) return null;
+    return ((target - price) / price) * 100;
+  };
+
+  const leftUpside = calcUpside(left);
+  const rightUpside = calcUpside(right);
+  const leftWins = leftUpside !== null && rightUpside !== null && leftUpside > rightUpside;
+  const rightWins = rightUpside !== null && leftUpside !== null && rightUpside > leftUpside;
+
+  const formatUpside = (upside: number | null) => {
+    if (upside === null) return '-';
+    const sign = upside >= 0 ? '+' : '';
+    const colorClass = upside >= 0 ? 'text-green-600' : 'text-red-600';
+    return <span className={colorClass}>{sign}{upside.toFixed(0)}%</span>;
+  };
+
+  return (
+    <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
+      <div className={cn('text-right font-mono', leftWins && 'font-semibold')}>
+        {formatUpside(leftUpside)}
+        {leftWins && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
+      </div>
+      <div className="text-center text-sm text-muted-foreground">Target Upside</div>
+      <div className={cn('text-left font-mono', rightWins && 'font-semibold')}>
+        {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
+        {formatUpside(rightUpside)}
+      </div>
+    </div>
+  );
+}
+
+function SignalsSummary({ left, right }: { left: StockDetailResponse; right: StockDetailResponse }) {
+  const countSignals = (signals: typeof left.signals) => {
+    const bullish = signals.filter(s => s.type === 'bullish').length;
+    const bearish = signals.filter(s => s.type === 'bearish').length;
+    const warning = signals.filter(s => s.type === 'warning').length;
+    return { bullish, bearish, warning };
+  };
+
+  const leftSignals = countSignals(left.signals);
+  const rightSignals = countSignals(right.signals);
+
+  const leftWinsBullish = leftSignals.bullish > rightSignals.bullish;
+  const rightWinsBullish = rightSignals.bullish > leftSignals.bullish;
+  const leftWinsBearish = leftSignals.bearish < rightSignals.bearish; // Fewer bearish is better
+  const rightWinsBearish = rightSignals.bearish < leftSignals.bearish;
+
+  return (
+    <CompareSection title="SIGNALS">
+      <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
+        <div className={cn(
+          'text-right font-mono',
+          leftWinsBullish && 'text-green-600 font-semibold'
+        )}>
+          {leftSignals.bullish}
+          {leftWinsBullish && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
+        </div>
+        <div className="text-center text-sm text-muted-foreground">Bullish</div>
+        <div className={cn(
+          'text-left font-mono',
+          rightWinsBullish && 'text-green-600 font-semibold'
+        )}>
+          {rightWinsBullish && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
+          {rightSignals.bullish}
+        </div>
+      </div>
+      <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
+        <div className={cn(
+          'text-right font-mono',
+          leftWinsBearish && 'text-green-600 font-semibold'
+        )}>
+          {leftSignals.bearish}
+          {leftWinsBearish && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
+        </div>
+        <div className="text-center text-sm text-muted-foreground">Bearish</div>
+        <div className={cn(
+          'text-left font-mono',
+          rightWinsBearish && 'text-green-600 font-semibold'
+        )}>
+          {rightWinsBearish && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
+          {rightSignals.bearish}
+        </div>
+      </div>
+      {(leftSignals.warning > 0 || rightSignals.warning > 0) && (
+        <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
+          <div className="text-right font-mono text-amber-600">
+            {leftSignals.warning > 0 ? leftSignals.warning : '-'}
+          </div>
+          <div className="text-center text-sm text-muted-foreground">Warnings</div>
+          <div className="text-left font-mono text-amber-600">
+            {rightSignals.warning > 0 ? rightSignals.warning : '-'}
+          </div>
+        </div>
+      )}
+    </CompareSection>
   );
 }
 
@@ -497,34 +678,72 @@ function SummarySection({
   const leftRank = rankings.find(r => r.ticker === left.company.ticker);
   const rightRank = rankings.find(r => r.ticker === right.company.ticker);
 
+  // Calculate category wins
+  const categoryNames: Record<string, string> = {
+    scores: 'Scores',
+    valuation: 'Valuation',
+    growth: 'Growth',
+    profitability: 'Margins',
+    financialHealth: 'Balance Sheet',
+    earningsQuality: 'Operations',
+    smartMoney: 'Smart Money',
+    analyst: 'Analysts',
+    performance: 'Performance',
+  };
+
+  const categoryWins: { left: string[]; right: string[] } = { left: [], right: [] };
+
+  for (const [categoryKey, metrics] of Object.entries(COMPARE_METRICS)) {
+    let leftWins = 0;
+    let rightWins = 0;
+    for (const metric of metrics) {
+      const leftVal = getNestedValue(left, metric.path);
+      const rightVal = getNestedValue(right, metric.path);
+      const winnerIdx = findWinner([leftVal, rightVal], metric.higherIsBetter, metric.excludeNonPositive);
+      if (winnerIdx === 0) leftWins++;
+      else if (winnerIdx === 1) rightWins++;
+    }
+    if (leftWins > rightWins) {
+      categoryWins.left.push(categoryNames[categoryKey] || categoryKey);
+    } else if (rightWins > leftWins) {
+      categoryWins.right.push(categoryNames[categoryKey] || categoryKey);
+    }
+  }
+
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="text-center mb-4">
+      <CardContent className="p-4">
+        <div className="text-center mb-3">
           <span className="text-xs font-semibold tracking-widest text-primary">SUMMARY</span>
         </div>
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-2 gap-4">
           <div className={cn(
-            'text-right p-4 rounded-lg',
+            'text-right p-3 rounded-lg',
             leftRank?.rank === 1 ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/50'
           )}>
-            <div className="text-lg font-bold">{left.company.ticker}</div>
-            <div className="text-2xl font-bold text-primary">{leftRank?.wins || 0} wins</div>
-            {leftRank?.rank === 1 && (
-              <div className="text-sm text-amber-600 mt-1 flex items-center justify-end gap-1">
-                <Trophy className="h-4 w-4" /> Leader
+            <div className="flex items-center justify-end gap-2">
+              <div className="text-lg font-bold">{left.company.ticker}</div>
+              {leftRank?.rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
+            </div>
+            <div className="text-xl font-bold text-primary">{leftRank?.wins || 0} wins</div>
+            {categoryWins.left.length > 0 && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Leads: {categoryWins.left.join(', ')}
               </div>
             )}
           </div>
           <div className={cn(
-            'text-left p-4 rounded-lg',
+            'text-left p-3 rounded-lg',
             rightRank?.rank === 1 ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/50'
           )}>
-            <div className="text-lg font-bold">{right.company.ticker}</div>
-            <div className="text-2xl font-bold text-primary">{rightRank?.wins || 0} wins</div>
-            {rightRank?.rank === 1 && (
-              <div className="text-sm text-amber-600 mt-1 flex items-center gap-1">
-                <Trophy className="h-4 w-4" /> Leader
+            <div className="flex items-center gap-2">
+              {rightRank?.rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
+              <div className="text-lg font-bold">{right.company.ticker}</div>
+            </div>
+            <div className="text-xl font-bold text-primary">{rightRank?.wins || 0} wins</div>
+            {categoryWins.right.length > 0 && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Leads: {categoryWins.right.join(', ')}
               </div>
             )}
           </div>

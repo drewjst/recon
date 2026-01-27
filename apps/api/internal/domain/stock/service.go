@@ -135,6 +135,7 @@ type StockDetailResponse struct {
 	TechnicalMetrics *TechnicalMetrics `json:"technicalMetrics,omitempty"`
 	ShortInterest    *ShortInterest    `json:"shortInterest,omitempty"`
 	AnalystEstimates *AnalystEstimates `json:"analystEstimates,omitempty"`
+	Peers            []string          `json:"peers,omitempty"`
 	ETFData          *ETFData          `json:"etfData,omitempty"`
 	Meta             DataMeta          `json:"meta"`
 }
@@ -255,6 +256,7 @@ func (s *Service) fetchAndBuildResponse(ctx context.Context, ticker string) (*St
 		shortInterest         *models.ShortInterest
 		polygonShortInterst   *polygon.ShortInterestResult
 		analystEstimates      *models.AnalystEstimates
+		peers                 []string
 		etfData               *models.ETFData
 	)
 
@@ -393,6 +395,15 @@ func (s *Service) fetchAndBuildResponse(ctx context.Context, ticker string) (*St
 		return nil
 	})
 
+	g.Go(func() error {
+		var err error
+		peers, err = s.fundamentals.GetStockPeers(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch stock peers", "ticker", ticker, "error", err)
+		}
+		return nil
+	})
+
 	// Fetch ETF data (will be nil for non-ETFs)
 	g.Go(func() error {
 		var err error
@@ -433,7 +444,7 @@ func (s *Service) fetchAndBuildResponse(ctx context.Context, ticker string) (*St
 	}
 
 	// Build stock response from fetched data
-	return s.buildResponseFromProviders(company, quote, ratios, financials, holders, institutionalSummary, trades, congressTrades, prices, dcf, technicalMetrics, shortInterest, analystEstimates), nil
+	return s.buildResponseFromProviders(company, quote, ratios, financials, holders, institutionalSummary, trades, congressTrades, prices, dcf, technicalMetrics, shortInterest, analystEstimates, peers), nil
 }
 
 // buildResponseFromProviders constructs the response from provider data.
@@ -451,6 +462,7 @@ func (s *Service) buildResponseFromProviders(
 	technicalMetrics *models.TechnicalMetrics,
 	shortInterest *models.ShortInterest,
 	analystEstimates *models.AnalystEstimates,
+	peers []string,
 ) *StockDetailResponse {
 	// Convert provider models to domain types
 	domainCompany := convertCompanyFromModel(company)
@@ -525,6 +537,7 @@ func (s *Service) buildResponseFromProviders(
 		TechnicalMetrics: convertTechnicalMetricsFromModel(technicalMetrics),
 		ShortInterest:    convertShortInterestFromModel(shortInterest),
 		AnalystEstimates: convertAnalystEstimatesFromModel(analystEstimates),
+		Peers:            peers,
 		Meta: DataMeta{
 			FundamentalsAsOf: fundamentalsDate,
 			HoldingsAsOf:     "Latest 13F",

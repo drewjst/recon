@@ -1,5 +1,5 @@
 import type { StockDetailResponse, RankingResult } from '@recon/shared';
-import { formatCurrency as formatCurrencyBase, formatNumber } from './utils';
+import { formatCurrency as formatCurrencyBase } from './utils';
 
 /**
  * Configuration for a comparable metric.
@@ -406,14 +406,6 @@ export function calculateRankings(stocks: StockDetailResponse[]): RankingResult[
  */
 export function formatMarketCap(cap: number): string {
   return formatCurrencyBase(cap, true);
-}
-
-/**
- * Format share count change for display.
- */
-export function formatShareChange(shares: number): string {
-  const sign = shares >= 0 ? '+' : '';
-  return `${sign}${formatNumber(shares, true)}`;
 }
 
 /**

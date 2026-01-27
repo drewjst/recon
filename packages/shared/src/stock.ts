@@ -1120,6 +1120,8 @@ export interface StockDetailResponse {
   analystEstimates?: AnalystEstimates;
   /** Short interest data (only for stocks) */
   shortInterest?: ShortInterest;
+  /** Peer/competitor stock tickers (only for stocks) */
+  peers?: string[];
   /** ETF-specific data (only for ETFs) */
   etfData?: ETFData;
   /** Data freshness timestamps */

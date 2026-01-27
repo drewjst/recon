@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ShareButton } from '@/components/ui/share-button';
 import { useSearch } from '@/hooks/use-search';
+import { useStock } from '@/hooks/use-stock';
 import { cn } from '@/lib/utils';
 import { COMPARE_LIMITS } from '@/lib/constants';
 
@@ -193,6 +194,10 @@ function CompareContent() {
     setTickers(tickers.filter((t) => t !== ticker));
   };
 
+  // Fetch peer suggestions when exactly one stock is selected
+  const { data: firstStockData } = useStock(tickers.length === 1 ? tickers[0] : '');
+  const peers = firstStockData?.peers?.filter(p => !tickers.includes(p.toUpperCase())).slice(0, 5) || [];
+
   const emptySlots = MAX_TICKERS - tickers.length;
 
   return (
@@ -252,6 +257,22 @@ function CompareContent() {
           </Card>
         ))}
       </div>
+
+      {/* Peer suggestions */}
+      {peers.length > 0 && tickers.length === 1 && (
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          <span className="text-sm text-muted-foreground">Similar to {tickers[0]}:</span>
+          {peers.map((peer) => (
+            <button
+              key={peer}
+              onClick={() => addTicker(peer)}
+              className="px-3 py-1 text-sm bg-muted hover:bg-muted/80 rounded-full transition-colors"
+            >
+              {peer}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Selected tickers badges */}
       {tickers.length > 0 && (

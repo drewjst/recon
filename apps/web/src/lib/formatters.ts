@@ -97,14 +97,6 @@ export function formatCompact(value: number | null | undefined): string {
 }
 
 /**
- * Format a large number with commas (no abbreviation).
- */
-export function formatWithCommas(value: number | null | undefined): string {
-  if (value === null || value === undefined) return NULL_DISPLAY;
-  return value.toLocaleString();
-}
-
-/**
  * Format shares/volume with compact notation.
  */
 export function formatShares(value: number | null | undefined): string {
@@ -146,25 +138,4 @@ export function formatDate(dateStr: string | null | undefined, options?: Intl.Da
  */
 export function formatMonthYear(dateStr: string | null | undefined): string {
   return formatDate(dateStr, { year: 'numeric', month: 'short' });
-}
-
-/**
- * Format a relative date (e.g., "2 days ago").
- */
-export function formatRelativeDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return NULL_DISPLAY;
-
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return NULL_DISPLAY;
-
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-  return `${Math.floor(diffDays / 365)} years ago`;
 }
