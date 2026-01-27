@@ -488,8 +488,8 @@ func (s *Service) buildResponseFromProviders(
 	// Build financials from ratios
 	financials := convertFinancialsFromRatios(ratios)
 
-	// Build valuation
-	valuation := convertValuationFromRatios(ratios, company.Sector)
+	// Build valuation (pass market cap and revenue estimate for NTM P/S calculation)
+	valuation := convertValuationFromRatios(ratios, company.Sector, quote.MarketCap, analystEstimates)
 
 	// Calculate sector metrics
 	profitability := calculateProfitability(ratios, company.Sector)
@@ -971,7 +971,7 @@ func convertFinancialsFromRatios(r *models.Ratios) *Financials {
 	}
 }
 
-func convertValuationFromRatios(r *models.Ratios, sector string) *Valuation {
+func convertValuationFromRatios(r *models.Ratios, sector string, marketCap int64, estimates *models.AnalystEstimates) *Valuation {
 	if r == nil {
 		return &Valuation{}
 	}
@@ -989,6 +989,12 @@ func convertValuationFromRatios(r *models.Ratios, sector string) *Valuation {
 		return ptrInt(calculatePercentileInverted(value, rng.Min, rng.Max))
 	}
 
+	// Calculate NTM P/S = Market Cap / Revenue Estimate Next Year
+	var ntmPS float64
+	if marketCap > 0 && estimates != nil && estimates.RevenueEstimateNextY > 0 {
+		ntmPS = float64(marketCap) / estimates.RevenueEstimateNextY
+	}
+
 	return &Valuation{
 		PE:          ValuationMetric{Value: ptr(r.PE), SectorMedian: ptr(medians.PE), Percentile: calcPct(r.PE, ranges.PE)},
 		ForwardPE:   ValuationMetric{Value: ptr(r.ForwardPE), SectorMedian: ptr(medians.PE), Percentile: calcPct(r.ForwardPE, ranges.PE)},
@@ -996,6 +1002,7 @@ func convertValuationFromRatios(r *models.Ratios, sector string) *Valuation {
 		EVToEBITDA:  ValuationMetric{Value: ptr(r.EVToEBITDA), SectorMedian: ptr(medians.EVToEBITDA), Percentile: calcPct(r.EVToEBITDA, ranges.EVToEBITDA)},
 		PriceToFCF:  ValuationMetric{Value: ptr(r.PriceToFCF), SectorMedian: ptr(medians.PriceToFCF), Percentile: calcPct(r.PriceToFCF, ranges.PriceToFCF)},
 		PriceToBook: ValuationMetric{Value: ptr(r.PB), SectorMedian: ptr(medians.PriceToBook), Percentile: calcPct(r.PB, ranges.PriceToBook)},
+		NTMPS:       ValuationMetric{Value: ptr(ntmPS), SectorMedian: nil, Percentile: nil}, // NTM metrics don't have sector medians
 	}
 }
 

@@ -260,6 +260,8 @@ export interface Valuation {
   priceToFcf: ValuationMetric;
   /** Price to Book Value */
   priceToBook: ValuationMetric;
+  /** NTM (Next Twelve Months) Price-to-Sales based on analyst revenue estimates */
+  ntmPs: ValuationMetric;
 }
 
 // =============================================================================

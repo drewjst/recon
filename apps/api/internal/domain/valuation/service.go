@@ -83,6 +83,7 @@ func (s *Service) GetDeepDive(ctx context.Context, ticker string) (*models.Valua
 		dcf              *models.DCF
 		ownerEarnings    *models.OwnerEarnings
 		sectorPE         *models.SectorPE
+		analystEstimates *models.AnalystEstimates
 	)
 
 	g, gctx := errgroup.WithContext(ctx)
@@ -163,6 +164,16 @@ func (s *Service) GetDeepDive(ctx context.Context, ticker string) (*models.Valua
 		return nil
 	})
 
+	// Fetch analyst estimates (for NTM P/S calculation)
+	g.Go(func() error {
+		var err error
+		analystEstimates, err = s.fundamentals.GetAnalystEstimates(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch analyst estimates for valuation", "ticker", ticker, "error", err)
+		}
+		return nil
+	})
+
 	if err := g.Wait(); err != nil {
 		return nil, fmt.Errorf("fetching valuation data: %w", err)
 	}
@@ -222,7 +233,7 @@ func (s *Service) GetDeepDive(ctx context.Context, ticker string) (*models.Valua
 	}
 
 	// Build the deep dive response
-	return s.buildDeepDive(ticker, company, ratios, quote, historicalRatios, peerRatios, dcf, ownerEarnings, sectorPE), nil
+	return s.buildDeepDive(ticker, company, ratios, quote, historicalRatios, peerRatios, dcf, ownerEarnings, sectorPE, analystEstimates), nil
 }
 
 // peerRatio holds all valuation metrics for a peer company.
@@ -335,6 +346,7 @@ func (s *Service) buildDeepDive(
 	dcf *models.DCF,
 	ownerEarnings *models.OwnerEarnings,
 	sectorPE *models.SectorPE,
+	analystEstimates *models.AnalystEstimates,
 ) *models.ValuationDeepDive {
 	companyName := ticker
 	if company != nil {
@@ -376,7 +388,7 @@ func (s *Service) buildDeepDive(
 	}
 
 	// Build key metrics with comparison context
-	result.KeyMetrics = s.buildKeyMetrics(ratios, historicalRatios, peerRatios, sectorPE)
+	result.KeyMetrics = s.buildKeyMetrics(ratios, historicalRatios, peerRatios, sectorPE, quote, analystEstimates)
 
 	// Build DCF analysis
 	result.DCFAnalysis = s.buildDCFAnalysis(dcf, ratios)
@@ -399,6 +411,7 @@ var spAverages = map[string]float64{
 	"forwardPE":  21.0,
 	"evToEbitda": 14.0,
 	"ps":         2.8,
+	"ntmPs":      2.5, // NTM P/S typically slightly lower than trailing P/S due to expected revenue growth
 	"priceToFcf": 18.5,
 	"pb":         4.5,
 	"peg":        1.9,
@@ -410,6 +423,8 @@ func (s *Service) buildKeyMetrics(
 	historicalRatios []models.QuarterlyRatio,
 	peerRatios []peerRatio,
 	sectorPE *models.SectorPE,
+	quote *models.Quote,
+	analystEstimates *models.AnalystEstimates,
 ) []models.ValuationMetricRow {
 	metrics := []models.ValuationMetricRow{}
 
@@ -496,6 +511,27 @@ func (s *Service) buildKeyMetrics(
 			Percentile:    percentile,
 			LowerIsBetter: true,
 		})
+	}
+
+	// NTM P/S (Next Twelve Months Price-to-Sales)
+	// Calculated as Market Cap / Revenue Estimate Next Year
+	if quote != nil && quote.MarketCap > 0 && analystEstimates != nil && analystEstimates.RevenueEstimateNextY > 0 {
+		ntmPS := float64(quote.MarketCap) / analystEstimates.RevenueEstimateNextY
+		if ntmPS > 0 {
+			sector := sectorMedians["ps"] // Use P/S sector median as proxy
+			spAvg := spAverages["ntmPs"]
+			percentile := s.calculateMetricPercentile(ntmPS, nil, sector, &spAvg, false)
+			metrics = append(metrics, models.ValuationMetricRow{
+				Key:           "ntmPs",
+				Label:         "NTM P/S",
+				Current:       &ntmPS,
+				FiveYearAvg:   nil, // NTM metrics don't have historical averages
+				SectorMedian:  sector,
+				SPAvg:         &spAvg,
+				Percentile:    percentile,
+				LowerIsBetter: true,
+			})
+		}
 	}
 
 	// P/FCF

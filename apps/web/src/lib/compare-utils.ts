@@ -67,6 +67,14 @@ export const COMPARE_METRICS: Record<string, MetricConfig[]> = {
       excludeNonPositive: true,
     },
     {
+      key: 'ntmPs',
+      label: 'NTM P/S',
+      path: 'valuation.ntmPs.value',
+      higherIsBetter: false,
+      format: (v) => v.toFixed(2),
+      excludeNonPositive: true,
+    },
+    {
       key: 'evToEbitda',
       label: 'EV/EBITDA',
       path: 'valuation.evToEbitda.value',

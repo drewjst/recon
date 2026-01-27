@@ -132,6 +132,12 @@ function ValuationSectionComponent({ data }: ValuationSectionProps) {
       info: 'Price/Earnings-to-Growth ratio factors in expected earnings growth. A PEG below 1 may suggest the stock is undervalued relative to its growth.',
       learnMoreUrl: 'https://www.investopedia.com/terms/p/pegratio.asp',
     }),
+    toMetric('ntmPs', 'NTM P/S', valuation.ntmPs, {
+      format: 'ratio' as const,
+      higherIsBetter: false,
+      info: 'Next Twelve Months Price-to-Sales uses analyst revenue estimates. It reflects expected valuation based on forward revenue projections.',
+      learnMoreUrl: 'https://www.investopedia.com/terms/p/price-to-salesratio.asp',
+    }),
     toMetric('priceToFcf', 'Price/FCF', valuation.priceToFcf, {
       format: 'ratio' as const,
       higherIsBetter: false,

@@ -1,9 +1,10 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import Link from 'next/link';
 import { ArrowUp, ArrowDown, Trophy } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { InlineShareLinks } from '@/components/ui/share-button';
 import { cn, formatCompactCurrency } from '@/lib/utils';
 import {
   formatMarketCap,
@@ -14,6 +15,8 @@ import {
   findWinner,
 } from '@/lib/compare-utils';
 import type { StockDetailResponse, RankingResult } from '@recon/shared';
+
+const BASE_URL = 'https://cruxit.finance';
 
 interface TwoStockCompareProps {
   left: StockDetailResponse;
@@ -26,6 +29,26 @@ export const TwoStockCompare = memo(function TwoStockCompare({
   right,
   rankings,
 }: TwoStockCompareProps) {
+  const tickers = [left.company.ticker, right.company.ticker];
+  const shareUrl = `${BASE_URL}/compare/${tickers.join('/')}`;
+
+  // Build share text for financial health scores
+  const financialHealthShareText = useMemo(() => {
+    const leftTicker = left.company.ticker;
+    const rightTicker = right.company.ticker;
+    const leftPiotroski = left.scores?.piotroski.score;
+    const rightPiotroski = right.scores?.piotroski.score;
+    const leftRuleOf40 = left.scores?.ruleOf40.score;
+    const rightRuleOf40 = right.scores?.ruleOf40.score;
+    const leftAltmanZ = left.scores?.altmanZ.score;
+    const rightAltmanZ = right.scores?.altmanZ.score;
+
+    return `Financial Health: $${leftTicker} vs $${rightTicker}\n` +
+      `Piotroski: ${leftPiotroski ?? '-'}/9 vs ${rightPiotroski ?? '-'}/9\n` +
+      `Rule of 40: ${leftRuleOf40 != null ? `${leftRuleOf40.toFixed(0)}%` : '-'} vs ${rightRuleOf40 != null ? `${rightRuleOf40.toFixed(0)}%` : '-'}\n` +
+      `Altman Z: ${leftAltmanZ?.toFixed(2) ?? '-'} vs ${rightAltmanZ?.toFixed(2) ?? '-'}`;
+  }, [left, right]);
+
   return (
     <div className="space-y-6">
       {/* Stock Headers */}
@@ -41,7 +64,10 @@ export const TwoStockCompare = memo(function TwoStockCompare({
       <Card>
         <CardContent className="p-0">
           {/* Financial Health Scores - matches Conviction Scores in single stock view */}
-          <CompareSection title="FINANCIAL HEALTH SCORES">
+          <CompareSection
+            title="FINANCIAL HEALTH SCORES"
+            headerRight={<InlineShareLinks text={financialHealthShareText} url={shareUrl} />}
+          >
             <ScoreBarRow
               label="Piotroski"
               leftValue={left.scores?.piotroski.score}
@@ -343,11 +369,22 @@ function StockHeader({ stock, align }: { stock: StockDetailResponse; align: 'lef
   );
 }
 
-function CompareSection({ title, children }: { title: string; children: React.ReactNode }) {
+function CompareSection({
+  title,
+  children,
+  headerRight,
+}: {
+  title: string;
+  children: React.ReactNode;
+  headerRight?: React.ReactNode;
+}) {
   return (
     <div className="border-b border-border last:border-b-0">
-      <div className="bg-muted/50 px-4 py-2 text-center">
+      <div className="bg-muted/50 px-4 py-2 flex items-center justify-center relative">
         <span className="text-xs font-semibold tracking-widest text-primary">{title}</span>
+        {headerRight && (
+          <div className="absolute right-2">{headerRight}</div>
+        )}
       </div>
       <div className="divide-y divide-border/50">
         {children}

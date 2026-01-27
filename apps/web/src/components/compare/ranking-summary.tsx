@@ -1,10 +1,13 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Trophy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { InlineShareLinks } from '@/components/ui/share-button';
 import { cn } from '@/lib/utils';
 import type { RankingResult } from '@recon/shared';
+
+const BASE_URL = 'https://cruxit.finance';
 
 interface RankingSummaryProps {
   rankings: RankingResult[];
@@ -18,13 +21,28 @@ const RANK_STYLES: Record<number, string> = {
 };
 
 export const RankingSummary = memo(function RankingSummary({ rankings }: RankingSummaryProps) {
+  const tickers = rankings.map((r) => r.ticker);
+
+  const shareText = useMemo(() => {
+    const sortedByRank = [...rankings].sort((a, b) => a.rank - b.rank);
+    const rankingLines = sortedByRank
+      .map((r) => `#${r.rank} $${r.ticker} (${r.wins} wins)`)
+      .join('\n');
+    return `Stock Comparison Rankings:\n${rankingLines}`;
+  }, [rankings]);
+
+  const shareUrl = `${BASE_URL}/compare/${tickers.join('/')}`;
+
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-xs uppercase text-primary font-semibold tracking-widest flex items-center gap-2">
-          <Trophy className="h-4 w-4" />
-          Overall Ranking
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xs uppercase text-primary font-semibold tracking-widest flex items-center gap-2">
+            <Trophy className="h-4 w-4" />
+            Overall Ranking
+          </CardTitle>
+          <InlineShareLinks text={shareText} url={shareUrl} />
+        </div>
       </CardHeader>
       <CardContent>
         <div

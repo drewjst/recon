@@ -40,6 +40,7 @@ type Valuation struct {
 	EVToEBITDA  ValuationMetric `json:"evToEbitda"`
 	PriceToFCF  ValuationMetric `json:"priceToFcf"`
 	PriceToBook ValuationMetric `json:"priceToBook"`
+	NTMPS       ValuationMetric `json:"ntmPs"`
 }
 
 // InstitutionalHolder represents a single institutional holder's position.

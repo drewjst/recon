@@ -4,9 +4,12 @@ import { memo, useMemo } from 'react';
 import { Trophy } from 'lucide-react';
 import { SectionCard } from '@/components/dashboard/sections/section-card';
 import { Card } from '@/components/ui/card';
+import { InlineShareLinks } from '@/components/ui/share-button';
 import { COMPARE_METRICS, getNestedValue, findWinner } from '@/lib/compare-utils';
 import { cn } from '@/lib/utils';
 import type { StockDetailResponse, CompareLayout } from '@recon/shared';
+
+const BASE_URL = 'https://cruxit.finance';
 
 interface ScoreComparisonProps {
   stocks: StockDetailResponse[];
@@ -25,8 +28,27 @@ export const ScoreComparison = memo(function ScoreComparison({ stocks, layout }:
     });
   }, [stocks, scoreMetrics]);
 
+  const tickers = stocks.map((s) => s.company.ticker);
+
+  const { shareText, shareUrl } = useMemo(() => {
+    const lines = stocks.map((stock) => {
+      const ticker = stock.company.ticker;
+      const piotroski = stock.scores?.piotroski.score;
+      const ruleOf40 = stock.scores?.ruleOf40.score;
+      const altmanZ = stock.scores?.altmanZ.score;
+      return `$${ticker}: Piotroski ${piotroski ?? '-'}/9, Rule of 40 ${ruleOf40 != null ? `${ruleOf40.toFixed(0)}%` : '-'}, Altman Z ${altmanZ?.toFixed(2) ?? '-'}`;
+    });
+    return {
+      shareText: `Financial Health Comparison:\n${lines.join('\n')}`,
+      shareUrl: `${BASE_URL}/compare/${tickers.join('/')}`,
+    };
+  }, [stocks, tickers]);
+
   return (
-    <SectionCard title="Financial Health Scores">
+    <SectionCard
+      title="Financial Health Scores"
+      headerRight={<InlineShareLinks text={shareText} url={shareUrl} />}
+    >
       <div
         className={cn(
           'grid gap-4',

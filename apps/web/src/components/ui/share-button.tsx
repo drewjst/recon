@@ -149,3 +149,57 @@ export function formatShareText(parts: {
 
   return text.trim();
 }
+
+/**
+ * Inline share links for compact UI (just icons, no dropdown)
+ */
+interface InlineShareLinksProps {
+  text: string;
+  url: string;
+  hashtags?: string[];
+  className?: string;
+}
+
+export function InlineShareLinks({
+  text,
+  url,
+  hashtags = DEFAULT_HASHTAGS,
+  className,
+}: InlineShareLinksProps) {
+  const handleShareX = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const intentUrl = buildXShareUrl(url, text, hashtags);
+    openShareWindow(intentUrl);
+  };
+
+  const handleShareThreads = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const intentUrl = buildThreadsShareUrl(url, text);
+    openShareWindow(intentUrl);
+  };
+
+  return (
+    <div className={cn('flex items-center gap-1', className)}>
+      <button
+        type="button"
+        onClick={handleShareX}
+        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        aria-label="Share on X"
+        title="Share on X"
+      >
+        <XIcon className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={handleShareThreads}
+        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        aria-label="Share on Threads"
+        title="Share on Threads"
+      >
+        <ThreadsIcon className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}

@@ -194,9 +194,9 @@ function CompareContent() {
     setTickers(tickers.filter((t) => t !== ticker));
   };
 
-  // Fetch peer suggestions when exactly one stock is selected
-  const { data: firstStockData } = useStock(tickers.length === 1 ? tickers[0] : '');
-  const peers = firstStockData?.peers?.filter(p => !tickers.includes(p.toUpperCase())).slice(0, 5) || [];
+  // Fetch peer suggestions based on the first selected stock
+  const { data: firstStockData } = useStock(tickers.length >= 1 ? tickers[0] : '');
+  const peers = firstStockData?.peers?.filter(p => !tickers.includes(p.toUpperCase())).slice(0, 8) || [];
 
   const emptySlots = MAX_TICKERS - tickers.length;
 
@@ -258,8 +258,8 @@ function CompareContent() {
         ))}
       </div>
 
-      {/* Peer suggestions */}
-      {peers.length > 0 && tickers.length === 1 && (
+      {/* Peer suggestions - show while there are peers and room for more tickers */}
+      {peers.length > 0 && tickers.length < MAX_TICKERS && (
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <span className="text-sm text-muted-foreground">Similar to {tickers[0]}:</span>
           {peers.map((peer) => (
