@@ -1,19 +1,11 @@
 import { Metadata } from 'next';
 import { StockDashboard } from '@/components/dashboard/stock-dashboard';
+import type { StockDetailResponse } from '@recon/shared';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const BASE_URL = 'https://cruxit.finance';
 
-interface StockData {
-  company: { ticker: string; name: string; sector: string };
-  scores?: {
-    piotroski: { score: number };
-    ruleOf40: { score: number; passed: boolean };
-    altmanZ: { score: number; zone: string };
-  };
-}
-
-function getOverallGrade(scores: StockData['scores']): string {
+function getOverallGrade(scores: StockDetailResponse['scores']): string {
   if (!scores) return 'N/A';
 
   const piotroski = scores.piotroski.score;
@@ -34,7 +26,7 @@ function getOverallGrade(scores: StockData['scores']): string {
   return 'F';
 }
 
-async function getStockData(ticker: string): Promise<StockData | null> {
+async function getStockData(ticker: string): Promise<StockDetailResponse | null> {
   try {
     const res = await fetch(`${API_BASE}/api/stock/${ticker.toUpperCase()}`, {
       next: { revalidate: 300 },
@@ -81,14 +73,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default function StockPage({ params }: PageProps) {
+export default async function StockPage({ params }: PageProps) {
   const ticker = params.ticker.toUpperCase();
+  const initialData = await getStockData(ticker);
 
   return (
     <div className="min-h-screen px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col min-h-screen">
         <div className="py-8 flex-1">
-          <StockDashboard ticker={ticker} />
+          <StockDashboard ticker={ticker} initialData={initialData} />
         </div>
       </div>
     </div>

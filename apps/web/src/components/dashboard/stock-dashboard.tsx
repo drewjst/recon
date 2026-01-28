@@ -13,6 +13,7 @@ import {
 } from './sections';
 import { ETFView } from './etf-view';
 import { CruxAIInsight } from '@/components/cruxai/cruxai-insight';
+import type { StockDetailResponse } from '@recon/shared';
 
 // Skeleton for loading sections
 const SectionSkeleton = () => (
@@ -76,11 +77,12 @@ const FooterSection = dynamic(
 
 interface StockDashboardProps {
   ticker: string;
+  initialData?: StockDetailResponse | null;
 }
 
-export function StockDashboard({ ticker }: StockDashboardProps) {
+export function StockDashboard({ ticker, initialData }: StockDashboardProps) {
   const router = useRouter();
-  const { data, isLoading, error } = useStock(ticker);
+  const { data, isLoading, error } = useStock(ticker, initialData);
 
   if (isLoading) {
     return (
