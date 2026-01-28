@@ -169,29 +169,21 @@ function CompareContent() {
     return [];
   });
 
-  // Sync URL when tickers change (use query params for the interactive UI)
-  useEffect(() => {
-    const newUrl = tickers.length > 0 ? `/compare?tickers=${tickers.join(',')}` : '/compare';
-    const currentPath = window.location.pathname + window.location.search;
-
-    // Only update if we're not already at the right URL
-    if (!currentPath.startsWith('/compare?') || tickersParam !== tickers.join(',')) {
-      // Use replace to avoid polluting history when user adds/removes tickers
-      if (tickers.length > 0 || tickersParam) {
-        router.replace(newUrl, { scroll: false });
-      }
-    }
-  }, [tickers, tickersParam, router]);
-
   const addTicker = (ticker: string) => {
     const upperTicker = ticker.toUpperCase();
     if (!tickers.includes(upperTicker) && tickers.length < MAX_TICKERS) {
-      setTickers([...tickers, upperTicker]);
+      const newTickers = [...tickers, upperTicker];
+      setTickers(newTickers);
+      const newUrl = newTickers.length > 0 ? `/compare?tickers=${newTickers.join(',')}` : '/compare';
+      router.replace(newUrl, { scroll: false });
     }
   };
 
   const removeTicker = (ticker: string) => {
-    setTickers(tickers.filter((t) => t !== ticker));
+    const newTickers = tickers.filter((t) => t !== ticker);
+    setTickers(newTickers);
+    const newUrl = newTickers.length > 0 ? `/compare?tickers=${newTickers.join(',')}` : '/compare';
+    router.replace(newUrl, { scroll: false });
   };
 
   // Fetch peer suggestions based on the first selected stock
