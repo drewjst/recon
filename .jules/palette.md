@@ -11,3 +11,7 @@
 ## 2024-05-22 - Error State Recovery
 **Learning:** Users landing on dead-end error states (like 404s) need an explicit path back to safety (Home/Search) to prevent abandonment.
 **Action:** Always provide a "Try Again" or "Back" button in error boundaries or empty states.
+
+## 2025-02-19 - Skip Links & Autofocus
+**Learning:** `autoFocus` on the main content (e.g. search input) can bypass the "Skip to Content" link for keyboard users on initial load, but the link remains critical for screen reader users and subsequent navigation.
+**Action:** Ensure "Skip to Content" links are always present in the root layout, even if the page has `autoFocus` elements, as they serve different accessibility needs.
