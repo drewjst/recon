@@ -40,11 +40,11 @@ export function GrowthSection({ data }: GrowthSectionProps) {
     );
   }
 
-  // Add Free Cash Flow TTM if available
+  // Add Free Cash Flow TTM if available (value is in millions from API)
   if (growth.freeCashFlowTTM) {
     metrics.push(
       toMetric('freeCashFlowTTM', 'Free Cash Flow (TTM)', growth.freeCashFlowTTM, {
-        format: 'currency',
+        format: 'currencyMillions',
         higherIsBetter: true,
         info: 'Free Cash Flow represents the cash a company generates after accounting for capital expenditures. Higher FCF indicates financial flexibility.',
         learnMoreUrl: 'https://www.investopedia.com/terms/f/freecashflow.asp',

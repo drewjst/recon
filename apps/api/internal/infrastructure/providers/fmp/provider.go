@@ -122,43 +122,39 @@ func (p *Provider) GetRatios(ctx context.Context, ticker string) (*models.Ratios
 		ratios = mapRatios(&annualRatios[0], keyMetrics)
 	}
 
-	// Fetch income statements to calculate growth metrics
-	income, err := p.client.GetIncomeStatement(ctx, ticker, 2)
+	// Fetch pre-calculated growth metrics from FMP financial-growth endpoint
+	// This gives us more accurate YoY growth rates than manual calculation
+	growth, err := p.client.GetFinancialGrowth(ctx, ticker, 1)
 	if err != nil {
-		slog.Debug("failed to fetch income for growth calculation", "ticker", ticker, "error", err)
-	} else if len(income) >= 2 {
-		// Calculate YoY growth from income statements
-		current := income[0]
-		prior := income[1]
-
-		// Revenue growth
-		if prior.Revenue > 0 {
-			ratios.RevenueGrowthYoY = ((current.Revenue - prior.Revenue) / prior.Revenue) * 100
-		}
-
-		// EPS growth (using diluted EPS)
-		if prior.EPSDiluted != 0 {
-			ratios.EPSGrowthYoY = ((current.EPSDiluted - prior.EPSDiluted) / abs(prior.EPSDiluted)) * 100
-		}
-
-		// Set revenue TTM for other calculations
-		ratios.RevenueTTM = current.Revenue
-		ratios.NetIncomeTTM = current.NetIncome
+		slog.Debug("failed to fetch financial growth", "ticker", ticker, "error", err)
+	} else if len(growth) > 0 {
+		g := growth[0]
+		// FMP returns growth rates as decimals (0.15 = 15%), convert to percentage
+		ratios.RevenueGrowthYoY = g.RevenueGrowth * 100
+		ratios.EPSGrowthYoY = g.EPSDilutedGrowth * 100
+		ratios.CashFlowGrowthYoY = g.FreeCashFlowGrowth * 100
+		slog.Debug("FMP financial growth",
+			"ticker", ticker,
+			"revenueGrowth", ratios.RevenueGrowthYoY,
+			"epsGrowth", ratios.EPSGrowthYoY,
+			"fcfGrowth", ratios.CashFlowGrowthYoY)
 	}
 
-	// Fetch cash flow statements for FCF metrics
-	cashFlow, err := p.client.GetCashFlowStatement(ctx, ticker, 2)
+	// Fetch income statements for RevenueTTM and NetIncomeTTM (still needed for other calculations)
+	income, err := p.client.GetIncomeStatement(ctx, ticker, 1)
 	if err != nil {
-		slog.Debug("failed to fetch cash flow for FCF calculation", "ticker", ticker, "error", err)
-	} else if len(cashFlow) >= 1 {
-		current := cashFlow[0]
-		ratios.FreeCashFlowTTM = current.FreeCashFlow
+		slog.Debug("failed to fetch income statement", "ticker", ticker, "error", err)
+	} else if len(income) >= 1 {
+		ratios.RevenueTTM = income[0].Revenue
+		ratios.NetIncomeTTM = income[0].NetIncome
+	}
 
-		// Calculate FCF growth if we have prior year
-		if len(cashFlow) >= 2 && cashFlow[1].FreeCashFlow != 0 {
-			prior := cashFlow[1]
-			ratios.CashFlowGrowthYoY = ((current.FreeCashFlow - prior.FreeCashFlow) / abs(prior.FreeCashFlow)) * 100
-		}
+	// Fetch cash flow statements for FCF TTM value
+	cashFlow, err := p.client.GetCashFlowStatement(ctx, ticker, 1)
+	if err != nil {
+		slog.Debug("failed to fetch cash flow for FCF", "ticker", ticker, "error", err)
+	} else if len(cashFlow) >= 1 {
+		ratios.FreeCashFlowTTM = cashFlow[0].FreeCashFlow
 	}
 
 	return ratios, nil

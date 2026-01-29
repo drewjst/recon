@@ -241,6 +241,19 @@ func (c *Client) GetKeyMetricsTTM(ctx context.Context, ticker string) ([]KeyMetr
 	return metrics, nil
 }
 
+// GetFinancialGrowth retrieves pre-calculated financial growth metrics.
+// Returns YoY growth rates for revenue, EPS, FCF, etc.
+func (c *Client) GetFinancialGrowth(ctx context.Context, ticker string, limit int) ([]FinancialGrowth, error) {
+	url := fmt.Sprintf("%s/financial-growth?symbol=%s&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
+
+	var growth []FinancialGrowth
+	if err := c.get(ctx, url, &growth); err != nil {
+		return nil, fmt.Errorf("fetching financial growth: %w", err)
+	}
+
+	return growth, nil
+}
+
 // GetDCF retrieves discounted cash flow valuation data.
 func (c *Client) GetDCF(ctx context.Context, ticker string) (*DCF, error) {
 	url := fmt.Sprintf("%s/discounted-cash-flow?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)

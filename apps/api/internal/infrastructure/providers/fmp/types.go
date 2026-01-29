@@ -461,3 +461,22 @@ type OwnerEarnings struct {
 	GrowthCapex            float64 `json:"growthCapex"`
 	OwnersEarningsPerShare float64 `json:"ownersEarningsPerShare"` // Note: API uses "owners" with 's'
 }
+
+// FinancialGrowth represents growth metrics from FMP's financial-growth endpoint.
+// These are pre-calculated YoY growth rates for key financial metrics.
+type FinancialGrowth struct {
+	Symbol                string  `json:"symbol"`
+	Date                  string  `json:"date"`
+	Period                string  `json:"period"`
+	RevenueGrowth         float64 `json:"revenueGrowth"`             // Revenue growth rate (decimal, e.g., 0.15 = 15%)
+	GrossProfitGrowth     float64 `json:"grossProfitGrowth"`         // Gross profit growth rate
+	EBITGrowth            float64 `json:"ebitGrowth"`                // EBIT growth rate
+	OperatingIncomeGrowth float64 `json:"operatingIncomeGrowth"`     // Operating income growth rate
+	NetIncomeGrowth       float64 `json:"netIncomeGrowth"`           // Net income growth rate
+	EPSGrowth             float64 `json:"epsgrowth"`                 // EPS growth rate (note: lowercase in API)
+	EPSDilutedGrowth      float64 `json:"epsdilutedGrowth"`          // Diluted EPS growth rate
+	FreeCashFlowGrowth    float64 `json:"freeCashFlowGrowth"`        // FCF growth rate
+	DividendsGrowth       float64 `json:"dividendsperShareGrowth"`   // Dividends per share growth (note: lowercase)
+	OperatingCFGrowth     float64 `json:"operatingCashFlowGrowth"`   // Operating cash flow growth
+	TenYRevenueGrowthPSh  float64 `json:"tenYRevenueGrowthPerShare"` // 10Y revenue growth per share
+}

@@ -3,7 +3,7 @@
  * All formatting should use these functions to ensure consistency.
  */
 
-export type MetricFormat = 'percent' | 'ratio' | 'currency' | 'multiple' | 'number';
+export type MetricFormat = 'percent' | 'ratio' | 'currency' | 'currencyMillions' | 'multiple' | 'number';
 
 // Null placeholder for missing values
 const NULL_DISPLAY = '--';
@@ -21,6 +21,9 @@ export function formatMetricValue(value: number | null | undefined, format: Metr
       return formatRatio(value);
     case 'currency':
       return formatCurrency(value);
+    case 'currencyMillions':
+      // Value is already in millions, convert to raw for formatting
+      return formatCurrency(value * 1_000_000);
     case 'multiple':
       return formatMultiple(value);
     case 'number':
