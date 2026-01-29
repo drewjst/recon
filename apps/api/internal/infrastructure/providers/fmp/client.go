@@ -8,8 +8,15 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 )
+
+// normalizeTicker converts ticker symbols to FMP format.
+// FMP uses hyphens for share classes (BRK-A, BRK-B) while other providers use dots (BRK.A, BRK.B).
+func normalizeTicker(ticker string) string {
+	return strings.ReplaceAll(ticker, ".", "-")
+}
 
 const (
 	baseURL        = "https://financialmodelingprep.com/stable"
@@ -47,7 +54,7 @@ func NewClient(cfg Config) *Client {
 
 // GetCompanyProfile retrieves company profile information.
 func (c *Client) GetCompanyProfile(ctx context.Context, ticker string) (*CompanyProfile, error) {
-	url := fmt.Sprintf("%s/profile?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/profile?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var profiles []CompanyProfile
 	if err := c.get(ctx, url, &profiles); err != nil {
@@ -63,7 +70,7 @@ func (c *Client) GetCompanyProfile(ctx context.Context, ticker string) (*Company
 
 // GetQuote retrieves real-time quote data.
 func (c *Client) GetQuote(ctx context.Context, ticker string) (*Quote, error) {
-	url := fmt.Sprintf("%s/quote?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/quote?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var quotes []Quote
 	if err := c.get(ctx, url, &quotes); err != nil {
@@ -79,7 +86,7 @@ func (c *Client) GetQuote(ctx context.Context, ticker string) (*Quote, error) {
 
 // GetIncomeStatement retrieves income statement data.
 func (c *Client) GetIncomeStatement(ctx context.Context, ticker string, limit int) ([]IncomeStatement, error) {
-	url := fmt.Sprintf("%s/income-statement?symbol=%s&period=annual&limit=%d&apikey=%s", c.baseURL, ticker, limit, c.apiKey)
+	url := fmt.Sprintf("%s/income-statement?symbol=%s&period=annual&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
 
 	var statements []IncomeStatement
 	if err := c.get(ctx, url, &statements); err != nil {
@@ -91,7 +98,7 @@ func (c *Client) GetIncomeStatement(ctx context.Context, ticker string, limit in
 
 // GetBalanceSheet retrieves balance sheet data.
 func (c *Client) GetBalanceSheet(ctx context.Context, ticker string, limit int) ([]BalanceSheet, error) {
-	url := fmt.Sprintf("%s/balance-sheet-statement?symbol=%s&period=annual&limit=%d&apikey=%s", c.baseURL, ticker, limit, c.apiKey)
+	url := fmt.Sprintf("%s/balance-sheet-statement?symbol=%s&period=annual&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
 
 	var statements []BalanceSheet
 	if err := c.get(ctx, url, &statements); err != nil {
@@ -103,7 +110,7 @@ func (c *Client) GetBalanceSheet(ctx context.Context, ticker string, limit int) 
 
 // GetCashFlowStatement retrieves cash flow statement data.
 func (c *Client) GetCashFlowStatement(ctx context.Context, ticker string, limit int) ([]CashFlowStatement, error) {
-	url := fmt.Sprintf("%s/cash-flow-statement?symbol=%s&period=annual&limit=%d&apikey=%s", c.baseURL, ticker, limit, c.apiKey)
+	url := fmt.Sprintf("%s/cash-flow-statement?symbol=%s&period=annual&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
 
 	var statements []CashFlowStatement
 	if err := c.get(ctx, url, &statements); err != nil {
@@ -128,7 +135,7 @@ func (c *Client) SearchTicker(ctx context.Context, query string, limit int) ([]S
 
 // GetRatios retrieves financial ratios data.
 func (c *Client) GetRatios(ctx context.Context, ticker string, limit int) ([]Ratios, error) {
-	url := fmt.Sprintf("%s/ratios?symbol=%s&period=annual&limit=%d&apikey=%s", c.baseURL, ticker, limit, c.apiKey)
+	url := fmt.Sprintf("%s/ratios?symbol=%s&period=annual&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
 
 	var ratios []Ratios
 	if err := c.get(ctx, url, &ratios); err != nil {
@@ -140,7 +147,7 @@ func (c *Client) GetRatios(ctx context.Context, ticker string, limit int) ([]Rat
 
 // GetKeyMetrics retrieves key financial metrics data.
 func (c *Client) GetKeyMetrics(ctx context.Context, ticker string, limit int) ([]KeyMetrics, error) {
-	url := fmt.Sprintf("%s/key-metrics?symbol=%s&period=annual&limit=%d&apikey=%s", c.baseURL, ticker, limit, c.apiKey)
+	url := fmt.Sprintf("%s/key-metrics?symbol=%s&period=annual&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
 
 	var metrics []KeyMetrics
 	if err := c.get(ctx, url, &metrics); err != nil {
@@ -152,7 +159,7 @@ func (c *Client) GetKeyMetrics(ctx context.Context, ticker string, limit int) ([
 
 // GetHistoricalPrices retrieves historical EOD price data.
 func (c *Client) GetHistoricalPrices(ctx context.Context, ticker string, fromDate string) ([]HistoricalPrice, error) {
-	url := fmt.Sprintf("%s/historical-price-eod/full?symbol=%s&from=%s&apikey=%s", c.baseURL, ticker, fromDate, c.apiKey)
+	url := fmt.Sprintf("%s/historical-price-eod/full?symbol=%s&from=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), fromDate, c.apiKey)
 
 	var prices []HistoricalPrice
 	if err := c.get(ctx, url, &prices); err != nil {
@@ -164,7 +171,7 @@ func (c *Client) GetHistoricalPrices(ctx context.Context, ticker string, fromDat
 
 // GetInsiderTrades retrieves insider trading data using the search endpoint.
 func (c *Client) GetInsiderTrades(ctx context.Context, ticker string, limit int) ([]InsiderTrade, error) {
-	url := fmt.Sprintf("%s/insider-trading/search?symbol=%s&page=0&limit=%d&apikey=%s", c.baseURL, ticker, limit, c.apiKey)
+	url := fmt.Sprintf("%s/insider-trading/search?symbol=%s&page=0&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
 
 	var trades []InsiderTrade
 	if err := c.get(ctx, url, &trades); err != nil {
@@ -176,7 +183,7 @@ func (c *Client) GetInsiderTrades(ctx context.Context, ticker string, limit int)
 
 // GetInsiderStatistics retrieves aggregated insider trading statistics by quarter.
 func (c *Client) GetInsiderStatistics(ctx context.Context, ticker string) ([]InsiderStatistics, error) {
-	url := fmt.Sprintf("%s/insider-trading/statistics?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/insider-trading/statistics?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var stats []InsiderStatistics
 	if err := c.get(ctx, url, &stats); err != nil {
@@ -188,7 +195,7 @@ func (c *Client) GetInsiderStatistics(ctx context.Context, ticker string) ([]Ins
 
 // GetSenateTrades retrieves Senate member stock trades for a ticker.
 func (c *Client) GetSenateTrades(ctx context.Context, ticker string) ([]SenateTrade, error) {
-	url := fmt.Sprintf("%s/senate-trades?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/senate-trades?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var trades []SenateTrade
 	if err := c.get(ctx, url, &trades); err != nil {
@@ -200,7 +207,7 @@ func (c *Client) GetSenateTrades(ctx context.Context, ticker string) ([]SenateTr
 
 // GetHouseTrades retrieves House member stock trades for a ticker.
 func (c *Client) GetHouseTrades(ctx context.Context, ticker string) ([]HouseTrade, error) {
-	url := fmt.Sprintf("%s/house-trades?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/house-trades?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var trades []HouseTrade
 	if err := c.get(ctx, url, &trades); err != nil {
@@ -212,7 +219,7 @@ func (c *Client) GetHouseTrades(ctx context.Context, ticker string) ([]HouseTrad
 
 // GetRatiosTTM retrieves trailing twelve month financial ratios.
 func (c *Client) GetRatiosTTM(ctx context.Context, ticker string) ([]RatiosTTM, error) {
-	url := fmt.Sprintf("%s/ratios-ttm?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/ratios-ttm?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var ratios []RatiosTTM
 	if err := c.get(ctx, url, &ratios); err != nil {
@@ -224,7 +231,7 @@ func (c *Client) GetRatiosTTM(ctx context.Context, ticker string) ([]RatiosTTM, 
 
 // GetKeyMetricsTTM retrieves trailing twelve month key metrics.
 func (c *Client) GetKeyMetricsTTM(ctx context.Context, ticker string) ([]KeyMetricsTTM, error) {
-	url := fmt.Sprintf("%s/key-metrics-ttm?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/key-metrics-ttm?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var metrics []KeyMetricsTTM
 	if err := c.get(ctx, url, &metrics); err != nil {
@@ -236,7 +243,7 @@ func (c *Client) GetKeyMetricsTTM(ctx context.Context, ticker string) ([]KeyMetr
 
 // GetDCF retrieves discounted cash flow valuation data.
 func (c *Client) GetDCF(ctx context.Context, ticker string) (*DCF, error) {
-	url := fmt.Sprintf("%s/discounted-cash-flow?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/discounted-cash-flow?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var dcfData []DCF
 	if err := c.get(ctx, url, &dcfData); err != nil {
@@ -255,7 +262,7 @@ func (c *Client) GetDCF(ctx context.Context, ticker string) (*DCF, error) {
 
 // GetOwnerEarnings retrieves owner earnings data (Buffett-style earnings).
 func (c *Client) GetOwnerEarnings(ctx context.Context, ticker string) (*OwnerEarnings, error) {
-	url := fmt.Sprintf("%s/owner-earnings?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/owner-earnings?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var data []OwnerEarnings
 	if err := c.get(ctx, url, &data); err != nil {
@@ -274,7 +281,7 @@ func (c *Client) GetOwnerEarnings(ctx context.Context, ticker string) (*OwnerEar
 
 // GetETFInfo retrieves ETF information (expense ratio, AUM, etc.).
 func (c *Client) GetETFInfo(ctx context.Context, ticker string) (*ETFInfo, error) {
-	url := fmt.Sprintf("%s/etf/info?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/etf/info?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var info []ETFInfo
 	if err := c.get(ctx, url, &info); err != nil {
@@ -291,7 +298,7 @@ func (c *Client) GetETFInfo(ctx context.Context, ticker string) (*ETFInfo, error
 // GetETFHoldings retrieves top holdings of an ETF.
 // Note: This endpoint requires a premium FMP subscription tier.
 func (c *Client) GetETFHoldings(ctx context.Context, ticker string) ([]ETFHolding, error) {
-	url := fmt.Sprintf("%s/etf/holdings?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/etf/holdings?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var holdings []ETFHolding
 	if err := c.get(ctx, url, &holdings); err != nil {
@@ -303,7 +310,7 @@ func (c *Client) GetETFHoldings(ctx context.Context, ticker string) ([]ETFHoldin
 
 // GetETFSectorWeightings retrieves sector breakdown of an ETF.
 func (c *Client) GetETFSectorWeightings(ctx context.Context, ticker string) ([]ETFSectorWeighting, error) {
-	url := fmt.Sprintf("%s/etf/sector-weightings?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/etf/sector-weightings?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var sectors []ETFSectorWeighting
 	if err := c.get(ctx, url, &sectors); err != nil {
@@ -315,7 +322,7 @@ func (c *Client) GetETFSectorWeightings(ctx context.Context, ticker string) ([]E
 
 // GetETFCountryWeightings retrieves country/region breakdown of an ETF.
 func (c *Client) GetETFCountryWeightings(ctx context.Context, ticker string) ([]ETFCountryWeighting, error) {
-	url := fmt.Sprintf("%s/etf/country-weightings?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/etf/country-weightings?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var countries []ETFCountryWeighting
 	if err := c.get(ctx, url, &countries); err != nil {
@@ -329,7 +336,7 @@ func (c *Client) GetETFCountryWeightings(ctx context.Context, ticker string) ([]
 // Uses the institutional-ownership extract-analytics/holder endpoint with most recent quarter.
 func (c *Client) GetInstitutionalHolders(ctx context.Context, ticker string, year int, quarter int, limit int) ([]InstitutionalOwnershipHolder, error) {
 	url := fmt.Sprintf("%s/institutional-ownership/extract-analytics/holder?symbol=%s&year=%d&quarter=%d&page=0&limit=%d&apikey=%s",
-		c.baseURL, ticker, year, quarter, limit, c.apiKey)
+		c.baseURL, normalizeTicker(ticker), year, quarter, limit, c.apiKey)
 
 	var holders []InstitutionalOwnershipHolder
 	if err := c.get(ctx, url, &holders); err != nil {
@@ -343,7 +350,7 @@ func (c *Client) GetInstitutionalHolders(ctx context.Context, ticker string, yea
 // Returns ownership percent, investor counts, and QoQ changes.
 func (c *Client) GetInstitutionalPositionsSummary(ctx context.Context, ticker string, year int, quarter int) (*InstitutionalPositionsSummary, error) {
 	url := fmt.Sprintf("%s/institutional-ownership/symbol-positions-summary?symbol=%s&year=%d&quarter=%d&apikey=%s",
-		c.baseURL, ticker, year, quarter, c.apiKey)
+		c.baseURL, normalizeTicker(ticker), year, quarter, c.apiKey)
 
 	var summaries []InstitutionalPositionsSummary
 	if err := c.get(ctx, url, &summaries); err != nil {
@@ -359,7 +366,7 @@ func (c *Client) GetInstitutionalPositionsSummary(ctx context.Context, ticker st
 
 // GetGradesConsensus retrieves pre-aggregated analyst grades consensus.
 func (c *Client) GetGradesConsensus(ctx context.Context, ticker string) (*GradesConsensus, error) {
-	url := fmt.Sprintf("%s/grades-consensus?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/grades-consensus?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var consensus []GradesConsensus
 	if err := c.get(ctx, url, &consensus); err != nil {
@@ -375,7 +382,7 @@ func (c *Client) GetGradesConsensus(ctx context.Context, ticker string) (*Grades
 
 // GetPriceTargetConsensus retrieves analyst price target consensus.
 func (c *Client) GetPriceTargetConsensus(ctx context.Context, ticker string) (*PriceTargetConsensus, error) {
-	url := fmt.Sprintf("%s/price-target-consensus?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/price-target-consensus?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var targets []PriceTargetConsensus
 	if err := c.get(ctx, url, &targets); err != nil {
@@ -392,7 +399,7 @@ func (c *Client) GetPriceTargetConsensus(ctx context.Context, ticker string) (*P
 // GetAnalystEstimates retrieves EPS and revenue estimates.
 func (c *Client) GetAnalystEstimates(ctx context.Context, ticker string, period string, limit int) ([]AnalystEstimate, error) {
 	url := fmt.Sprintf("%s/analyst-estimates?symbol=%s&period=%s&limit=%d&apikey=%s",
-		c.baseURL, ticker, period, limit, c.apiKey)
+		c.baseURL, normalizeTicker(ticker), period, limit, c.apiKey)
 
 	var estimates []AnalystEstimate
 	if err := c.get(ctx, url, &estimates); err != nil {
@@ -405,7 +412,7 @@ func (c *Client) GetAnalystEstimates(ctx context.Context, ticker string, period 
 // GetStockPeers retrieves peer/competitor companies for a stock.
 // Returns a list of peer ticker symbols.
 func (c *Client) GetStockPeers(ctx context.Context, ticker string) ([]string, error) {
-	url := fmt.Sprintf("%s/stock-peers?symbol=%s&apikey=%s", c.baseURL, ticker, c.apiKey)
+	url := fmt.Sprintf("%s/stock-peers?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)
 
 	var peers []StockPeer
 	if err := c.get(ctx, url, &peers); err != nil {
@@ -429,7 +436,7 @@ func (c *Client) GetStockPeers(ctx context.Context, ticker string) ([]string, er
 
 // GetQuarterlyRatios retrieves quarterly financial ratios for historical analysis.
 func (c *Client) GetQuarterlyRatios(ctx context.Context, ticker string, limit int) ([]Ratios, error) {
-	url := fmt.Sprintf("%s/ratios?symbol=%s&period=quarter&limit=%d&apikey=%s", c.baseURL, ticker, limit, c.apiKey)
+	url := fmt.Sprintf("%s/ratios?symbol=%s&period=quarter&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
 
 	var ratios []Ratios
 	if err := c.get(ctx, url, &ratios); err != nil {
