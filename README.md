@@ -1,4 +1,4 @@
-# Recon
+# Crux
 
 **Stock fundamental analysis, distilled.** Enter a ticker, get the crux in 30 seconds.
 
