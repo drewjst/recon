@@ -16,6 +16,7 @@ const INSIGHT_STALE_TIME = 24 * 60 * 60 * 1000; // 24 hours
 const sectionLabels: Record<InsightSection, string> = {
   'valuation-summary': 'Valuation Summary',
   'position-summary': 'Position Summary',
+  'news-sentiment': 'News Sentiment',
 };
 
 export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps) {

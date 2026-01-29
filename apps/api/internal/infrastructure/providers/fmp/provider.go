@@ -725,6 +725,23 @@ func (p *Provider) GetIndustryPE(ctx context.Context, industry string, exchange 
 	}, nil
 }
 
+// GetNews implements FundamentalsProvider.
+// Returns recent news articles for the given ticker.
+func (p *Provider) GetNews(ctx context.Context, ticker string, limit int) ([]models.NewsArticle, error) {
+	articles, err := p.client.GetNews(ctx, ticker, limit)
+	if err != nil {
+		return nil, fmt.Errorf("fetching news: %w", err)
+	}
+
+	result := make([]models.NewsArticle, 0, len(articles))
+	for i := range articles {
+		mapped := mapNewsArticle(&articles[i])
+		result = append(result, *mapped)
+	}
+
+	return result, nil
+}
+
 // getMostRecentFilingQuarter returns the most recent quarter with complete 13F filings.
 func getMostRecentFilingQuarter() (year int, quarter int) {
 	now := time.Now()

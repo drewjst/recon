@@ -34,6 +34,7 @@ const (
 	cacheIndustryPE          = "industry_pe"
 	cacheETFData             = "etf_data"
 	cacheIsETF               = "is_etf"
+	cacheNews                = "news"
 )
 
 // Cache TTLs.
@@ -246,5 +247,11 @@ func (p *CachedFundamentalsProvider) GetETFData(ctx context.Context, ticker stri
 func (p *CachedFundamentalsProvider) GetCongressTrades(ctx context.Context, ticker string, days int) ([]models.CongressTrade, error) {
 	return cachedSlice(p, cacheCongressTrades, fmt.Sprintf("%s:%d", ticker, days), ttlInsider, func() ([]models.CongressTrade, error) {
 		return p.underlying.GetCongressTrades(ctx, ticker, days)
+	})
+}
+
+func (p *CachedFundamentalsProvider) GetNews(ctx context.Context, ticker string, limit int) ([]models.NewsArticle, error) {
+	return cachedSlice(p, cacheNews, fmt.Sprintf("%s:%d", ticker, limit), ttlInsider, func() ([]models.NewsArticle, error) {
+		return p.underlying.GetNews(ctx, ticker, limit)
 	})
 }

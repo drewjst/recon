@@ -86,16 +86,21 @@ type PromptData struct {
 	EPSVsEst        float64
 
 	// Position Summary fields
-	YTDReturn       float64
-	Week52High      float64
-	Week52Low       float64
-	PctFrom52High   float64 // How far below 52-week high
-	PctFrom52Low    float64 // How far above 52-week low
-	PiotroskiScore  int
-	AltmanZScore    float64
-	AltmanZZone     string // "safe", "gray", "distress"
-	RuleOf40Score   float64
-	RuleOf40Passed  bool
+	YTDReturn      float64
+	Week52High     float64
+	Week52Low      float64
+	PctFrom52High  float64 // How far below 52-week high
+	PctFrom52Low   float64 // How far above 52-week low
+	PiotroskiScore int
+	AltmanZScore   float64
+	AltmanZZone    string // "safe", "gray", "distress"
+	RuleOf40Score  float64
+	RuleOf40Passed bool
+
+	// News Sentiment fields
+	NewsHeadlines []string // Headlines for sentiment analysis
+	ArticleCount  int
+	DaysCovered   int
 }
 
 var promptTemplates = map[models.InsightSection]string{
@@ -199,6 +204,33 @@ TASK: Write a 3-4 sentence executive summary that:
 3. Identifies one key factor an investor should monitor going forward
 
 Be direct, specific, and actionable. Avoid generic statements. Reference specific metrics.`,
+
+	models.InsightSectionNewsSentiment: `You are a financial news analyst. Analyze the sentiment of recent news headlines for {{.Ticker}}.
+
+COMPANY: {{.Ticker}}{{if .CompanyName}} - {{.CompanyName}}{{end}}
+{{if .Sector}}SECTOR: {{.Sector}}{{end}}
+
+═══════════════════════════════════════════════════════════════════
+RECENT NEWS HEADLINES ({{.ArticleCount}} articles, last {{.DaysCovered}} days)
+═══════════════════════════════════════════════════════════════════
+{{range .NewsHeadlines}}- {{.}}
+{{end}}
+
+TASK: Analyze the overall sentiment of these news headlines and return a JSON response in this exact format:
+{
+  "sentiment": "positive" | "negative" | "neutral" | "mixed",
+  "confidence": 0.0-1.0,
+  "themes": ["theme1", "theme2", "theme3"],
+  "summary": "One sentence summary of key news themes"
+}
+
+Rules:
+- sentiment: "positive" if mostly bullish news, "negative" if mostly bearish, "neutral" if balanced/factual, "mixed" if conflicting signals
+- confidence: How confident you are in the sentiment assessment (0.5 = uncertain, 1.0 = very confident)
+- themes: 2-4 key themes from the news (e.g., "AI growth", "margin pressure", "new product launch")
+- summary: A concise one-sentence summary suitable for display (max 80 chars)
+
+Return ONLY the JSON object, no other text.`,
 }
 
 // BuildPrompt constructs a prompt for the given section using the provided data.

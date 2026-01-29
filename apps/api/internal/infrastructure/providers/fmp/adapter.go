@@ -399,6 +399,26 @@ func mapETFData(info *ETFInfo, holdings []ETFHolding, sectors []ETFSectorWeighti
 	}
 }
 
+// mapNewsArticle converts FMP NewsArticle to internal model.
+func mapNewsArticle(fmp *NewsArticle) *models.NewsArticle {
+	// Parse date like "2024-01-15 10:30:00" or "2024-01-15"
+	var pubDate time.Time
+	if t, err := time.Parse("2006-01-02 15:04:05", fmp.PublishedDate); err == nil {
+		pubDate = t
+	} else if t, err := time.Parse("2006-01-02", fmp.PublishedDate); err == nil {
+		pubDate = t
+	}
+
+	return &models.NewsArticle{
+		Symbol:        fmp.Symbol,
+		PublishedDate: pubDate,
+		Title:         fmp.Title,
+		Text:          fmp.Text,
+		URL:           fmp.URL,
+		Site:          fmp.Site,
+	}
+}
+
 // mapAnalystEstimates converts FMP analyst data to internal AnalystEstimates model.
 func mapAnalystEstimates(ticker string, grades *GradesConsensus, targets *PriceTargetConsensus, estimates []AnalystEstimate) *models.AnalystEstimates {
 	result := &models.AnalystEstimates{

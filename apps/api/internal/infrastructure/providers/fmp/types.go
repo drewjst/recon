@@ -492,3 +492,17 @@ type FinancialGrowth struct {
 	OperatingCFGrowth     float64 `json:"operatingCashFlowGrowth"`   // Operating cash flow growth
 	TenYRevenueGrowthPSh  float64 `json:"tenYRevenueGrowthPerShare"` // 10Y revenue growth per share
 }
+
+// =============================================================================
+// News Types
+// =============================================================================
+
+// NewsArticle represents a news article from FMP's stock news endpoint.
+type NewsArticle struct {
+	Symbol        string `json:"symbol"`
+	PublishedDate string `json:"publishedDate"`
+	Title         string `json:"title"`
+	Text          string `json:"text"`
+	URL           string `json:"url"`
+	Site          string `json:"site"`
+}

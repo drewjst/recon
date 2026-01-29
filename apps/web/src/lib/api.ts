@@ -49,7 +49,7 @@ export async function fetchValuation(ticker: string): Promise<ValuationDeepDive>
 }
 
 // CruxAI Insight types
-export type InsightSection = 'valuation-summary' | 'position-summary';
+export type InsightSection = 'valuation-summary' | 'position-summary' | 'news-sentiment';
 
 export interface InsightResponse {
   ticker: string;
@@ -60,6 +60,15 @@ export interface InsightResponse {
   cached: boolean;
 }
 
+export interface NewsSentiment {
+  sentiment: 'positive' | 'negative' | 'neutral' | 'mixed';
+  confidence: number;
+  themes: string[];
+  summary: string;
+  articleCount: number;
+  daysCovered: number;
+}
+
 export async function fetchInsight(
   ticker: string,
   section: InsightSection
@@ -67,4 +76,17 @@ export async function fetchInsight(
   return fetchApi<InsightResponse>(
     `/api/v1/insights/${section}?ticker=${ticker.toUpperCase()}`
   );
+}
+
+export async function fetchNewsSentiment(ticker: string): Promise<NewsSentiment | null> {
+  try {
+    const response = await fetchApi<InsightResponse>(
+      `/api/v1/insights/news-sentiment?ticker=${ticker.toUpperCase()}`
+    );
+    // Parse the JSON insight string into NewsSentiment
+    return JSON.parse(response.insight) as NewsSentiment;
+  } catch {
+    // Fail silently - news sentiment is optional
+    return null;
+  }
 }

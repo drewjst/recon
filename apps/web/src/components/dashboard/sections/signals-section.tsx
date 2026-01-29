@@ -1,9 +1,10 @@
 'use client';
 
 import { memo } from 'react';
-import { CheckCircle2, AlertTriangle, TrendingDown, TrendingUp, Activity, Target } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, TrendingDown, TrendingUp, Activity, Target, Newspaper } from 'lucide-react';
 import { SectionCard } from './section-card';
 import { Badge } from '@/components/ui/badge';
+import { useNewsSentiment } from '@/hooks/use-news-sentiment';
 import type { StockDetailResponse } from '@recon/shared';
 
 interface SignalsSectionProps {
@@ -114,7 +115,8 @@ const getSignalIcon = (type: string) => {
 };
 
 function SignalsSectionComponent({ data }: SignalsSectionProps) {
-  const { signals: rawSignals, performance, quote, analystEstimates } = data;
+  const { signals: rawSignals, performance, quote, analystEstimates, company } = data;
+  const { data: newsSentiment } = useNewsSentiment(company.ticker);
 
   const signals = rawSignals ?? [];
 
@@ -171,6 +173,28 @@ function SignalsSectionComponent({ data }: SignalsSectionProps) {
             <span className={`text-sm font-semibold font-mono ${priceTargetUpside >= 0 ? 'text-success' : 'text-destructive'}`}>
               {priceTargetUpside >= 0 ? '+' : ''}{priceTargetUpside.toFixed(0)}%
             </span>
+          </div>
+        )}
+        {newsSentiment && (
+          <div className="flex items-center gap-1.5">
+            <Newspaper className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">News</span>
+            <span className={`text-sm font-semibold ${
+              newsSentiment.sentiment === 'positive' ? 'text-success' :
+              newsSentiment.sentiment === 'negative' ? 'text-destructive' :
+              newsSentiment.sentiment === 'mixed' ? 'text-amber-500' :
+              'text-muted-foreground'
+            }`}>
+              {newsSentiment.sentiment.charAt(0).toUpperCase() + newsSentiment.sentiment.slice(1)}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              ({newsSentiment.articleCount}, {newsSentiment.daysCovered}d)
+            </span>
+            {newsSentiment.themes.length > 0 && (
+              <span className="text-xs text-muted-foreground/70 truncate max-w-[180px]">
+                - {newsSentiment.themes.slice(0, 2).join(', ')}
+              </span>
+            )}
           </div>
         )}
       </div>

@@ -78,6 +78,8 @@ func (s *InsightService) GetInsight(ctx context.Context, req models.InsightReque
 		resp, err = s.generateValuationSummary(ctx, req.Ticker)
 	case models.InsightSectionPositionSummary:
 		resp, err = s.generatePositionSummary(ctx, req.Ticker)
+	case models.InsightSectionNewsSentiment:
+		resp, err = s.generateNewsSentiment(ctx, req.Ticker)
 	default:
 		return nil, fmt.Errorf("no generator for section: %s", req.Section)
 	}
@@ -525,6 +527,104 @@ func (s *InsightService) buildPositionPromptData(data *positionData) ai.PromptDa
 			pd.Upside, pd.UpsideDirection = calculateUpside(data.quote.Price, data.estimates.PriceTargetAverage)
 		}
 	}
+
+	return pd
+}
+
+// newsData holds all data needed for news sentiment generation.
+type newsData struct {
+	company  *models.Company
+	articles []models.NewsArticle
+}
+
+func (s *InsightService) generateNewsSentiment(ctx context.Context, ticker string) (*models.InsightResponse, error) {
+	data, err := s.fetchNewsData(ctx, ticker)
+	if err != nil {
+		return nil, fmt.Errorf("fetching news data: %w", err)
+	}
+
+	// Skip if no news articles
+	if len(data.articles) == 0 {
+		return nil, fmt.Errorf("no news articles found for %s", ticker)
+	}
+
+	promptData := s.buildNewsPromptData(data)
+
+	prompt, err := ai.BuildPrompt(models.InsightSectionNewsSentiment, promptData)
+	if err != nil {
+		return nil, fmt.Errorf("building prompt: %w", err)
+	}
+
+	insight, err := s.cruxAI.GenerateInsight(ctx, prompt)
+	if err != nil {
+		return nil, fmt.Errorf("generating insight: %w", err)
+	}
+
+	now := time.Now()
+	return &models.InsightResponse{
+		Ticker:      ticker,
+		Section:     models.InsightSectionNewsSentiment,
+		Insight:     insight,
+		GeneratedAt: now,
+		ExpiresAt:   now.Add(models.InsightSectionNewsSentiment.CacheTTL()),
+		Cached:      false,
+	}, nil
+}
+
+func (s *InsightService) fetchNewsData(ctx context.Context, ticker string) (*newsData, error) {
+	data := &newsData{}
+	g, gctx := errgroup.WithContext(ctx)
+
+	// Fetch company profile for context
+	g.Go(func() error {
+		company, err := s.fundamentals.GetCompany(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch company for news", "ticker", ticker, "error", err)
+		}
+		data.company = company
+		return nil
+	})
+
+	// Fetch news articles
+	g.Go(func() error {
+		articles, err := s.fundamentals.GetNews(gctx, ticker, 20)
+		if err != nil {
+			return fmt.Errorf("fetching news: %w", err)
+		}
+		data.articles = articles
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (s *InsightService) buildNewsPromptData(data *newsData) ai.PromptData {
+	pd := ai.PromptData{}
+
+	if data.company != nil {
+		pd.Ticker = data.company.Ticker
+		pd.CompanyName = data.company.Name
+		pd.Sector = data.company.Sector
+	}
+
+	// Filter to last 7 days and extract headlines
+	cutoff := time.Now().AddDate(0, 0, -7)
+	var headlines []string
+
+	for _, a := range data.articles {
+		if a.PublishedDate.Before(cutoff) {
+			continue
+		}
+		headlines = append(headlines, a.Title)
+	}
+
+	pd.NewsHeadlines = headlines
+	pd.ArticleCount = len(headlines)
+	pd.DaysCovered = 7
 
 	return pd
 }

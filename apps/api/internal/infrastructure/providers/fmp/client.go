@@ -514,6 +514,18 @@ func (c *Client) GetIndustryPE(ctx context.Context, industry string, exchange st
 	return nil, nil
 }
 
+// GetNews retrieves recent news articles for a ticker.
+func (c *Client) GetNews(ctx context.Context, ticker string, limit int) ([]NewsArticle, error) {
+	url := fmt.Sprintf("%s/news/stock?symbols=%s&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
+
+	var articles []NewsArticle
+	if err := c.get(ctx, url, &articles); err != nil {
+		return nil, fmt.Errorf("fetching news: %w", err)
+	}
+
+	return articles, nil
+}
+
 // get makes an HTTP GET request and unmarshals the response.
 func (c *Client) get(ctx context.Context, url string, dest any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)

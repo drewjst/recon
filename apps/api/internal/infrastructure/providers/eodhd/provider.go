@@ -296,3 +296,9 @@ func (p *Provider) GetSectorPE(ctx context.Context, sector string, exchange stri
 func (p *Provider) GetIndustryPE(ctx context.Context, industry string, exchange string) (*models.IndustryPE, error) {
 	return nil, nil
 }
+
+// GetNews returns news articles for a ticker.
+// EODHD doesn't provide stock news, so this returns nil.
+func (p *Provider) GetNews(ctx context.Context, ticker string, limit int) ([]models.NewsArticle, error) {
+	return nil, nil
+}

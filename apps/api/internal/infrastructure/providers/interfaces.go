@@ -34,6 +34,9 @@ type FundamentalsProvider interface {
 	// ETF-specific methods
 	IsETF(ctx context.Context, ticker string) (bool, error)
 	GetETFData(ctx context.Context, ticker string) (*models.ETFData, error)
+
+	// News
+	GetNews(ctx context.Context, ticker string, limit int) ([]models.NewsArticle, error)
 }
 
 // QuoteProvider provides real-time and historical price data.
