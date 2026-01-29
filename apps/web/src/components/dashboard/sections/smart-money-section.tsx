@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useState } from 'react';
-import { TrendingUp, TrendingDown, Minus, Landmark } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Landmark, TriangleAlert } from 'lucide-react';
 import { SectionCard } from './section-card';
 import { formatCurrency, formatShares } from '@/lib/formatters';
 import type { StockDetailResponse, InstitutionalHolder, CongressTrade, InsiderTrade } from '@recon/shared';
@@ -111,18 +111,24 @@ const HolderRow = memo(function HolderRow({ holder, type }: HolderRowProps) {
   );
 });
 
+function getShortInterestColor(percent: number): string {
+  if (percent >= 20) return 'text-destructive';
+  if (percent >= 10) return 'text-amber-500';
+  return 'text-foreground';
+}
+
 export const SmartMoneySection = memo(function SmartMoneySection({ data }: SmartMoneySectionProps) {
-  const { company, holdings, insiderActivity, congressTrades, congressActivity } = data;
+  const { company, holdings, insiderActivity, congressTrades, congressActivity, shortInterest } = data;
 
   // Default to Congress tab if there are congress trades, otherwise Insiders
   const defaultTab: ActivityTab = (congressTrades && congressTrades.length > 0) ? 'congress' : 'insiders';
   const [activeTab, setActiveTab] = useState<ActivityTab>(defaultTab);
 
-  if (!holdings) return null;
+  if (!holdings && !shortInterest) return null;
 
-  const sentiment = holdings.sentiment;
-  const topBuyers = holdings.topBuyers || [];
-  const topSellers = holdings.topSellers || [];
+  const sentiment = holdings?.sentiment;
+  const topBuyers = holdings?.topBuyers || [];
+  const topSellers = holdings?.topSellers || [];
 
   // Defensive: ensure insiderActivity exists and has expected properties
   const buyCount = insiderActivity?.buyCount90d ?? 0;
@@ -234,6 +240,44 @@ export const SmartMoneySection = memo(function SmartMoneySection({ data }: Smart
           <div className="text-sm text-muted-foreground">No institutional ownership data</div>
         </div>
       ) : null}
+
+      {/* Short Interest */}
+      {shortInterest && shortInterest.shortPercentFloat > 0 && (
+        <div className="mb-6 pt-4 border-t border-border/30">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
+            Short Interest
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <div className="flex items-center gap-2">
+              {shortInterest.shortPercentFloat >= 10 && (
+                <TriangleAlert className={`h-4 w-4 ${getShortInterestColor(shortInterest.shortPercentFloat)}`} />
+              )}
+              <span className="text-sm text-muted-foreground">% of Float</span>
+              <span className={`text-lg font-bold font-mono ${getShortInterestColor(shortInterest.shortPercentFloat)}`}>
+                {shortInterest.shortPercentFloat.toFixed(1)}%
+              </span>
+            </div>
+            {shortInterest.daysToCover > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Days to Cover</span>
+                <span className="text-lg font-bold font-mono">
+                  {shortInterest.daysToCover.toFixed(1)}
+                </span>
+              </div>
+            )}
+          </div>
+          {shortInterest.shortPercentFloat >= 20 && (
+            <p className="text-xs text-destructive mt-2">
+              High short interest may indicate elevated bearish sentiment or squeeze potential
+            </p>
+          )}
+          {shortInterest.shortPercentFloat >= 10 && shortInterest.shortPercentFloat < 20 && (
+            <p className="text-xs text-amber-500 mt-2">
+              Elevated short interest indicates increased bearish sentiment
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Top Buyers / Sellers */}
       {hasBuyersOrSellers && (
