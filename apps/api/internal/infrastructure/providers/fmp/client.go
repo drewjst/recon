@@ -415,7 +415,7 @@ func (c *Client) GetAnalystEstimates(ctx context.Context, ticker string, period 
 		c.baseURL, normalizeTicker(ticker), period, limit, c.apiKey)
 
 	var estimates []AnalystEstimate
-	if err := c.get(ctx, url, &estimates); err != nil {
+	if err := c.getWithRawLog(ctx, url, &estimates, ticker); err != nil {
 		slog.Error("FMP analyst-estimates API error", "ticker", ticker, "error", err)
 		return nil, fmt.Errorf("fetching analyst estimates: %w", err)
 	}
@@ -550,6 +550,46 @@ func (c *Client) get(ctx context.Context, url string, dest any) error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(body))
 	}
+
+	if err := json.Unmarshal(body, dest); err != nil {
+		return fmt.Errorf("decoding response: %w (body: %.200s)", err, string(body))
+	}
+
+	return nil
+}
+
+// getWithRawLog makes an HTTP GET request, logs the raw response, and unmarshals.
+// Used for debugging API response field mismatches.
+func (c *Client) getWithRawLog(ctx context.Context, url string, dest any, ticker string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("making request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Log first 500 chars of raw response for debugging
+	rawSample := string(body)
+	if len(rawSample) > 500 {
+		rawSample = rawSample[:500]
+	}
+	slog.Info("FMP raw analyst-estimates response",
+		"ticker", ticker,
+		"sample", rawSample,
+	)
 
 	if err := json.Unmarshal(body, dest); err != nil {
 		return fmt.Errorf("decoding response: %w (body: %.200s)", err, string(body))
