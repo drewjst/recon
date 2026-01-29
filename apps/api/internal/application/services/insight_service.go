@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -576,10 +577,25 @@ func (s *InsightService) generateNewsSentiment(ctx context.Context, ticker strin
 
 // enrichNewsSentimentWithArticles parses the AI response and adds top article links.
 func (s *InsightService) enrichNewsSentimentWithArticles(insight string, articles []models.NewsArticle) string {
+	// Strip markdown code blocks if present (AI often wraps JSON in ```json ... ```)
+	cleaned := insight
+	if strings.HasPrefix(strings.TrimSpace(insight), "```") {
+		cleaned = strings.TrimSpace(insight)
+		// Remove opening ```json or ```
+		if idx := strings.Index(cleaned, "\n"); idx != -1 {
+			cleaned = cleaned[idx+1:]
+		}
+		// Remove closing ```
+		if idx := strings.LastIndex(cleaned, "```"); idx != -1 {
+			cleaned = cleaned[:idx]
+		}
+		cleaned = strings.TrimSpace(cleaned)
+	}
+
 	// Parse the AI-generated JSON
 	var sentiment models.NewsSentiment
-	if err := json.Unmarshal([]byte(insight), &sentiment); err != nil {
-		slog.Warn("failed to parse news sentiment JSON, returning as-is", "error", err)
+	if err := json.Unmarshal([]byte(cleaned), &sentiment); err != nil {
+		slog.Warn("failed to parse news sentiment JSON, returning as-is", "error", err, "insight", insight[:min(100, len(insight))])
 		return insight
 	}
 
