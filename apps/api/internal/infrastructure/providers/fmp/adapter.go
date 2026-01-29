@@ -1,6 +1,7 @@
 package fmp
 
 import (
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -446,10 +447,18 @@ func mapAnalystEstimates(ticker string, grades *GradesConsensus, targets *PriceT
 		for i := range estimates {
 			estDate, err := time.Parse("2006-01-02", estimates[i].Date)
 			if err != nil {
+				slog.Debug("mapAnalystEstimates: failed to parse date",
+					"ticker", ticker,
+					"date", estimates[i].Date,
+					"error", err)
 				continue
 			}
 			dated = append(dated, datedEstimate{date: estDate, estimate: &estimates[i]})
 		}
+		slog.Info("mapAnalystEstimates: parsed estimates",
+			"ticker", ticker,
+			"inputCount", len(estimates),
+			"parsedCount", len(dated))
 
 		// Sort by date ascending
 		for i := 0; i < len(dated)-1; i++ {

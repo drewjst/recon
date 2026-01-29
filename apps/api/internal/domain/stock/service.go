@@ -488,8 +488,8 @@ func (s *Service) buildResponseFromProviders(
 	// Build financials from ratios
 	financials := convertFinancialsFromRatios(ratios)
 
-	// Build valuation (pass market cap and revenue estimate for NTM P/S calculation)
-	valuation := convertValuationFromRatios(ratios, company.Sector, quote.MarketCap, analystEstimates)
+	// Build valuation (pass market cap, price, and estimates for Forward P/E and NTM P/S calculation)
+	valuation := convertValuationFromRatios(ratios, company.Sector, quote.MarketCap, quote.Price, analystEstimates)
 
 	// Calculate sector metrics
 	profitability := calculateProfitability(ratios, company.Sector)
@@ -971,7 +971,7 @@ func convertFinancialsFromRatios(r *models.Ratios) *Financials {
 	}
 }
 
-func convertValuationFromRatios(r *models.Ratios, sector string, marketCap int64, estimates *models.AnalystEstimates) *Valuation {
+func convertValuationFromRatios(r *models.Ratios, sector string, marketCap int64, currentPrice float64, estimates *models.AnalystEstimates) *Valuation {
 	if r == nil {
 		return &Valuation{}
 	}
@@ -989,6 +989,12 @@ func convertValuationFromRatios(r *models.Ratios, sector string, marketCap int64
 		return ptrInt(calculatePercentileInverted(value, rng.Min, rng.Max))
 	}
 
+	// Calculate Forward P/E = Price / EPS Estimate Next Year
+	var forwardPE float64
+	if currentPrice > 0 && estimates != nil && estimates.EPSEstimateNextY > 0 {
+		forwardPE = currentPrice / estimates.EPSEstimateNextY
+	}
+
 	// Calculate NTM P/S = Market Cap / Revenue Estimate Next Year
 	var ntmPS float64
 	if marketCap > 0 && estimates != nil && estimates.RevenueEstimateNextY > 0 {
@@ -997,7 +1003,7 @@ func convertValuationFromRatios(r *models.Ratios, sector string, marketCap int64
 
 	return &Valuation{
 		PE:          ValuationMetric{Value: ptr(r.PE), SectorMedian: ptr(medians.PE), Percentile: calcPct(r.PE, ranges.PE)},
-		ForwardPE:   ValuationMetric{Value: ptr(r.ForwardPE), SectorMedian: ptr(medians.PE), Percentile: calcPct(r.ForwardPE, ranges.PE)},
+		ForwardPE:   ValuationMetric{Value: ptr(forwardPE), SectorMedian: ptr(medians.PE), Percentile: calcPct(forwardPE, ranges.PE)},
 		PEG:         ValuationMetric{Value: ptr(r.PEG), SectorMedian: ptr(medians.PEG), Percentile: calcPct(r.PEG, ranges.PEG)},
 		EVToEBITDA:  ValuationMetric{Value: ptr(r.EVToEBITDA), SectorMedian: ptr(medians.EVToEBITDA), Percentile: calcPct(r.EVToEBITDA, ranges.EVToEBITDA)},
 		PriceToFCF:  ValuationMetric{Value: ptr(r.PriceToFCF), SectorMedian: ptr(medians.PriceToFCF), Percentile: calcPct(r.PriceToFCF, ranges.PriceToFCF)},

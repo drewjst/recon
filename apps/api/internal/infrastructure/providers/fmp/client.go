@@ -416,7 +416,21 @@ func (c *Client) GetAnalystEstimates(ctx context.Context, ticker string, period 
 
 	var estimates []AnalystEstimate
 	if err := c.get(ctx, url, &estimates); err != nil {
+		slog.Error("FMP analyst-estimates API error", "ticker", ticker, "error", err)
 		return nil, fmt.Errorf("fetching analyst estimates: %w", err)
+	}
+
+	slog.Info("FMP analyst-estimates response",
+		"ticker", ticker,
+		"count", len(estimates),
+	)
+	if len(estimates) > 0 {
+		slog.Info("FMP analyst-estimates first item",
+			"ticker", ticker,
+			"date", estimates[0].Date,
+			"epsAvg", estimates[0].EstimatedEpsAvg,
+			"revenueAvg", estimates[0].EstimatedRevenueAvg,
+		)
 	}
 
 	return estimates, nil
