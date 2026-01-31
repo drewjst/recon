@@ -100,7 +100,7 @@ export const CollapsibleMetricSection = memo(function CollapsibleMetricSection({
                   <th className="py-1.5 px-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                     Industry
                   </th>
-                  <th className="py-1.5 pl-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="py-1.5 pl-4 text-right text-xs font-medium text-muted-foreground tracking-wider">
                     %ile
                   </th>
                 </tr>
