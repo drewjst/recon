@@ -65,6 +65,8 @@ func (rl *RateLimiter) Stop() {
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := r.RemoteAddr
+		// Normalize IP by stripping port if present. This prevents memory leaks
+		// caused by ephemeral ports creating distinct visitor entries.
 		if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
 			ip = host
 		}
