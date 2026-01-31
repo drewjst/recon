@@ -14,9 +14,10 @@ type NewsArticle struct {
 
 // NewsLink represents a link to a news article for display.
 type NewsLink struct {
-	Title string `json:"title"`
-	URL   string `json:"url"`
-	Site  string `json:"site"`
+	Title       string `json:"title"`
+	URL         string `json:"url"`
+	Site        string `json:"site"`
+	PublishedAt string `json:"publishedAt,omitempty"` // ISO 8601 format
 }
 
 // NewsSentiment represents AI-analyzed sentiment from news articles.

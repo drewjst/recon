@@ -6,13 +6,14 @@ Crux synthesizes financial data into conviction scores and actionable signals—
 
 ## Features
 
-- **AI Insights** — Vertex AI-powered summaries for valuation and position analysis
+- **AI Insights** — Vertex AI-powered summaries for valuation, position analysis, and news sentiment
 - **Financial Health Scores** — Piotroski F-Score (0-9), Rule of 40, Altman Z-Score, DCF Valuation
 - **Performance** — 1D, 1W, 1M, YTD, 1Y returns with 52-week range visualization
 - **Valuation** — P/E, Forward P/E, PEG, EV/EBITDA, P/FCF, P/B with sector percentiles
-- **Financials** — Revenue growth, margins (gross/operating/net/FCF), ROE, ROIC, leverage
+- **10-K Financials** — Detailed income statement, balance sheet, and cash flow with multi-period comparison, common-size analysis, and CSV export
 - **Smart Money** — Institutional ownership trends, insider activity, congressional trades, short interest
 - **Smart Money Deep Dive** — Comprehensive institutional ownership analysis with holder breakdown and activity tracking
+- **News Sentiment** — AI-analyzed news with sentiment, themes, and recent article links
 - **Signals** — Automated bullish/bearish/warning flags based on score thresholds
 - **Stock Compare** — Side-by-side comparison of 2-4 stocks
 - **ETF Support** — Fund overview, holdings, and sector breakdown
@@ -102,8 +103,15 @@ cd apps/web && pnpm dev
 | `GET` | `/api/stock/{ticker}` | Complete stock/ETF analysis |
 | `GET` | `/api/stock/{ticker}/valuation` | Valuation deep dive |
 | `GET` | `/api/stock/{ticker}/institutional` | Institutional ownership detail |
+| `GET` | `/api/stock/{ticker}/financials/income` | Income statements (annual/quarterly) |
+| `GET` | `/api/stock/{ticker}/financials/balance-sheet` | Balance sheets (annual/quarterly) |
+| `GET` | `/api/stock/{ticker}/financials/cash-flow` | Cash flow statements (annual/quarterly) |
 | `GET` | `/api/search?q={query}` | Ticker search (Polygon-powered) |
 | `GET` | `/api/v1/insights/{section}?ticker={ticker}` | AI-generated insights |
+
+**Financials Query Parameters:**
+- `period` — `annual` (default) or `quarterly`
+- `limit` — Number of periods to return (default: 5)
 
 **Insight Sections:**
 - `position-summary` — Executive summary for the main stock page

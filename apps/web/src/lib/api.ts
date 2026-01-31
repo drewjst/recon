@@ -64,6 +64,7 @@ export interface NewsLink {
   title: string;
   url: string;
   site: string;
+  publishedAt?: string; // ISO 8601 format
 }
 
 export interface NewsSentiment {

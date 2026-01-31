@@ -111,8 +111,21 @@ if score > PiotroskiStrongSignal {
 
 | Technology | Purpose |
 |------------|---------|
-| PostgreSQL | Cache storage (JSONB), stock data persistence |
-| GORM auto-migrate | Schema management for cache tables |
+| PostgreSQL | Cache storage (JSONB), financial statements persistence |
+| GORM auto-migrate | Schema management for all tables |
+
+**Database Schema:**
+```
+financial_periods (ticker, period_type, period_end, fiscal_year, fiscal_quarter)
+  ├── income_statements (revenue, expenses, net_income, EPS, margins)
+  ├── balance_sheets (assets, liabilities, equity, ratios)
+  ├── cash_flow_statements (operating, investing, financing, FCF)
+  └── revenue_segments (product/geography breakdown) [future]
+
+stock_cache (ticker → JSONB fundamentals)
+provider_cache (data_type + key → JSONB with TTL)
+quote_cache (ticker → real-time price data)
+```
 
 ### Shared Contracts (`/packages/shared`)
 
@@ -177,14 +190,28 @@ Data is cached in PostgreSQL to minimize external API calls:
 | Data Type | Source | Cache TTL | Rationale |
 |-----------|--------|-----------|-----------|
 | Company Profile | FMP | 24 hours | Rarely changes |
-| Financial Statements | FMP | 24 hours | Updates quarterly |
+| Financial Statements | FMP | 7 days | Updates quarterly |
 | Ratios/Metrics | FMP | 24 hours | Derived from financials |
 | Institutional Holdings | FMP | 24 hours | Updates quarterly (13F) |
 | Insider Trades | FMP | 24 hours | Updates with SEC filings |
 | Technical Metrics | FMP | 24 hours | Beta, moving averages |
 | Analyst Estimates | FMP | 24 hours | Updates with new analyst coverage |
+| AI Insights | Vertex AI | 24 hours | Generated on-demand |
 
-Cache is stored as JSONB in the `stock_cache` table, keyed by ticker.
+**Cache Tables:**
+- `stock_cache` — General stock data (JSONB)
+- `provider_cache` — Provider-level response cache with TTL
+- `financial_periods` — Financial statement period metadata
+- `income_statements` — Income statement data by period
+- `balance_sheets` — Balance sheet data by period
+- `cash_flow_statements` — Cash flow data by period
+
+**Financial Statements Repository:**
+The `FinancialsRepository` uses a DB-first caching pattern:
+1. Check DB for cached data within staleness threshold (7 days)
+2. If stale or missing, fetch from FMP
+3. Upsert to DB for future requests
+4. Return stale data if FMP fails (graceful degradation)
 
 ### Provider Implementation Guidelines
 

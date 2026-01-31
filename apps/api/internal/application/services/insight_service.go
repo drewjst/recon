@@ -609,9 +609,10 @@ func (s *InsightService) enrichNewsSentimentWithArticles(insight string, article
 			continue
 		}
 		topArticles = append(topArticles, models.NewsLink{
-			Title: a.Title,
-			URL:   a.URL,
-			Site:  a.Site,
+			Title:       a.Title,
+			URL:         a.URL,
+			Site:        a.Site,
+			PublishedAt: a.PublishedDate.Format(time.RFC3339),
 		})
 		if len(topArticles) >= 3 {
 			break
