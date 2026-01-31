@@ -54,16 +54,25 @@ type IncomeStatement struct {
 	Revenue              float64 `json:"revenue"`
 	CostOfRevenue        float64 `json:"costOfRevenue"`
 	GrossProfit          float64 `json:"grossProfit"`
-	OperatingExpenses    float64 `json:"operatingExpenses"`
-	OperatingIncome      float64 `json:"operatingIncome"`
-	EBITDA               float64 `json:"ebitda"`
-	EBIT                 float64 `json:"ebit"`
-	InterestExpense      float64 `json:"interestExpense"`
-	InterestIncome       float64 `json:"interestIncome"`
-	IncomeBeforeTax      float64 `json:"incomeBeforeTax"`
-	IncomeTaxExpense     float64 `json:"incomeTaxExpense"`
+	// Operating expense breakdown
+	ResearchAndDevelopment float64 `json:"researchAndDevelopmentExpenses"`
+	SellingGeneralAdmin    float64 `json:"sellingGeneralAndAdministrativeExpenses"`
+	OperatingExpenses      float64 `json:"operatingExpenses"`
+	OperatingIncome        float64 `json:"operatingIncome"`
+	// EBITDA components
+	DepreciationAmortization float64 `json:"depreciationAndAmortization"`
+	EBITDA                   float64 `json:"ebitda"`
+	EBIT                     float64 `json:"ebit"`
+	// Non-operating
+	InterestExpense         float64 `json:"interestExpense"`
+	InterestIncome          float64 `json:"interestIncome"`
+	OtherIncomeExpenseNet   float64 `json:"totalOtherIncomeExpensesNet"`
+	IncomeBeforeTax         float64 `json:"incomeBeforeTax"`
+	IncomeTaxExpense        float64 `json:"incomeTaxExpense"`
+	// Net income
 	NetIncome            float64 `json:"netIncome"`
 	BottomLineNetIncome  float64 `json:"bottomLineNetIncome"`
+	// Per share
 	EPS                  float64 `json:"eps"`
 	EPSDiluted           float64 `json:"epsDiluted"`
 	WeightedAvgSharesOut int64   `json:"weightedAverageShsOut"`

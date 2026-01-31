@@ -526,15 +526,18 @@ func (r *FinancialsRepositoryImpl) fmpIncomeStatementToDomain(f fmp.IncomeStatem
 		FiscalQuarter: fiscalQuarter,
 		FilingDate:    filingDate,
 
-		Revenue:        int64(f.Revenue),
-		CostOfRevenue:  int64(f.CostOfRevenue),
-		GrossProfit:    int64(f.GrossProfit),
+		Revenue:       int64(f.Revenue),
+		CostOfRevenue: int64(f.CostOfRevenue),
+		GrossProfit:   int64(f.GrossProfit),
 
-		OperatingExpenses: int64(f.OperatingExpenses),
-		OperatingIncome:   int64(f.OperatingIncome),
+		ResearchAndDevelopment: int64(f.ResearchAndDevelopment),
+		SellingGeneralAdmin:    int64(f.SellingGeneralAdmin),
+		OperatingExpenses:      int64(f.OperatingExpenses),
+		OperatingIncome:        int64(f.OperatingIncome),
 
 		InterestIncome:   int64(f.InterestIncome),
 		InterestExpense:  int64(f.InterestExpense),
+		OtherIncomeExp:   int64(f.OtherIncomeExpenseNet),
 		IncomeBeforeTax:  int64(f.IncomeBeforeTax),
 		IncomeTaxExpense: int64(f.IncomeTaxExpense),
 
@@ -546,7 +549,8 @@ func (r *FinancialsRepositoryImpl) fmpIncomeStatementToDomain(f fmp.IncomeStatem
 		WeightedAvgSharesBasic:   f.WeightedAvgSharesOut,
 		WeightedAvgSharesDiluted: f.WeightedAvgSharesDil,
 
-		EBITDA: int64(f.EBITDA),
+		EBITDA:                   int64(f.EBITDA),
+		DepreciationAmortization: int64(f.DepreciationAmortization),
 
 		FetchedAt: time.Now(),
 	}
