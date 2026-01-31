@@ -26,3 +26,10 @@
 **Prevention:**
 - Configured `headers()` in `apps/web/next.config.js` to apply security headers globally (`/:path*`).
 - Enforced `Strict-Transport-Security`, `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: strict-origin-when-cross-origin`.
+
+## 2026-02-04 - [RealIP Input Validation]
+**Vulnerability:** The `RealIP` middleware blindly accepted `X-Forwarded-For` and `X-Real-IP` headers without validation. This allowed attackers to inject arbitrary strings into `r.RemoteAddr`, potentially leading to log injection or resource exhaustion in the `RateLimit` middleware (which uses IP as a map key).
+**Learning:** Middleware that modifies global request state (like `RemoteAddr`) must treat all incoming headers as untrusted input. Type safety (expecting an IP) is not enough; explicit validation (`net.ParseIP`) is required.
+**Prevention:**
+- Modified `RealIP` middleware to validate extracted IPs using `net.ParseIP`.
+- Added comprehensive regression tests in `real_ip_test.go` to ensure invalid headers are ignored.
