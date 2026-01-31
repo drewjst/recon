@@ -9,12 +9,21 @@ import (
 // APIKeyAuth returns middleware that validates API keys.
 // If no valid keys are configured, authentication is disabled (passthrough).
 // Keys can be provided via X-API-Key header or Authorization: Bearer <key>.
-func APIKeyAuth(validKeys []string) func(http.Handler) http.Handler {
+// Requests from trusted origins (matching allowedOrigins) are allowed without API key.
+func APIKeyAuth(validKeys []string, allowedOrigins []string) func(http.Handler) http.Handler {
 	// Build a set for O(1) lookup
 	keySet := make(map[string]struct{}, len(validKeys))
 	for _, k := range validKeys {
 		if k != "" {
 			keySet[k] = struct{}{}
+		}
+	}
+
+	// Build origin set for trusted origins
+	originSet := make(map[string]struct{}, len(allowedOrigins))
+	for _, o := range allowedOrigins {
+		if o != "" {
+			originSet[o] = struct{}{}
 		}
 	}
 
@@ -24,6 +33,15 @@ func APIKeyAuth(validKeys []string) func(http.Handler) http.Handler {
 			if len(keySet) == 0 {
 				next.ServeHTTP(w, r)
 				return
+			}
+
+			// Allow requests from trusted origins (browser requests from our frontend)
+			origin := r.Header.Get("Origin")
+			if origin != "" {
+				if _, trusted := originSet[origin]; trusted {
+					next.ServeHTTP(w, r)
+					return
+				}
 			}
 
 			// Extract API key from request

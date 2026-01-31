@@ -48,7 +48,8 @@ func NewRouter(deps RouterDeps) *chi.Mux {
 	// API routes
 	r.Route("/api", func(r chi.Router) {
 		// Apply API key authentication (disabled if no keys configured)
-		r.Use(middleware.APIKeyAuth(deps.APIKeys))
+		// Requests from AllowedOrigins are trusted (browser requests from our frontend)
+		r.Use(middleware.APIKeyAuth(deps.APIKeys, deps.AllowedOrigins))
 
 		stockHandler := handlers.NewStockHandler(deps.StockService)
 		searchHandler := handlers.NewSearchHandler(deps.PolygonSearcher)
