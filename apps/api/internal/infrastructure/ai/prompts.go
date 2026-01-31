@@ -101,6 +101,14 @@ type PromptData struct {
 	NewsHeadlines []string // Headlines for sentiment analysis
 	ArticleCount  int
 	DaysCovered   int
+
+	// Smart Money fields
+	TopHolderNames    []string // Top 5 institutional holder names
+	TopHolderChanges  []string // Formatted change % for each holder
+	InsiderBuyCount   int      // Insider buys (90 days)
+	InsiderSellCount  int      // Insider sells (90 days)
+	CongressBuyCount  int
+	CongressSellCount int
 }
 
 var promptTemplates = map[models.InsightSection]string{
@@ -231,6 +239,45 @@ Rules:
 - summary: A concise one-sentence summary suitable for display (max 80 chars)
 
 Return ONLY the JSON object, no other text.`,
+
+	models.InsightSectionSmartMoneySummary: `You are a concise equity analyst summarizing smart money activity. Be specific and data-driven.
+
+COMPANY: {{.Ticker}} - {{.CompanyName}}
+SECTOR: {{.Sector}}{{if .Industry}} | INDUSTRY: {{.Industry}}{{end}}
+
+═══════════════════════════════════════════════════════════════════
+INSTITUTIONAL OWNERSHIP
+═══════════════════════════════════════════════════════════════════
+Ownership: {{printf "%.1f" .InstOwnership}}% of float
+QoQ Change: {{if gt .InstChangeQoQ 0.0}}+{{end}}{{printf "%.1f" .InstChangeQoQ}}%
+{{if .TopHolderNames}}
+Top Holders (with QoQ change):
+{{range $i, $name := .TopHolderNames}}- {{$name}}: {{index $.TopHolderChanges $i}}
+{{end}}{{end}}
+═══════════════════════════════════════════════════════════════════
+INSIDER ACTIVITY (90 Days)
+═══════════════════════════════════════════════════════════════════
+Transactions: {{.InsiderBuyCount}} buys, {{.InsiderSellCount}} sells
+Net Value: {{.InsiderNetValue}}
+
+═══════════════════════════════════════════════════════════════════
+CONGRESSIONAL TRADING
+═══════════════════════════════════════════════════════════════════
+Transactions: {{.CongressBuyCount}} buys, {{.CongressSellCount}} sells
+{{if gt .ShortInterest 5.0}}
+═══════════════════════════════════════════════════════════════════
+SHORT INTEREST
+═══════════════════════════════════════════════════════════════════
+Short % of Float: {{printf "%.1f" .ShortInterest}}%
+{{end}}
+═══════════════════════════════════════════════════════════════════
+
+TASK: Write a 3-4 sentence smart money summary that:
+1. Summarizes the overall smart money sentiment (accumulation vs distribution)
+2. Highlights the most notable activity from institutions, insiders, or Congress
+3. Notes any signals that may indicate conviction or concern (e.g., cluster buying, unusual activity)
+
+Be direct, specific, and actionable. Reference specific data points.`,
 }
 
 // BuildPrompt constructs a prompt for the given section using the provided data.

@@ -377,6 +377,58 @@ func (c *Client) GetInstitutionalPositionsSummary(ctx context.Context, ticker st
 	return &summaries[0], nil
 }
 
+// GetInstitutionalHolderBreakdown retrieves holder type breakdown (Investment Advisors, Hedge Funds, etc.)
+func (c *Client) GetInstitutionalHolderBreakdown(ctx context.Context, ticker string, year int, quarter int) ([]InstitutionalHolderBreakdown, error) {
+	url := fmt.Sprintf("%s/institutional-ownership/holder-industry-breakdown?symbol=%s&year=%d&quarter=%d&apikey=%s",
+		c.baseURL, normalizeTicker(ticker), year, quarter, c.apiKey)
+
+	var breakdown []InstitutionalHolderBreakdown
+	if err := c.get(ctx, url, &breakdown); err != nil {
+		return nil, fmt.Errorf("fetching holder industry breakdown: %w", err)
+	}
+
+	return breakdown, nil
+}
+
+// GetInstitutionalOwnershipHistory retrieves historical institutional ownership across multiple quarters.
+// Fetches data for the specified number of quarters going back from the most recent.
+func (c *Client) GetInstitutionalOwnershipHistory(ctx context.Context, ticker string, quarters int) ([]InstitutionalPositionsSummary, error) {
+	var history []InstitutionalPositionsSummary
+
+	// Get current quarter
+	now := time.Now()
+	year := now.Year()
+	quarter := (int(now.Month())-1)/3 + 1
+
+	// 13F filings have a 45-day delay, so if we're early in a quarter, use previous
+	if now.Day() < 50 && quarter > 1 {
+		quarter--
+	} else if now.Day() < 50 && quarter == 1 {
+		year--
+		quarter = 4
+	}
+
+	for i := 0; i < quarters; i++ {
+		summary, err := c.GetInstitutionalPositionsSummary(ctx, ticker, year, quarter)
+		if err != nil {
+			// Log and continue - some quarters may not have data
+			continue
+		}
+		if summary != nil && summary.OwnershipPercent > 0 {
+			history = append(history, *summary)
+		}
+
+		// Move to previous quarter
+		quarter--
+		if quarter < 1 {
+			quarter = 4
+			year--
+		}
+	}
+
+	return history, nil
+}
+
 // GetGradesConsensus retrieves pre-aggregated analyst grades consensus.
 func (c *Client) GetGradesConsensus(ctx context.Context, ticker string) (*GradesConsensus, error) {
 	url := fmt.Sprintf("%s/grades-consensus?symbol=%s&apikey=%s", c.baseURL, normalizeTicker(ticker), c.apiKey)

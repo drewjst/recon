@@ -81,6 +81,8 @@ func (s *InsightService) GetInsight(ctx context.Context, req models.InsightReque
 		resp, err = s.generatePositionSummary(ctx, req.Ticker)
 	case models.InsightSectionNewsSentiment:
 		resp, err = s.generateNewsSentiment(ctx, req.Ticker)
+	case models.InsightSectionSmartMoneySummary:
+		resp, err = s.generateSmartMoneySummary(ctx, req.Ticker)
 	default:
 		return nil, fmt.Errorf("no generator for section: %s", req.Section)
 	}
@@ -683,6 +685,212 @@ func (s *InsightService) buildNewsPromptData(data *newsData) ai.PromptData {
 	pd.DaysCovered = 7
 
 	return pd
+}
+
+// smartMoneyData holds all data needed for smart money summary generation.
+type smartMoneyData struct {
+	company       *models.Company
+	holders       []models.InstitutionalHolder
+	summary       *models.InstitutionalSummary
+	insiderTrades []models.InsiderTrade
+	congressTrades []models.CongressTrade
+	shortInterest *models.ShortInterest
+}
+
+func (s *InsightService) generateSmartMoneySummary(ctx context.Context, ticker string) (*models.InsightResponse, error) {
+	data, err := s.fetchSmartMoneyData(ctx, ticker)
+	if err != nil {
+		return nil, fmt.Errorf("fetching smart money data: %w", err)
+	}
+
+	promptData := s.buildSmartMoneyPromptData(data)
+
+	prompt, err := ai.BuildPrompt(models.InsightSectionSmartMoneySummary, promptData)
+	if err != nil {
+		return nil, fmt.Errorf("building prompt: %w", err)
+	}
+
+	insight, err := s.cruxAI.GenerateInsight(ctx, prompt)
+	if err != nil {
+		return nil, fmt.Errorf("generating insight: %w", err)
+	}
+
+	now := time.Now()
+	return &models.InsightResponse{
+		Ticker:      ticker,
+		Section:     models.InsightSectionSmartMoneySummary,
+		Insight:     insight,
+		GeneratedAt: now,
+		ExpiresAt:   now.Add(models.InsightSectionSmartMoneySummary.CacheTTL()),
+		Cached:      false,
+	}, nil
+}
+
+func (s *InsightService) fetchSmartMoneyData(ctx context.Context, ticker string) (*smartMoneyData, error) {
+	data := &smartMoneyData{}
+	g, gctx := errgroup.WithContext(ctx)
+
+	// Fetch company profile
+	g.Go(func() error {
+		company, err := s.fundamentals.GetCompany(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch company for smart money", "ticker", ticker, "error", err)
+		}
+		data.company = company
+		return nil
+	})
+
+	// Fetch institutional holders
+	g.Go(func() error {
+		holders, err := s.fundamentals.GetInstitutionalHolders(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch institutional holders", "ticker", ticker, "error", err)
+		}
+		data.holders = holders
+		return nil
+	})
+
+	// Fetch institutional summary
+	g.Go(func() error {
+		summary, err := s.fundamentals.GetInstitutionalSummary(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch institutional summary", "ticker", ticker, "error", err)
+		}
+		data.summary = summary
+		return nil
+	})
+
+	// Fetch insider trades (90 days)
+	g.Go(func() error {
+		trades, err := s.fundamentals.GetInsiderTrades(gctx, ticker, 90)
+		if err != nil {
+			slog.Warn("failed to fetch insider trades", "ticker", ticker, "error", err)
+		}
+		data.insiderTrades = trades
+		return nil
+	})
+
+	// Fetch congress trades (365 days)
+	g.Go(func() error {
+		trades, err := s.fundamentals.GetCongressTrades(gctx, ticker, 365)
+		if err != nil {
+			slog.Warn("failed to fetch congress trades", "ticker", ticker, "error", err)
+		}
+		data.congressTrades = trades
+		return nil
+	})
+
+	// Fetch short interest
+	g.Go(func() error {
+		shortInterest, err := s.fundamentals.GetShortInterest(gctx, ticker)
+		if err != nil {
+			slog.Warn("failed to fetch short interest", "ticker", ticker, "error", err)
+		}
+		data.shortInterest = shortInterest
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (s *InsightService) buildSmartMoneyPromptData(data *smartMoneyData) ai.PromptData {
+	pd := ai.PromptData{}
+
+	if data.company != nil {
+		pd.Ticker = data.company.Ticker
+		pd.CompanyName = data.company.Name
+		pd.Sector = data.company.Sector
+		pd.Industry = data.company.Industry
+	}
+
+	// Institutional ownership from summary
+	if data.summary != nil {
+		pd.InstOwnership = data.summary.OwnershipPercent
+		pd.InstChangeQoQ = data.summary.OwnershipPercentChange
+	}
+
+	// Top 5 holders with changes
+	if len(data.holders) > 0 {
+		limit := 5
+		if len(data.holders) < limit {
+			limit = len(data.holders)
+		}
+		for i := 0; i < limit; i++ {
+			h := data.holders[i]
+			pd.TopHolderNames = append(pd.TopHolderNames, h.Name)
+			changeStr := fmt.Sprintf("%+.1f%%", h.ChangePercent)
+			if h.IsNew {
+				changeStr = "NEW"
+			} else if h.IsSoldOut {
+				changeStr = "SOLD OUT"
+			}
+			pd.TopHolderChanges = append(pd.TopHolderChanges, changeStr)
+		}
+	}
+
+	// Insider activity counts and net value
+	var buyCount, sellCount int
+	var netValue int64
+	for _, t := range data.insiderTrades {
+		if t.TradeType == "buy" {
+			buyCount++
+			netValue += t.Value
+		} else if t.TradeType == "sell" {
+			sellCount++
+			netValue -= t.Value
+		}
+	}
+	pd.InsiderBuyCount = buyCount
+	pd.InsiderSellCount = sellCount
+	pd.InsiderNetBuys = buyCount - sellCount
+	pd.InsiderNetValue = formatNetValue(netValue)
+
+	// Congress activity counts
+	for _, t := range data.congressTrades {
+		if t.TradeType == "buy" {
+			pd.CongressBuyCount++
+		} else if t.TradeType == "sell" {
+			pd.CongressSellCount++
+		}
+	}
+
+	// Short interest
+	if data.shortInterest != nil {
+		pd.ShortInterest = data.shortInterest.ShortPercentFloat
+	}
+
+	return pd
+}
+
+// formatNetValue formats a net dollar value as a human-readable string.
+func formatNetValue(value int64) string {
+	abs := value
+	if abs < 0 {
+		abs = -abs
+	}
+
+	var formatted string
+	switch {
+	case abs >= 1e9:
+		formatted = fmt.Sprintf("$%.1fB", float64(abs)/1e9)
+	case abs >= 1e6:
+		formatted = fmt.Sprintf("$%.1fM", float64(abs)/1e6)
+	case abs >= 1e3:
+		formatted = fmt.Sprintf("$%.0fK", float64(abs)/1e3)
+	default:
+		formatted = fmt.Sprintf("$%d", abs)
+	}
+
+	if value < 0 {
+		return "-" + formatted + " (net selling)"
+	} else if value > 0 {
+		return "+" + formatted + " (net buying)"
+	}
+	return "$0 (neutral)"
 }
 
 // calculateYTDReturn calculates year-to-date return from historical prices.

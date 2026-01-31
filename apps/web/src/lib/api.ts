@@ -49,7 +49,7 @@ export async function fetchValuation(ticker: string): Promise<ValuationDeepDive>
 }
 
 // CruxAI Insight types
-export type InsightSection = 'valuation-summary' | 'position-summary' | 'news-sentiment';
+export type InsightSection = 'valuation-summary' | 'position-summary' | 'news-sentiment' | 'smart-money-summary';
 
 export interface InsightResponse {
   ticker: string;
@@ -96,4 +96,67 @@ export async function fetchNewsSentiment(ticker: string): Promise<NewsSentiment 
     // Fail silently - news sentiment is optional
     return null;
   }
+}
+
+// Institutional Detail types
+export interface OwnershipHistoryPoint {
+  date: string; // "2024-Q4" format
+  year: number;
+  quarter: number;
+  ownershipPercent: number;
+  holderCount: number;
+  totalShares: number;
+}
+
+export interface HolderTypeBreakdown {
+  holderType: string; // "Investment Advisor", "Hedge Fund", etc.
+  investorCount: number;
+  ownershipPercent: number;
+  totalShares: number;
+  totalValue: number;
+  sharesChange: number;
+  changePercent: number;
+}
+
+export interface InstitutionalHolderDetail {
+  rank?: number;
+  name: string;
+  cik?: string;
+  shares: number;
+  value: number;
+  percentOwned: number;
+  changeShares: number;
+  changePercent: number;
+  isNew: boolean;
+  isSoldOut: boolean;
+  dateReported?: string;
+}
+
+export interface InstitutionalSignal {
+  type: 'bullish' | 'bearish' | 'neutral';
+  title: string;
+  description: string;
+}
+
+export interface InstitutionalDetail {
+  ticker: string;
+  ownershipPercent: number;
+  ownershipPercentChange: number;
+  totalHolders: number;
+  holdersIncreased: number;
+  holdersDecreased: number;
+  holdersNew: number;
+  holdersClosed: number;
+  ownershipHistory: OwnershipHistoryPoint[];
+  holderTypeBreakdown: HolderTypeBreakdown[];
+  topHolders: InstitutionalHolderDetail[];
+  newPositions: InstitutionalHolderDetail[];
+  closedPositions: InstitutionalHolderDetail[];
+  biggestIncreases: InstitutionalHolderDetail[];
+  biggestDecreases: InstitutionalHolderDetail[];
+  signals: InstitutionalSignal[];
+}
+
+export async function fetchInstitutionalDetail(ticker: string): Promise<InstitutionalDetail> {
+  return fetchApi<InstitutionalDetail>(`/api/stock/${ticker.toUpperCase()}/institutional`);
 }

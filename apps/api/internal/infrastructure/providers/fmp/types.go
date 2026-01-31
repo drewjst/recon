@@ -387,6 +387,21 @@ type InstitutionalPositionsSummary struct {
 	LastOwnershipPercent float64 `json:"lastOwnershipPercent"`
 }
 
+// InstitutionalHolderBreakdown represents holder type breakdown from 13F filings.
+// From GET /stable/institutional-ownership/holder-industry-breakdown
+type InstitutionalHolderBreakdown struct {
+	Symbol               string  `json:"symbol"`
+	Year                 int     `json:"year"`
+	Quarter              int     `json:"quarter"`
+	HolderType           string  `json:"holderType"` // "Investment Advisor", "Hedge Fund", "Pension Fund", etc.
+	InvestorCount        int     `json:"investorCount"`
+	TotalShares          int64   `json:"totalShares"`
+	TotalValue           int64   `json:"totalValue"`
+	OwnershipPercent     float64 `json:"ownershipPercent"`
+	SharesChange         int64   `json:"sharesChange"`
+	SharesChangePercent  float64 `json:"sharesChangePercent"`
+}
+
 // =============================================================================
 // Analyst Estimates Types
 // =============================================================================

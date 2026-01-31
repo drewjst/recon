@@ -16,6 +16,7 @@ import (
 	"github.com/drewjst/crux/apps/api/internal/api"
 	"github.com/drewjst/crux/apps/api/internal/application/services"
 	"github.com/drewjst/crux/apps/api/internal/config"
+	"github.com/drewjst/crux/apps/api/internal/domain/institutional"
 	"github.com/drewjst/crux/apps/api/internal/domain/search"
 	"github.com/drewjst/crux/apps/api/internal/domain/stock"
 	"github.com/drewjst/crux/apps/api/internal/domain/valuation"
@@ -23,6 +24,7 @@ import (
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/db"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/external/polygon"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/providers"
+	"github.com/drewjst/crux/apps/api/internal/infrastructure/providers/fmp"
 )
 
 func main() {
@@ -107,6 +109,16 @@ func run() error {
 	valuationService := valuation.NewService(fundamentalsProvider, rawProvider)
 	slog.Info("valuation service initialized", "caching", cacheRepo != nil)
 
+	// Initialize institutional service with FMP client
+	var institutionalService *institutional.Service
+	if cfg.FMPAPIKey != "" {
+		fmpClient := fmp.NewClient(fmp.Config{APIKey: cfg.FMPAPIKey})
+		institutionalService = institutional.NewService(fmpClient)
+		slog.Info("institutional service initialized")
+	} else {
+		slog.Info("institutional service disabled (no FMP API key)")
+	}
+
 	// Initialize CruxAI client and insight service
 	var insightService *services.InsightService
 	if cfg.CruxAI.Enabled {
@@ -161,11 +173,12 @@ func run() error {
 
 	// Initialize router
 	router := api.NewRouter(api.RouterDeps{
-		StockService:     stockService,
-		ValuationService: valuationService,
-		InsightService:   insightService,
-		PolygonSearcher:  polygonSearcher,
-		AllowedOrigins:   cfg.AllowedOrigins,
+		StockService:         stockService,
+		ValuationService:     valuationService,
+		InstitutionalService: institutionalService,
+		InsightService:       insightService,
+		PolygonSearcher:      polygonSearcher,
+		AllowedOrigins:       cfg.AllowedOrigins,
 	})
 
 	// Create server

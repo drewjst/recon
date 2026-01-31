@@ -150,7 +150,7 @@ export function StockDashboard({ ticker }: StockDashboardProps) {
         </div>
 
         {/* Smart Money - Condensed one-line summary */}
-        <SmartMoneySummary data={data} />
+        <SmartMoneySummary data={data} ticker={ticker} />
 
         {/* Valuation - Collapsible, collapsed by default */}
         <ValuationCompact data={data} />

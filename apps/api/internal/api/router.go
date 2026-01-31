@@ -9,6 +9,7 @@ import (
 	"github.com/drewjst/crux/apps/api/internal/api/handlers"
 	"github.com/drewjst/crux/apps/api/internal/api/middleware"
 	"github.com/drewjst/crux/apps/api/internal/application/services"
+	"github.com/drewjst/crux/apps/api/internal/domain/institutional"
 	"github.com/drewjst/crux/apps/api/internal/domain/search"
 	"github.com/drewjst/crux/apps/api/internal/domain/stock"
 	"github.com/drewjst/crux/apps/api/internal/domain/valuation"
@@ -16,11 +17,12 @@ import (
 
 // RouterDeps contains all dependencies needed by the router.
 type RouterDeps struct {
-	StockService     *stock.Service
-	ValuationService *valuation.Service
-	InsightService   *services.InsightService
-	PolygonSearcher  *search.PolygonSearcher
-	AllowedOrigins   []string
+	StockService         *stock.Service
+	ValuationService     *valuation.Service
+	InstitutionalService *institutional.Service
+	InsightService       *services.InsightService
+	PolygonSearcher      *search.PolygonSearcher
+	AllowedOrigins       []string
 }
 
 // NewRouter creates and configures the Chi router with all routes and middleware.
@@ -49,6 +51,12 @@ func NewRouter(deps RouterDeps) *chi.Mux {
 		r.Get("/stock/{ticker}", stockHandler.GetStock)
 		r.Get("/stock/{ticker}/valuation", valuationHandler.GetValuation)
 		r.Get("/search", searchHandler.Search)
+
+		// Institutional ownership deep dive
+		if deps.InstitutionalService != nil {
+			institutionalHandler := handlers.NewInstitutionalHandler(deps.InstitutionalService)
+			r.Get("/stock/{ticker}/institutional", institutionalHandler.GetInstitutionalDetail)
+		}
 
 		// CruxAI insight routes (v1)
 		if deps.InsightService != nil {

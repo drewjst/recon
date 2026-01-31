@@ -16,9 +16,52 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crux.finance';
+
 export const metadata: Metadata = {
-  title: 'Crux - Stock Research Dashboard',
-  description: 'Distill stock fundamentals into actionable signals',
+  title: {
+    default: 'Crux - Stock Research Dashboard',
+    template: '%s | Crux',
+  },
+  description:
+    'Distill stock fundamentals into actionable signals. Research institutional ownership, insider trading, valuations, and AI-powered insights.',
+  keywords: [
+    'stock research',
+    'fundamental analysis',
+    'institutional ownership',
+    'insider trading',
+    'stock valuation',
+    'investment research',
+  ],
+  authors: [{ name: 'Crux' }],
+  creator: 'Crux',
+  metadataBase: new URL(siteUrl),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: siteUrl,
+    siteName: 'Crux',
+    title: 'Crux - Stock Research Dashboard',
+    description:
+      'Distill stock fundamentals into actionable signals. Research institutional ownership, insider trading, and valuations.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Crux - Stock Research Dashboard',
+    description:
+      'Distill stock fundamentals into actionable signals. Research institutional ownership, insider trading, and valuations.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

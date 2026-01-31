@@ -17,6 +17,7 @@ const sectionLabels: Record<InsightSection, string> = {
   'valuation-summary': 'Valuation Summary',
   'position-summary': 'Position Summary',
   'news-sentiment': 'News Sentiment',
+  'smart-money-summary': 'Smart Money Summary',
 };
 
 // Parse news sentiment JSON from insight string
