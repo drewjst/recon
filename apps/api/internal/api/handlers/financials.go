@@ -56,10 +56,20 @@ type IncomeStatementPeriod struct {
 	GrossProfit      int64   `json:"grossProfit"`
 	GrossMargin      float64 `json:"grossMargin"`
 
-	// Operating
-	OperatingExpenses int64   `json:"operatingExpenses"`
-	OperatingIncome   int64   `json:"operatingIncome"`
-	OperatingMargin   float64 `json:"operatingMargin"`
+	// Operating Expenses Breakdown
+	ResearchAndDevelopment int64 `json:"researchAndDevelopment"`
+	SellingGeneralAdmin    int64 `json:"sellingGeneralAdmin"`
+	OperatingExpenses      int64 `json:"operatingExpenses"`
+
+	// Operating Income
+	OperatingIncome int64   `json:"operatingIncome"`
+	OperatingMargin float64 `json:"operatingMargin"`
+
+	// Non-Operating
+	InterestIncome   int64 `json:"interestIncome"`
+	InterestExpense  int64 `json:"interestExpense"`
+	IncomeBeforeTax  int64 `json:"incomeBeforeTax"`
+	IncomeTaxExpense int64 `json:"incomeTaxExpense"`
 
 	// Net Income
 	NetIncome          int64   `json:"netIncome"`
@@ -67,16 +77,26 @@ type IncomeStatementPeriod struct {
 	NetMargin          float64 `json:"netMargin"`
 
 	// Per Share
+	EPSBasic   float64 `json:"epsBasic"`
 	EPSDiluted float64 `json:"epsDiluted"`
+
+	// Shares Outstanding
+	SharesOutstandingBasic   int64 `json:"sharesOutstandingBasic"`
+	SharesOutstandingDiluted int64 `json:"sharesOutstandingDiluted"`
 
 	// Other
 	EBITDA       int64   `json:"ebitda"`
 	EBITDAMargin float64 `json:"ebitdaMargin"`
 
+	// Effective Tax Rate
+	EffectiveTaxRate float64 `json:"effectiveTaxRate"`
+
 	// YoY Growth (computed)
-	RevenueGrowth   *float64 `json:"revenueGrowth,omitempty"`
-	NetIncomeGrowth *float64 `json:"netIncomeGrowth,omitempty"`
-	EPSGrowth       *float64 `json:"epsGrowth,omitempty"`
+	RevenueGrowth         *float64 `json:"revenueGrowth,omitempty"`
+	GrossProfitGrowth     *float64 `json:"grossProfitGrowth,omitempty"`
+	OperatingIncomeGrowth *float64 `json:"operatingIncomeGrowth,omitempty"`
+	NetIncomeGrowth       *float64 `json:"netIncomeGrowth,omitempty"`
+	EPSGrowth             *float64 `json:"epsGrowth,omitempty"`
 }
 
 // BalanceSheetResponse is the API response for balance sheets.
@@ -94,35 +114,55 @@ type BalanceSheetPeriod struct {
 	FiscalQuarter *int   `json:"fiscalQuarter"`
 	FilingDate    string `json:"filingDate,omitempty"`
 
-	// Assets
-	TotalAssets           int64  `json:"totalAssets"`
-	TotalAssetsFormatted  string `json:"totalAssetsFormatted"`
-	CashAndEquivalents    int64  `json:"cashAndEquivalents"`
-	TotalCurrentAssets    int64  `json:"totalCurrentAssets"`
-	TotalNonCurrentAssets int64  `json:"totalNonCurrentAssets"`
+	// Current Assets
+	CashAndEquivalents int64 `json:"cashAndEquivalents"`
+	AccountsReceivable int64 `json:"accountsReceivable"`
+	Inventory          int64 `json:"inventory"`
+	TotalCurrentAssets int64 `json:"totalCurrentAssets"`
 
-	// Liabilities
-	TotalLiabilities        int64  `json:"totalLiabilities"`
-	TotalLiabFormatted      string `json:"totalLiabilitiesFormatted"`
-	TotalCurrentLiabilities int64  `json:"totalCurrentLiabilities"`
-	TotalNonCurrentLiab     int64  `json:"totalNonCurrentLiabilities"`
+	// Non-Current Assets
+	TotalNonCurrentAssets int64 `json:"totalNonCurrentAssets"`
 
-	// Debt
-	TotalDebt int64  `json:"totalDebt"`
-	NetDebt   int64  `json:"netDebt"`
+	// Total Assets
+	TotalAssets          int64  `json:"totalAssets"`
+	TotalAssetsFormatted string `json:"totalAssetsFormatted"`
+
+	// Current Liabilities
+	AccountsPayable         int64 `json:"accountsPayable"`
+	ShortTermDebt           int64 `json:"shortTermDebt"`
+	TotalCurrentLiabilities int64 `json:"totalCurrentLiabilities"`
+
+	// Non-Current Liabilities
+	LongTermDebt        int64 `json:"longTermDebt"`
+	TotalNonCurrentLiab int64 `json:"totalNonCurrentLiabilities"`
+
+	// Total Liabilities
+	TotalLiabilities   int64  `json:"totalLiabilities"`
+	TotalLiabFormatted string `json:"totalLiabilitiesFormatted"`
+
+	// Debt Summary
+	TotalDebt int64 `json:"totalDebt"`
+	NetDebt   int64 `json:"netDebt"`
 
 	// Equity
-	TotalEquity          int64  `json:"totalEquity"`
+	CommonStock      int64 `json:"commonStock"`
+	RetainedEarnings int64 `json:"retainedEarnings"`
+	TotalEquity      int64 `json:"totalEquity"`
 	TotalEquityFormatted string `json:"totalEquityFormatted"`
 
+	// Computed Metrics
+	WorkingCapital int64 `json:"workingCapital"`
+
 	// Ratios
-	CurrentRatio  float64 `json:"currentRatio"`
-	DebtToEquity  float64 `json:"debtToEquity"`
-	DebtToAssets  float64 `json:"debtToAssets"`
+	CurrentRatio float64 `json:"currentRatio"`
+	QuickRatio   float64 `json:"quickRatio"`
+	DebtToEquity float64 `json:"debtToEquity"`
+	DebtToAssets float64 `json:"debtToAssets"`
 
 	// YoY Growth
-	TotalAssetsGrowth *float64 `json:"totalAssetsGrowth,omitempty"`
-	TotalEquityGrowth *float64 `json:"totalEquityGrowth,omitempty"`
+	TotalAssetsGrowth      *float64 `json:"totalAssetsGrowth,omitempty"`
+	TotalLiabilitiesGrowth *float64 `json:"totalLiabilitiesGrowth,omitempty"`
+	TotalEquityGrowth      *float64 `json:"totalEquityGrowth,omitempty"`
 }
 
 // CashFlowResponse is the API response for cash flow statements.
@@ -141,25 +181,37 @@ type CashFlowPeriod struct {
 	FilingDate    string `json:"filingDate,omitempty"`
 
 	// Operating Activities
-	OperatingCashFlow          int64  `json:"operatingCashFlow"`
+	NetIncome                int64  `json:"netIncome"`
+	DepreciationAmortization int64  `json:"depreciationAmortization"`
+	StockBasedCompensation   int64  `json:"stockBasedCompensation"`
+	ChangeInWorkingCapital   int64  `json:"changeInWorkingCapital"`
+	OperatingCashFlow        int64  `json:"operatingCashFlow"`
 	OperatingCashFlowFormatted string `json:"operatingCashFlowFormatted"`
 
 	// Investing Activities
 	CapitalExpenditures int64 `json:"capitalExpenditures"`
+	Acquisitions        int64 `json:"acquisitions"`
 	InvestingCashFlow   int64 `json:"investingCashFlow"`
 
 	// Financing Activities
-	DividendsPaid          int64 `json:"dividendsPaid"`
+	DebtRepayment          int64 `json:"debtRepayment"`
+	DebtIssuance           int64 `json:"debtIssuance"`
 	CommonStockRepurchased int64 `json:"stockBuybacks"`
+	DividendsPaid          int64 `json:"dividendsPaid"`
 	FinancingCashFlow      int64 `json:"financingCashFlow"`
 
-	// Free Cash Flow
+	// Summary
+	NetChangeInCash       int64  `json:"netChangeInCash"`
 	FreeCashFlow          int64  `json:"freeCashFlow"`
 	FreeCashFlowFormatted string `json:"freeCashFlowFormatted"`
 
+	// FCF Conversion (Operating CF to FCF ratio)
+	FCFConversion float64 `json:"fcfConversion"`
+
 	// YoY Growth
-	OperatingCFGrowth *float64 `json:"operatingCashFlowGrowth,omitempty"`
+	OperatingCFGrowth  *float64 `json:"operatingCashFlowGrowth,omitempty"`
 	FreeCashFlowGrowth *float64 `json:"freeCashFlowGrowth,omitempty"`
+	CapexGrowth        *float64 `json:"capexGrowth,omitempty"`
 }
 
 // SegmentsResponse is the API response for revenue segments.
@@ -224,24 +276,47 @@ func (h *FinancialsHandler) GetIncomeStatements(w http.ResponseWriter, r *http.R
 			FiscalYear:    stmt.FiscalYear,
 			FiscalQuarter: stmt.FiscalQuarter,
 
+			// Revenue
 			Revenue:          stmt.Revenue,
 			RevenueFormatted: formatLargeNumber(stmt.Revenue),
 			CostOfRevenue:    stmt.CostOfRevenue,
 			GrossProfit:      stmt.GrossProfit,
 			GrossMargin:      safePercent(stmt.GrossProfit, stmt.Revenue),
 
-			OperatingExpenses: stmt.OperatingExpenses,
-			OperatingIncome:   stmt.OperatingIncome,
-			OperatingMargin:   safePercent(stmt.OperatingIncome, stmt.Revenue),
+			// Operating Expenses Breakdown
+			ResearchAndDevelopment: stmt.ResearchAndDevelopment,
+			SellingGeneralAdmin:    stmt.SellingGeneralAdmin,
+			OperatingExpenses:      stmt.OperatingExpenses,
 
+			// Operating Income
+			OperatingIncome: stmt.OperatingIncome,
+			OperatingMargin: safePercent(stmt.OperatingIncome, stmt.Revenue),
+
+			// Non-Operating
+			InterestIncome:   stmt.InterestIncome,
+			InterestExpense:  stmt.InterestExpense,
+			IncomeBeforeTax:  stmt.IncomeBeforeTax,
+			IncomeTaxExpense: stmt.IncomeTaxExpense,
+
+			// Net Income
 			NetIncome:          stmt.NetIncome,
 			NetIncomeFormatted: formatLargeNumber(stmt.NetIncome),
 			NetMargin:          safePercent(stmt.NetIncome, stmt.Revenue),
 
+			// Per Share
+			EPSBasic:   stmt.EPSBasic,
 			EPSDiluted: stmt.EPSDiluted,
 
+			// Shares Outstanding
+			SharesOutstandingBasic:   stmt.WeightedAvgSharesBasic,
+			SharesOutstandingDiluted: stmt.WeightedAvgSharesDiluted,
+
+			// Other
 			EBITDA:       stmt.EBITDA,
 			EBITDAMargin: safePercent(stmt.EBITDA, stmt.Revenue),
+
+			// Effective Tax Rate
+			EffectiveTaxRate: safePercent(stmt.IncomeTaxExpense, stmt.IncomeBeforeTax),
 		}
 
 		if stmt.FilingDate != nil {
@@ -252,6 +327,8 @@ func (h *FinancialsHandler) GetIncomeStatements(w http.ResponseWriter, r *http.R
 		if i < len(statements)-1 {
 			prev := statements[i+1]
 			period.RevenueGrowth = computeGrowth(stmt.Revenue, prev.Revenue)
+			period.GrossProfitGrowth = computeGrowth(stmt.GrossProfit, prev.GrossProfit)
+			period.OperatingIncomeGrowth = computeGrowth(stmt.OperatingIncome, prev.OperatingIncome)
 			period.NetIncomeGrowth = computeGrowth(stmt.NetIncome, prev.NetIncome)
 			period.EPSGrowth = computeGrowthFloat(stmt.EPSDiluted, prev.EPSDiluted)
 		}
@@ -293,29 +370,60 @@ func (h *FinancialsHandler) GetBalanceSheets(w http.ResponseWriter, r *http.Requ
 	}
 
 	for i, sheet := range sheets {
+		// Calculate working capital
+		workingCapital := sheet.TotalCurrentAssets - sheet.TotalCurrentLiabilities
+
+		// Calculate quick ratio: (Current Assets - Inventory) / Current Liabilities
+		quickAssets := sheet.TotalCurrentAssets - sheet.Inventory
+		quickRatio := safeRatio(float64(quickAssets), float64(sheet.TotalCurrentLiabilities))
+
 		period := BalanceSheetPeriod{
 			PeriodEnd:     sheet.PeriodEnd.Format("2006-01-02"),
 			FiscalYear:    sheet.FiscalYear,
 			FiscalQuarter: sheet.FiscalQuarter,
 
-			TotalAssets:           sheet.TotalAssets,
-			TotalAssetsFormatted:  formatLargeNumber(sheet.TotalAssets),
-			CashAndEquivalents:    sheet.CashAndEquivalents,
-			TotalCurrentAssets:    sheet.TotalCurrentAssets,
+			// Current Assets
+			CashAndEquivalents: sheet.CashAndEquivalents,
+			AccountsReceivable: sheet.AccountsReceivable,
+			Inventory:          sheet.Inventory,
+			TotalCurrentAssets: sheet.TotalCurrentAssets,
+
+			// Non-Current Assets
 			TotalNonCurrentAssets: sheet.TotalNonCurrentAssets,
 
-			TotalLiabilities:        sheet.TotalLiabilities,
-			TotalLiabFormatted:      formatLargeNumber(sheet.TotalLiabilities),
-			TotalCurrentLiabilities: sheet.TotalCurrentLiabilities,
-			TotalNonCurrentLiab:     sheet.TotalNonCurrentLiab,
+			// Total Assets
+			TotalAssets:          sheet.TotalAssets,
+			TotalAssetsFormatted: formatLargeNumber(sheet.TotalAssets),
 
+			// Current Liabilities
+			AccountsPayable:         sheet.AccountsPayable,
+			ShortTermDebt:           sheet.ShortTermDebt,
+			TotalCurrentLiabilities: sheet.TotalCurrentLiabilities,
+
+			// Non-Current Liabilities
+			LongTermDebt:        sheet.LongTermDebt,
+			TotalNonCurrentLiab: sheet.TotalNonCurrentLiab,
+
+			// Total Liabilities
+			TotalLiabilities:   sheet.TotalLiabilities,
+			TotalLiabFormatted: formatLargeNumber(sheet.TotalLiabilities),
+
+			// Debt Summary
 			TotalDebt: sheet.TotalDebt,
 			NetDebt:   sheet.NetDebt,
 
+			// Equity
+			CommonStock:          sheet.CommonStock,
+			RetainedEarnings:     sheet.RetainedEarnings,
 			TotalEquity:          sheet.TotalEquity,
 			TotalEquityFormatted: formatLargeNumber(sheet.TotalEquity),
 
+			// Computed Metrics
+			WorkingCapital: workingCapital,
+
+			// Ratios
 			CurrentRatio: safeRatio(float64(sheet.TotalCurrentAssets), float64(sheet.TotalCurrentLiabilities)),
+			QuickRatio:   quickRatio,
 			DebtToEquity: safeRatio(float64(sheet.TotalDebt), float64(sheet.TotalEquity)),
 			DebtToAssets: safeRatio(float64(sheet.TotalDebt), float64(sheet.TotalAssets)),
 		}
@@ -328,6 +436,7 @@ func (h *FinancialsHandler) GetBalanceSheets(w http.ResponseWriter, r *http.Requ
 		if i < len(sheets)-1 {
 			prev := sheets[i+1]
 			period.TotalAssetsGrowth = computeGrowth(sheet.TotalAssets, prev.TotalAssets)
+			period.TotalLiabilitiesGrowth = computeGrowth(sheet.TotalLiabilities, prev.TotalLiabilities)
 			period.TotalEquityGrowth = computeGrowth(sheet.TotalEquity, prev.TotalEquity)
 		}
 
@@ -368,23 +477,44 @@ func (h *FinancialsHandler) GetCashFlowStatements(w http.ResponseWriter, r *http
 	}
 
 	for i, stmt := range statements {
+		// Calculate FCF Conversion (FCF / Operating CF)
+		fcfConversion := safePercent(stmt.FreeCashFlow, stmt.OperatingCashFlow)
+
+		// Calculate net change in cash
+		netChange := stmt.OperatingCashFlow + stmt.InvestingCashFlow + stmt.FinancingCashFlow
+
 		period := CashFlowPeriod{
 			PeriodEnd:     stmt.PeriodEnd.Format("2006-01-02"),
 			FiscalYear:    stmt.FiscalYear,
 			FiscalQuarter: stmt.FiscalQuarter,
 
-			OperatingCashFlow:          stmt.OperatingCashFlow,
+			// Operating Activities
+			NetIncome:                stmt.NetIncome,
+			DepreciationAmortization: stmt.DepreciationAmortization,
+			StockBasedCompensation:   stmt.StockBasedCompensation,
+			ChangeInWorkingCapital:   stmt.ChangeInWorkingCapital,
+			OperatingCashFlow:        stmt.OperatingCashFlow,
 			OperatingCashFlowFormatted: formatLargeNumber(stmt.OperatingCashFlow),
 
+			// Investing Activities
 			CapitalExpenditures: stmt.CapitalExpenditures,
+			Acquisitions:        stmt.Acquisitions,
 			InvestingCashFlow:   stmt.InvestingCashFlow,
 
-			DividendsPaid:          stmt.DividendsPaid,
+			// Financing Activities
+			DebtRepayment:          stmt.DebtRepayment,
+			DebtIssuance:           stmt.DebtIssuance,
 			CommonStockRepurchased: stmt.CommonStockRepurchased,
+			DividendsPaid:          stmt.DividendsPaid,
 			FinancingCashFlow:      stmt.FinancingCashFlow,
 
+			// Summary
+			NetChangeInCash:       netChange,
 			FreeCashFlow:          stmt.FreeCashFlow,
 			FreeCashFlowFormatted: formatLargeNumber(stmt.FreeCashFlow),
+
+			// FCF Conversion
+			FCFConversion: fcfConversion,
 		}
 
 		if stmt.FilingDate != nil {
@@ -396,6 +526,7 @@ func (h *FinancialsHandler) GetCashFlowStatements(w http.ResponseWriter, r *http
 			prev := statements[i+1]
 			period.OperatingCFGrowth = computeGrowth(stmt.OperatingCashFlow, prev.OperatingCashFlow)
 			period.FreeCashFlowGrowth = computeGrowth(stmt.FreeCashFlow, prev.FreeCashFlow)
+			period.CapexGrowth = computeGrowth(stmt.CapitalExpenditures, prev.CapitalExpenditures)
 		}
 
 		response.Periods[i] = period

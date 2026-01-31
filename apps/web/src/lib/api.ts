@@ -172,21 +172,43 @@ export interface IncomeStatementPeriod {
   fiscalYear: number;
   fiscalQuarter: number | null;
   filingDate?: string;
+  // Revenue
   revenue: number;
   revenueFormatted: string;
   costOfRevenue: number;
   grossProfit: number;
   grossMargin: number;
+  // Operating Expenses Breakdown
+  researchAndDevelopment: number;
+  sellingGeneralAdmin: number;
   operatingExpenses: number;
+  // Operating Income
   operatingIncome: number;
   operatingMargin: number;
+  // Non-Operating
+  interestIncome: number;
+  interestExpense: number;
+  incomeBeforeTax: number;
+  incomeTaxExpense: number;
+  // Net Income
   netIncome: number;
   netIncomeFormatted: string;
   netMargin: number;
+  // Per Share
+  epsBasic: number;
   epsDiluted: number;
+  // Shares Outstanding
+  sharesOutstandingBasic: number;
+  sharesOutstandingDiluted: number;
+  // Other
   ebitda: number;
   ebitdaMargin: number;
+  // Effective Tax Rate
+  effectiveTaxRate: number;
+  // YoY Growth
   revenueGrowth?: number;
+  grossProfitGrowth?: number;
+  operatingIncomeGrowth?: number;
   netIncomeGrowth?: number;
   epsGrowth?: number;
 }
@@ -203,23 +225,44 @@ export interface BalanceSheetPeriod {
   fiscalYear: number;
   fiscalQuarter: number | null;
   filingDate?: string;
+  // Current Assets
+  cashAndEquivalents: number;
+  accountsReceivable: number;
+  inventory: number;
+  totalCurrentAssets: number;
+  // Non-Current Assets
+  totalNonCurrentAssets: number;
+  // Total Assets
   totalAssets: number;
   totalAssetsFormatted: string;
-  cashAndEquivalents: number;
-  totalCurrentAssets: number;
-  totalNonCurrentAssets: number;
+  // Current Liabilities
+  accountsPayable: number;
+  shortTermDebt: number;
+  totalCurrentLiabilities: number;
+  // Non-Current Liabilities
+  longTermDebt: number;
+  totalNonCurrentLiabilities: number;
+  // Total Liabilities
   totalLiabilities: number;
   totalLiabilitiesFormatted: string;
-  totalCurrentLiabilities: number;
-  totalNonCurrentLiabilities: number;
+  // Debt Summary
   totalDebt: number;
   netDebt: number;
+  // Equity
+  commonStock: number;
+  retainedEarnings: number;
   totalEquity: number;
   totalEquityFormatted: string;
+  // Computed Metrics
+  workingCapital: number;
+  // Ratios
   currentRatio: number;
+  quickRatio: number;
   debtToEquity: number;
   debtToAssets: number;
+  // YoY Growth
   totalAssetsGrowth?: number;
+  totalLiabilitiesGrowth?: number;
   totalEquityGrowth?: number;
 }
 
@@ -235,17 +278,33 @@ export interface CashFlowPeriod {
   fiscalYear: number;
   fiscalQuarter: number | null;
   filingDate?: string;
+  // Operating Activities
+  netIncome: number;
+  depreciationAmortization: number;
+  stockBasedCompensation: number;
+  changeInWorkingCapital: number;
   operatingCashFlow: number;
   operatingCashFlowFormatted: string;
+  // Investing Activities
   capitalExpenditures: number;
+  acquisitions: number;
   investingCashFlow: number;
-  dividendsPaid: number;
+  // Financing Activities
+  debtRepayment: number;
+  debtIssuance: number;
   stockBuybacks: number;
+  dividendsPaid: number;
   financingCashFlow: number;
+  // Summary
+  netChangeInCash: number;
   freeCashFlow: number;
   freeCashFlowFormatted: string;
+  // FCF Conversion
+  fcfConversion: number;
+  // YoY Growth
   operatingCashFlowGrowth?: number;
   freeCashFlowGrowth?: number;
+  capexGrowth?: number;
 }
 
 export interface CashFlowResponse {

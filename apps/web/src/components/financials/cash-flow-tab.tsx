@@ -26,6 +26,10 @@ const sections: SectionConfig[] = [
   {
     title: 'Operating Activities',
     rows: [
+      { label: 'Net Income', key: 'netIncome', indent: 1 },
+      { label: 'Depreciation & Amortization', key: 'depreciationAmortization', indent: 1 },
+      { label: 'Stock-Based Compensation', key: 'stockBasedCompensation', indent: 1 },
+      { label: 'Change in Working Capital', key: 'changeInWorkingCapital', indent: 1 },
       { label: 'Operating Cash Flow', key: 'operatingCashFlow', isSubtotal: true },
     ],
   },
@@ -33,21 +37,26 @@ const sections: SectionConfig[] = [
     title: 'Investing Activities',
     rows: [
       { label: 'Capital Expenditures', key: 'capitalExpenditures', indent: 1 },
+      { label: 'Acquisitions', key: 'acquisitions', indent: 1 },
       { label: 'Investing Cash Flow', key: 'investingCashFlow', isSubtotal: true },
     ],
   },
   {
     title: 'Financing Activities',
     rows: [
-      { label: 'Dividends Paid', key: 'dividendsPaid', indent: 1 },
+      { label: 'Debt Issuance', key: 'debtIssuance', indent: 1 },
+      { label: 'Debt Repayment', key: 'debtRepayment', indent: 1 },
       { label: 'Stock Buybacks', key: 'stockBuybacks', indent: 1 },
+      { label: 'Dividends Paid', key: 'dividendsPaid', indent: 1 },
       { label: 'Financing Cash Flow', key: 'financingCashFlow', isSubtotal: true },
     ],
   },
   {
-    title: 'Free Cash Flow',
+    title: 'Summary',
     rows: [
+      { label: 'Net Change in Cash', key: 'netChangeInCash' },
       { label: 'Free Cash Flow', key: 'freeCashFlow', isSubtotal: true },
+      { label: 'FCF Conversion %', key: 'fcfConversion' },
     ],
   },
 ];
@@ -76,6 +85,10 @@ function getPeriodLabel(period: CashFlowPeriod): string {
     return `Q${period.fiscalQuarter} ${period.fiscalYear}`;
   }
   return `FY ${period.fiscalYear}`;
+}
+
+function isPercentKey(key: string): boolean {
+  return key.includes('Conversion');
 }
 
 const CollapsibleSection = memo(function CollapsibleSection({
@@ -109,81 +122,98 @@ const CollapsibleSection = memo(function CollapsibleSection({
 
       {isOpen && (
         <div>
-          {rows.map((row) => (
-            <div
-              key={row.key}
-              className={cn(
-                'flex items-center border-b border-border/20 last:border-0',
-                'hover:bg-muted/30 transition-colors',
-                row.isSubtotal && 'bg-muted/20'
-              )}
-            >
+          {rows.map((row) => {
+            // Skip rows with zero values for optional fields
+            const hasData = periods.some(p => {
+              const val = p[row.key as keyof CashFlowPeriod] as number;
+              return val !== 0 && val !== undefined && val !== null;
+            });
+            if (!hasData && ['depreciationAmortization', 'stockBasedCompensation', 'changeInWorkingCapital', 'acquisitions', 'debtIssuance', 'debtRepayment'].includes(row.key)) {
+              return null;
+            }
+
+            return (
               <div
+                key={row.key}
                 className={cn(
-                  'sticky left-0 z-10 bg-background',
-                  'min-w-[200px] w-[200px] py-2.5 px-4 text-sm',
-                  row.isSubtotal && 'font-semibold',
-                  row.indent && 'pl-8'
+                  'flex items-center border-b border-border/20 last:border-0',
+                  'hover:bg-muted/30 transition-colors',
+                  row.isSubtotal && 'bg-muted/20'
                 )}
               >
-                {row.label}
-              </div>
+                <div
+                  className={cn(
+                    'sticky left-0 z-10 bg-background',
+                    'min-w-[200px] w-[200px] py-2.5 px-4 text-sm',
+                    row.isSubtotal && 'font-semibold',
+                    row.indent && 'pl-8'
+                  )}
+                >
+                  {row.label}
+                </div>
 
-              {periods.map((period) => {
-                const key = row.key as keyof CashFlowPeriod;
-                const value = period[key] as number | undefined;
+                {periods.map((period) => {
+                  const key = row.key as keyof CashFlowPeriod;
+                  const value = period[key] as number | undefined;
+                  const isPercent = isPercentKey(row.key);
 
-                let displayValue: string;
-                let colorClass = '';
+                  let displayValue: string;
+                  let colorClass = '';
 
-                if (viewMode === 'growth') {
-                  const growthKey = `${row.key}Growth` as keyof CashFlowPeriod;
-                  const growth = period[growthKey] as number | undefined;
-                  displayValue = formatGrowth(growth);
-                  if (growth !== undefined && growth !== null) {
-                    colorClass = growth > 0 ? 'text-success' : growth < 0 ? 'text-destructive' : '';
-                  }
-                } else if (viewMode === 'common-size' && period.operatingCashFlow !== 0 && value !== undefined) {
-                  const pctOfCFO = (value / Math.abs(period.operatingCashFlow)) * 100;
-                  displayValue = `${pctOfCFO.toFixed(1)}%`;
-                } else {
-                  displayValue = formatValue(value);
-                  if (value !== undefined) {
-                    if (['operatingCashFlow', 'freeCashFlow'].includes(row.key)) {
-                      colorClass = value > 0 ? 'text-success' : value < 0 ? 'text-destructive' : '';
-                    } else if (value < 0) {
-                      colorClass = 'text-destructive';
+                  if (viewMode === 'growth' && !isPercent) {
+                    const growthKey = `${row.key}Growth` as keyof CashFlowPeriod;
+                    const growth = period[growthKey] as number | undefined;
+                    displayValue = formatGrowth(growth);
+                    if (growth !== undefined && growth !== null) {
+                      colorClass = growth > 0 ? 'text-success' : growth < 0 ? 'text-destructive' : '';
+                    }
+                  } else if (viewMode === 'common-size' && period.operatingCashFlow !== 0 && value !== undefined && !isPercent) {
+                    const pctOfCFO = (value / Math.abs(period.operatingCashFlow)) * 100;
+                    displayValue = `${pctOfCFO.toFixed(1)}%`;
+                  } else if (isPercent) {
+                    displayValue = value !== undefined ? `${value.toFixed(1)}%` : '--';
+                    if (value !== undefined) {
+                      colorClass = value >= 70 ? 'text-success' : value < 50 ? 'text-destructive' : '';
+                    }
+                  } else {
+                    displayValue = formatValue(value);
+                    if (value !== undefined) {
+                      if (['operatingCashFlow', 'freeCashFlow'].includes(row.key)) {
+                        colorClass = value > 0 ? 'text-success' : value < 0 ? 'text-destructive' : '';
+                      } else if (value < 0) {
+                        colorClass = 'text-destructive';
+                      }
                     }
                   }
-                }
 
-                return (
-                  <div
-                    key={period.periodEnd}
-                    className={cn(
-                      'min-w-[120px] flex-1 py-2.5 px-3 text-sm text-right font-mono tabular-nums',
-                      colorClass,
-                      row.isSubtotal && 'font-semibold'
-                    )}
-                  >
-                    {displayValue}
+                  return (
+                    <div
+                      key={period.periodEnd}
+                      className={cn(
+                        'min-w-[120px] flex-1 py-2.5 px-3 text-sm text-right font-mono tabular-nums',
+                        colorClass,
+                        row.isSubtotal && 'font-semibold'
+                      )}
+                    >
+                      {displayValue}
+                    </div>
+                  );
+                })}
+
+                {viewMode === 'standard' && !isPercentKey(row.key) && (
+                  <div className="min-w-[100px] w-[100px] py-2.5 px-3 text-sm text-right font-mono tabular-nums">
+                    {(() => {
+                      const growthKey = `${row.key}Growth` as keyof CashFlowPeriod;
+                      const growth = periods[0]?.[growthKey] as number | undefined;
+                      if (growth === undefined || growth === null) return '--';
+                      const colorClass = growth > 0 ? 'text-success' : growth < 0 ? 'text-destructive' : '';
+                      return <span className={colorClass}>{formatGrowth(growth)}</span>;
+                    })()}
                   </div>
-                );
-              })}
-
-              {viewMode === 'standard' && (
-                <div className="min-w-[100px] w-[100px] py-2.5 px-3 text-sm text-right font-mono tabular-nums">
-                  {(() => {
-                    const growthKey = `${row.key}Growth` as keyof CashFlowPeriod;
-                    const growth = periods[0]?.[growthKey] as number | undefined;
-                    if (growth === undefined || growth === null) return '--';
-                    const colorClass = growth > 0 ? 'text-success' : growth < 0 ? 'text-destructive' : '';
-                    return <span className={colorClass}>{formatGrowth(growth)}</span>;
-                  })()}
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -298,7 +328,7 @@ export const CashFlowTab = memo(function CashFlowTab({
       {/* Key Metrics Summary */}
       <div className="bg-card/50 rounded-xl p-5 border border-border/50 shadow-sm">
         <h4 className="text-sm font-semibold mb-4">Key Metrics (Latest Period)</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
           <div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Operating CF</div>
             <div className={cn(
@@ -334,10 +364,28 @@ export const CashFlowTab = memo(function CashFlowTab({
             )}
           </div>
           <div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">FCF Conversion</div>
+            <div className={cn(
+              'text-xl font-mono font-semibold',
+              latestPeriod.fcfConversion >= 70 ? 'text-success' : latestPeriod.fcfConversion < 50 ? 'text-destructive' : ''
+            )}>
+              {latestPeriod.fcfConversion?.toFixed(1) || '--'}%
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">FCF / CFO</div>
+          </div>
+          <div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">CapEx</div>
             <div className="text-xl font-mono font-semibold text-destructive">
               {formatValue(latestPeriod.capitalExpenditures)}
             </div>
+            {latestPeriod.capexGrowth !== undefined && (
+              <div className={cn(
+                'text-sm font-mono mt-0.5',
+                latestPeriod.capexGrowth > 0 ? 'text-destructive' : latestPeriod.capexGrowth < 0 ? 'text-success' : ''
+              )}>
+                {formatGrowth(latestPeriod.capexGrowth)} YoY
+              </div>
+            )}
           </div>
           <div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Shareholder Returns</div>
@@ -346,6 +394,18 @@ export const CashFlowTab = memo(function CashFlowTab({
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">
               Div + Buybacks
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Net Change</div>
+            <div className={cn(
+              'text-xl font-mono font-semibold',
+              latestPeriod.netChangeInCash > 0 ? 'text-success' : latestPeriod.netChangeInCash < 0 ? 'text-destructive' : ''
+            )}>
+              {formatValue(latestPeriod.netChangeInCash)}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              CFO+CFI+CFF
             </div>
           </div>
         </div>

@@ -15,8 +15,6 @@ interface RowData {
   key: keyof IncomeStatementPeriod | string;
   isSubtotal?: boolean;
   indent?: number;
-  commonSizeKey?: keyof IncomeStatementPeriod;
-  growthKey?: keyof IncomeStatementPeriod;
 }
 
 interface SectionConfig {
@@ -34,9 +32,11 @@ const sections: SectionConfig[] = [
   {
     title: 'Costs & Expenses',
     rows: [
-      { label: 'Cost of Revenue', key: 'costOfRevenue' },
+      { label: 'Cost of Revenue', key: 'costOfRevenue', indent: 1 },
       { label: 'Gross Profit', key: 'grossProfit', isSubtotal: true },
-      { label: 'Operating Expenses', key: 'operatingExpenses' },
+      { label: 'R&D Expenses', key: 'researchAndDevelopment', indent: 1 },
+      { label: 'SG&A Expenses', key: 'sellingGeneralAdmin', indent: 1 },
+      { label: 'Total Operating Expenses', key: 'operatingExpenses', isSubtotal: true },
     ],
   },
   {
@@ -44,6 +44,15 @@ const sections: SectionConfig[] = [
     rows: [
       { label: 'Operating Income', key: 'operatingIncome', isSubtotal: true },
       { label: 'EBITDA', key: 'ebitda' },
+    ],
+  },
+  {
+    title: 'Non-Operating',
+    rows: [
+      { label: 'Interest Income', key: 'interestIncome', indent: 1 },
+      { label: 'Interest Expense', key: 'interestExpense', indent: 1 },
+      { label: 'Income Before Tax', key: 'incomeBeforeTax', isSubtotal: true },
+      { label: 'Income Tax Expense', key: 'incomeTaxExpense', indent: 1 },
     ],
   },
   {
@@ -55,31 +64,46 @@ const sections: SectionConfig[] = [
   {
     title: 'Per Share',
     rows: [
+      { label: 'Basic EPS', key: 'epsBasic' },
       { label: 'Diluted EPS', key: 'epsDiluted' },
+      { label: 'Shares Outstanding (Basic)', key: 'sharesOutstandingBasic' },
+      { label: 'Shares Outstanding (Diluted)', key: 'sharesOutstandingDiluted' },
     ],
   },
   {
-    title: 'Margins',
+    title: 'Margins & Rates',
     rows: [
       { label: 'Gross Margin', key: 'grossMargin' },
       { label: 'Operating Margin', key: 'operatingMargin' },
       { label: 'EBITDA Margin', key: 'ebitdaMargin' },
       { label: 'Net Margin', key: 'netMargin' },
+      { label: 'Effective Tax Rate', key: 'effectiveTaxRate' },
     ],
   },
 ];
 
-function formatValue(value: number | undefined | null, isPercent = false, isEPS = false): string {
+function formatValue(value: number | undefined | null, key: string): string {
   if (value === undefined || value === null) return '--';
 
-  if (isPercent) {
+  // Percent fields
+  if (key.includes('Margin') || key.includes('Rate') || key.includes('Growth')) {
     return `${value.toFixed(1)}%`;
   }
 
-  if (isEPS) {
+  // EPS fields
+  if (key.toLowerCase().includes('eps')) {
     return `$${value.toFixed(2)}`;
   }
 
+  // Shares fields - format as millions/billions
+  if (key.includes('shares') || key.includes('Shares')) {
+    const abs = Math.abs(value);
+    if (abs >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+    if (abs >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+    return value.toLocaleString();
+  }
+
+  // Currency fields
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
 
@@ -104,11 +128,15 @@ function getPeriodLabel(period: IncomeStatementPeriod): string {
 }
 
 function isPercentKey(key: string): boolean {
-  return key.includes('Margin') || key.includes('Growth');
+  return key.includes('Margin') || key.includes('Rate') || key.includes('Growth');
 }
 
 function isEPSKey(key: string): boolean {
   return key.toLowerCase().includes('eps');
+}
+
+function isSharesKey(key: string): boolean {
+  return key.includes('shares') || key.includes('Shares');
 }
 
 const CollapsibleSection = memo(function CollapsibleSection({
@@ -142,83 +170,95 @@ const CollapsibleSection = memo(function CollapsibleSection({
 
       {isOpen && (
         <div>
-          {rows.map((row) => (
-            <div
-              key={row.key}
-              className={cn(
-                'flex items-center border-b border-border/20 last:border-0',
-                'hover:bg-muted/30 transition-colors',
-                row.isSubtotal && 'bg-muted/20'
-              )}
-            >
+          {rows.map((row) => {
+            // Skip rows with zero values for R&D and SG&A (not all companies report these)
+            const hasData = periods.some(p => {
+              const val = p[row.key as keyof IncomeStatementPeriod] as number;
+              return val !== 0 && val !== undefined && val !== null;
+            });
+            if (!hasData && (row.key === 'researchAndDevelopment' || row.key === 'sellingGeneralAdmin')) {
+              return null;
+            }
+
+            return (
               <div
+                key={row.key}
                 className={cn(
-                  'sticky left-0 z-10 bg-background',
-                  'min-w-[200px] w-[200px] py-2.5 px-4 text-sm',
-                  row.isSubtotal && 'font-semibold',
-                  row.indent && 'pl-8'
+                  'flex items-center border-b border-border/20 last:border-0',
+                  'hover:bg-muted/30 transition-colors',
+                  row.isSubtotal && 'bg-muted/20'
                 )}
               >
-                {row.label}
-              </div>
-
-              {periods.map((period) => {
-                const key = row.key as keyof IncomeStatementPeriod;
-                const value = period[key] as number | undefined;
-                const isPercent = isPercentKey(row.key);
-                const isEPS = isEPSKey(row.key);
-
-                let displayValue: string;
-                let colorClass = '';
-
-                if (viewMode === 'growth' && !isPercent) {
-                  const growthKey = `${row.key}Growth` as keyof IncomeStatementPeriod;
-                  const growth = period[growthKey] as number | undefined;
-                  displayValue = formatGrowth(growth);
-                  if (growth !== undefined && growth !== null) {
-                    colorClass = growth > 0 ? 'text-success' : growth < 0 ? 'text-destructive' : '';
-                  }
-                } else if (viewMode === 'common-size' && !isPercent && !isEPS) {
-                  if (period.revenue && period.revenue > 0 && value !== undefined) {
-                    const pctOfRevenue = (value / period.revenue) * 100;
-                    displayValue = `${pctOfRevenue.toFixed(1)}%`;
-                  } else {
-                    displayValue = '--';
-                  }
-                } else {
-                  displayValue = formatValue(value, isPercent, isEPS);
-                  if (value !== undefined && value < 0 && !isPercent) {
-                    colorClass = 'text-destructive';
-                  }
-                }
-
-                return (
-                  <div
-                    key={period.periodEnd}
-                    className={cn(
-                      'min-w-[120px] flex-1 py-2.5 px-3 text-sm text-right font-mono tabular-nums',
-                      colorClass,
-                      row.isSubtotal && 'font-semibold'
-                    )}
-                  >
-                    {displayValue}
-                  </div>
-                );
-              })}
-
-              {viewMode === 'standard' && !isPercentKey(row.key) && (
-                <div className="min-w-[100px] w-[100px] py-2.5 px-3 text-sm text-right font-mono tabular-nums">
-                  {(() => {
-                    const growthKey = `${row.key}Growth` as keyof IncomeStatementPeriod;
-                    const growth = periods[0]?.[growthKey] as number | undefined;
-                    if (growth === undefined || growth === null) return '--';
-                    const colorClass = growth > 0 ? 'text-success' : growth < 0 ? 'text-destructive' : '';
-                    return <span className={colorClass}>{formatGrowth(growth)}</span>;
-                  })()}
+                <div
+                  className={cn(
+                    'sticky left-0 z-10 bg-background',
+                    'min-w-[200px] w-[200px] py-2.5 px-4 text-sm',
+                    row.isSubtotal && 'font-semibold',
+                    row.indent && 'pl-8'
+                  )}
+                >
+                  {row.label}
                 </div>
-              )}
-            </div>
-          ))}
+
+                {periods.map((period) => {
+                  const key = row.key as keyof IncomeStatementPeriod;
+                  const value = period[key] as number | undefined;
+                  const isPercent = isPercentKey(row.key);
+                  const isEPS = isEPSKey(row.key);
+                  const isShares = isSharesKey(row.key);
+
+                  let displayValue: string;
+                  let colorClass = '';
+
+                  if (viewMode === 'growth' && !isPercent && !isEPS && !isShares) {
+                    const growthKey = `${row.key}Growth` as keyof IncomeStatementPeriod;
+                    const growth = period[growthKey] as number | undefined;
+                    displayValue = formatGrowth(growth);
+                    if (growth !== undefined && growth !== null) {
+                      colorClass = growth > 0 ? 'text-success' : growth < 0 ? 'text-destructive' : '';
+                    }
+                  } else if (viewMode === 'common-size' && !isPercent && !isEPS && !isShares) {
+                    if (period.revenue && period.revenue > 0 && value !== undefined) {
+                      const pctOfRevenue = (value / period.revenue) * 100;
+                      displayValue = `${pctOfRevenue.toFixed(1)}%`;
+                    } else {
+                      displayValue = '--';
+                    }
+                  } else {
+                    displayValue = formatValue(value, row.key);
+                    if (value !== undefined && value < 0 && !isPercent && !isEPS) {
+                      colorClass = 'text-destructive';
+                    }
+                  }
+
+                  return (
+                    <div
+                      key={period.periodEnd}
+                      className={cn(
+                        'min-w-[120px] flex-1 py-2.5 px-3 text-sm text-right font-mono tabular-nums',
+                        colorClass,
+                        row.isSubtotal && 'font-semibold'
+                      )}
+                    >
+                      {displayValue}
+                    </div>
+                  );
+                })}
+
+                {viewMode === 'standard' && !isPercentKey(row.key) && !isSharesKey(row.key) && (
+                  <div className="min-w-[100px] w-[100px] py-2.5 px-3 text-sm text-right font-mono tabular-nums">
+                    {(() => {
+                      const growthKey = `${row.key}Growth` as keyof IncomeStatementPeriod;
+                      const growth = periods[0]?.[growthKey] as number | undefined;
+                      if (growth === undefined || growth === null) return '--';
+                      const colorClass = growth > 0 ? 'text-success' : growth < 0 ? 'text-destructive' : '';
+                      return <span className={colorClass}>{formatGrowth(growth)}</span>;
+                    })()}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -280,7 +320,7 @@ export const IncomeStatementTab = memo(function IncomeStatementTab({
       {/* Key Metrics Summary */}
       <div className="bg-card/50 rounded-xl p-5 border border-border/50 shadow-sm">
         <h4 className="text-sm font-semibold mb-4">Key Metrics (Latest Period)</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
           <div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Revenue</div>
             <div className="text-xl font-mono font-semibold">
@@ -310,9 +350,29 @@ export const IncomeStatementTab = memo(function IncomeStatementTab({
             )}
           </div>
           <div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Diluted EPS</div>
+            <div className="text-xl font-mono font-semibold">
+              {periods[0]?.epsDiluted !== undefined ? `$${periods[0].epsDiluted.toFixed(2)}` : '--'}
+            </div>
+            {periods[0]?.epsGrowth !== undefined && (
+              <div className={cn(
+                'text-sm font-mono mt-0.5',
+                periods[0].epsGrowth > 0 ? 'text-success' : periods[0].epsGrowth < 0 ? 'text-destructive' : ''
+              )}>
+                {formatGrowth(periods[0].epsGrowth)} YoY
+              </div>
+            )}
+          </div>
+          <div>
             <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Gross Margin</div>
             <div className="text-xl font-mono font-semibold">
               {periods[0]?.grossMargin !== undefined ? `${periods[0].grossMargin.toFixed(1)}%` : '--'}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Operating Margin</div>
+            <div className="text-xl font-mono font-semibold">
+              {periods[0]?.operatingMargin !== undefined ? `${periods[0].operatingMargin.toFixed(1)}%` : '--'}
             </div>
           </div>
           <div>
