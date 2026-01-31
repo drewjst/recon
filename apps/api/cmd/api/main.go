@@ -70,9 +70,7 @@ func run() error {
 
 	// Create provider based on config
 	providerCfg := providers.Config{
-		Provider:    providers.ParseProviderType(cfg.FundamentalsProvider),
-		FMPAPIKey:   cfg.FMPAPIKey,
-		EODHDAPIKey: cfg.EODHDAPIKey,
+		FMPAPIKey: cfg.FMPAPIKey,
 	}
 	rawProvider, err := providers.NewFullProvider(providerCfg)
 	if err != nil {
@@ -85,7 +83,7 @@ func run() error {
 		fundamentalsProvider = providers.NewCachedFundamentalsProvider(
 			rawProvider,
 			cacheRepo,
-			cfg.FundamentalsProvider,
+			"fmp",
 		)
 		slog.Info("provider caching enabled")
 	}
@@ -103,7 +101,7 @@ func run() error {
 		stock.DefaultServiceConfig(),
 		polygonClient,
 	)
-	slog.Info("stock service initialized", "provider", cfg.FundamentalsProvider, "caching", cacheRepo != nil)
+	slog.Info("stock service initialized", "provider", "fmp", "caching", cacheRepo != nil)
 
 	// Initialize valuation service with cached provider
 	valuationService := valuation.NewService(fundamentalsProvider, rawProvider)

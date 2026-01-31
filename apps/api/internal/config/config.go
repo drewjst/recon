@@ -18,27 +18,23 @@ type CruxAIConfig struct {
 }
 
 type Config struct {
-	Port                 string
-	Env                  string
-	FMPAPIKey            string
-	EODHDAPIKey          string
-	FundamentalsProvider string // "fmp" (default) or "eodhd"
-	PolygonAPIKey        string
-	DatabaseURL          string
-	AllowedOrigins       []string
-	CruxAI               CruxAIConfig
+	Port           string
+	Env            string
+	FMPAPIKey      string
+	PolygonAPIKey  string
+	DatabaseURL    string
+	AllowedOrigins []string
+	CruxAI         CruxAIConfig
 }
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		Port:                 getEnv("PORT", "8080"),
-		Env:                  getEnv("ENV", "development"),
-		FMPAPIKey:            os.Getenv("FMP_API_KEY"),
-		EODHDAPIKey:          os.Getenv("EODHD_API_KEY"),
-		FundamentalsProvider: getEnv("FUNDAMENTALS_PROVIDER", "fmp"),
-		PolygonAPIKey:        os.Getenv("POLYGON_API_KEY"),
-		DatabaseURL:          os.Getenv("DATABASE_URL"),
-		CruxAI:               loadCruxAIConfig(),
+		Port:          getEnv("PORT", "8080"),
+		Env:           getEnv("ENV", "development"),
+		FMPAPIKey:     os.Getenv("FMP_API_KEY"),
+		PolygonAPIKey: os.Getenv("POLYGON_API_KEY"),
+		DatabaseURL:   os.Getenv("DATABASE_URL"),
+		CruxAI:        loadCruxAIConfig(),
 	}
 
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
@@ -53,16 +49,9 @@ func Load() (*Config, error) {
 		}
 	}
 
-	// Validate required API keys based on selected provider
-	switch strings.ToLower(cfg.FundamentalsProvider) {
-	case "eodhd":
-		if cfg.EODHDAPIKey == "" {
-			return nil, fmt.Errorf("EODHD_API_KEY environment variable is required when FUNDAMENTALS_PROVIDER=eodhd")
-		}
-	default: // "fmp" or empty (default)
-		if cfg.FMPAPIKey == "" {
-			return nil, fmt.Errorf("FMP_API_KEY environment variable is required")
-		}
+	// Validate required API keys
+	if cfg.FMPAPIKey == "" {
+		return nil, fmt.Errorf("FMP_API_KEY environment variable is required")
 	}
 
 	if cfg.PolygonAPIKey == "" {

@@ -22,7 +22,7 @@ type FundamentalsProvider interface {
 	GetTechnicalMetrics(ctx context.Context, ticker string) (*models.TechnicalMetrics, error)
 	GetShortInterest(ctx context.Context, ticker string) (*models.ShortInterest, error)
 
-	// Analyst estimates (FMP provides this, EODHD returns nil)
+	// Analyst estimates
 	GetAnalystEstimates(ctx context.Context, ticker string) (*models.AnalystEstimates, error)
 
 	// Valuation deep dive methods

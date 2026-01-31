@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
-	"time"
 
 	"github.com/drewjst/crux/apps/api/internal/domain/models"
+	"github.com/drewjst/crux/apps/api/internal/domain/utils"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/providers/fmp"
 	"golang.org/x/sync/errgroup"
 )
@@ -35,48 +35,14 @@ func NewService(fmpClient *fmp.Client) *Service {
 // GetDetail returns comprehensive institutional ownership data.
 func (s *Service) GetDetail(ctx context.Context, ticker string) (*models.InstitutionalDetail, error) {
 	var (
-		holders       []fmp.InstitutionalOwnershipHolder
-		summary       *fmp.InstitutionalPositionsSummary
-		history       []fmp.InstitutionalPositionsSummary
-		breakdown     []fmp.InstitutionalHolderBreakdown
+		holders   []fmp.InstitutionalOwnershipHolder
+		summary   *fmp.InstitutionalPositionsSummary
+		history   []fmp.InstitutionalPositionsSummary
+		breakdown []fmp.InstitutionalHolderBreakdown
 	)
 
 	// Get the most recent quarter with complete 13F data
-	// 13F filings are due 45 days after quarter end:
-	// Q1 (Mar 31) -> due May 15, Q2 (Jun 30) -> due Aug 14
-	// Q3 (Sep 30) -> due Nov 14, Q4 (Dec 31) -> due Feb 14
-	// To be safe, we use data from 2 quarters ago if we're in the first half of a quarter
-	now := time.Now()
-	year := now.Year()
-	month := int(now.Month())
-
-	// Determine the most recent quarter with COMPLETE data
-	// In Q1 (Jan-Mar): Q3 of prev year is complete, Q4 may be incomplete until mid-Feb
-	// In Q2 (Apr-Jun): Q4 of prev year is complete, Q1 may be incomplete until mid-May
-	// In Q3 (Jul-Sep): Q1 is complete, Q2 may be incomplete until mid-Aug
-	// In Q4 (Oct-Dec): Q2 is complete, Q3 may be incomplete until mid-Nov
-	var quarter int
-	switch {
-	case month <= 2: // Jan-Feb: use Q3 of previous year (safest)
-		year--
-		quarter = 3
-	case month == 3: // March: Q4 should be available
-		year--
-		quarter = 4
-	case month <= 5: // Apr-May: use Q4 of previous year
-		year--
-		quarter = 4
-	case month == 6: // June: Q1 should be available
-		quarter = 1
-	case month <= 8: // Jul-Aug: use Q1
-		quarter = 1
-	case month == 9: // September: Q2 should be available
-		quarter = 2
-	case month <= 11: // Oct-Nov: use Q2
-		quarter = 2
-	default: // December: Q3 should be available
-		quarter = 3
-	}
+	year, quarter := utils.GetMostRecentFilingQuarter()
 
 	slog.Info("fetching institutional data", "ticker", ticker, "year", year, "quarter", quarter)
 
@@ -88,7 +54,7 @@ func (s *Service) GetDetail(ctx context.Context, ticker string) (*models.Institu
 		holders, err = s.fmpClient.GetInstitutionalHolders(gctx, ticker, year, quarter, 50)
 		if err != nil {
 			// Try previous quarter if current fails
-			prevYear, prevQuarter := previousQuarter(year, quarter)
+			prevYear, prevQuarter := utils.PreviousQuarter(year, quarter)
 			holders, err = s.fmpClient.GetInstitutionalHolders(gctx, ticker, prevYear, prevQuarter, 50)
 			if err != nil {
 				slog.Warn("failed to fetch institutional holders", "ticker", ticker, "error", err)
@@ -102,7 +68,7 @@ func (s *Service) GetDetail(ctx context.Context, ticker string) (*models.Institu
 		var err error
 		summary, err = s.fmpClient.GetInstitutionalPositionsSummary(gctx, ticker, year, quarter)
 		if err != nil {
-			prevYear, prevQuarter := previousQuarter(year, quarter)
+			prevYear, prevQuarter := utils.PreviousQuarter(year, quarter)
 			summary, _ = s.fmpClient.GetInstitutionalPositionsSummary(gctx, ticker, prevYear, prevQuarter)
 		}
 		return nil
@@ -123,7 +89,7 @@ func (s *Service) GetDetail(ctx context.Context, ticker string) (*models.Institu
 		var err error
 		breakdown, err = s.fmpClient.GetInstitutionalHolderBreakdown(gctx, ticker, year, quarter)
 		if err != nil {
-			prevYear, prevQuarter := previousQuarter(year, quarter)
+			prevYear, prevQuarter := utils.PreviousQuarter(year, quarter)
 			breakdown, _ = s.fmpClient.GetInstitutionalHolderBreakdown(gctx, ticker, prevYear, prevQuarter)
 		}
 		return nil
@@ -341,15 +307,6 @@ func (s *Service) generateSignals(data *models.InstitutionalDetail) []models.Ins
 	}
 
 	return signals
-}
-
-func previousQuarter(year, quarter int) (int, int) {
-	quarter--
-	if quarter < 1 {
-		quarter = 4
-		year--
-	}
-	return year, quarter
 }
 
 func limitSlice(s []models.InstitutionalHolderDetail, max int) []models.InstitutionalHolderDetail {

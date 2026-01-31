@@ -8,34 +8,19 @@ import (
 	"time"
 
 	"github.com/drewjst/crux/apps/api/internal/domain/models"
+	"github.com/drewjst/crux/apps/api/internal/domain/utils"
 	"golang.org/x/sync/errgroup"
 )
 
-// ETFHoldingsFallback provides ETF holdings data when FMP returns empty.
-// This is used to fall back to EODHD for ETF holdings (FMP requires premium tier).
-type ETFHoldingsFallback interface {
-	GetETFData(ctx context.Context, ticker string) (*models.ETFData, error)
-}
-
 // Provider implements the provider interfaces using FMP API.
 type Provider struct {
-	client          *Client
-	etfHoldingsFallback ETFHoldingsFallback
+	client *Client
 }
 
 // NewProvider creates a new FMP provider.
 func NewProvider(apiKey string) *Provider {
 	return &Provider{
 		client: NewClient(Config{APIKey: apiKey}),
-	}
-}
-
-// NewProviderWithFallback creates an FMP provider with an ETF holdings fallback.
-// The fallback is used when FMP returns empty holdings (requires premium tier).
-func NewProviderWithFallback(apiKey string, fallback ETFHoldingsFallback) *Provider {
-	return &Provider{
-		client:          NewClient(Config{APIKey: apiKey}),
-		etfHoldingsFallback: fallback,
 	}
 }
 
@@ -170,7 +155,7 @@ func abs(x float64) float64 {
 
 // GetInstitutionalHolders implements FundamentalsProvider.
 func (p *Provider) GetInstitutionalHolders(ctx context.Context, ticker string) ([]models.InstitutionalHolder, error) {
-	year, quarter := getMostRecentFilingQuarter()
+	year, quarter := utils.GetMostRecentFilingQuarter()
 
 	// Fetch more holders to calculate top buyers/sellers
 	holders, err := p.client.GetInstitutionalHolders(ctx, ticker, year, quarter, 50)
@@ -180,11 +165,7 @@ func (p *Provider) GetInstitutionalHolders(ctx context.Context, ticker string) (
 
 	if len(holders) == 0 {
 		// Try previous quarter
-		prevYear, prevQuarter := year, quarter-1
-		if prevQuarter == 0 {
-			prevQuarter = 4
-			prevYear--
-		}
+		prevYear, prevQuarter := utils.PreviousQuarter(year, quarter)
 		holders, err = p.client.GetInstitutionalHolders(ctx, ticker, prevYear, prevQuarter, 50)
 		if err != nil {
 			return nil, fmt.Errorf("fetching institutional holders (prev quarter): %w", err)
@@ -201,7 +182,7 @@ func (p *Provider) GetInstitutionalHolders(ctx context.Context, ticker string) (
 
 // GetInstitutionalSummary implements FundamentalsProvider.
 func (p *Provider) GetInstitutionalSummary(ctx context.Context, ticker string) (*models.InstitutionalSummary, error) {
-	year, quarter := getMostRecentFilingQuarter()
+	year, quarter := utils.GetMostRecentFilingQuarter()
 
 	summary, err := p.client.GetInstitutionalPositionsSummary(ctx, ticker, year, quarter)
 	if err != nil {
@@ -210,11 +191,7 @@ func (p *Provider) GetInstitutionalSummary(ctx context.Context, ticker string) (
 
 	if summary == nil {
 		// Try previous quarter
-		prevYear, prevQuarter := year, quarter-1
-		if prevQuarter == 0 {
-			prevQuarter = 4
-			prevYear--
-		}
+		prevYear, prevQuarter := utils.PreviousQuarter(year, quarter)
 		summary, err = p.client.GetInstitutionalPositionsSummary(ctx, ticker, prevYear, prevQuarter)
 		if err != nil {
 			return nil, fmt.Errorf("fetching institutional summary (prev quarter): %w", err)
@@ -288,7 +265,9 @@ func (p *Provider) GetCongressTrades(ctx context.Context, ticker string, days in
 		return nil // Don't fail on error, just log
 	})
 
-	_ = g.Wait()
+	if err := g.Wait(); err != nil {
+		slog.Warn("congress trades fetch interrupted", "ticker", ticker, "error", err)
+	}
 
 	cutoff := time.Now().AddDate(0, 0, -days)
 	result := make([]models.CongressTrade, 0, len(senateTrades)+len(houseTrades))
@@ -533,45 +512,7 @@ func (p *Provider) GetETFData(ctx context.Context, ticker string) (*models.ETFDa
 		return nil, nil
 	}
 
-	// Build base ETF data from FMP
-	etfData := mapETFData(info, holdings, sectors, countries, profile, keyMetrics)
-
-	// If FMP returned empty holdings and we have a fallback, use it
-	if len(holdings) == 0 && p.etfHoldingsFallback != nil {
-		slog.Info("FMP ETF holdings empty, using fallback provider", "ticker", ticker)
-		fallbackData, err := p.etfHoldingsFallback.GetETFData(ctx, ticker)
-		if err != nil {
-			slog.Warn("ETF holdings fallback failed", "ticker", ticker, "error", err)
-		} else if fallbackData != nil {
-			// Merge fallback holdings into FMP data
-			etfData.Holdings = fallbackData.Holdings
-			etfData.HoldingsCount = fallbackData.HoldingsCount
-			// Also use fallback sector weights if FMP returned empty
-			if len(sectors) == 0 && len(fallbackData.SectorWeights) > 0 {
-				etfData.SectorWeights = fallbackData.SectorWeights
-			}
-			// Use fallback regions and market cap breakdown if available
-			if len(etfData.Regions) == 0 && len(fallbackData.Regions) > 0 {
-				etfData.Regions = fallbackData.Regions
-			}
-			if etfData.MarketCapBreakdown == nil && fallbackData.MarketCapBreakdown != nil {
-				etfData.MarketCapBreakdown = fallbackData.MarketCapBreakdown
-			}
-			if etfData.Valuations == nil && fallbackData.Valuations != nil {
-				etfData.Valuations = fallbackData.Valuations
-			}
-			if etfData.Performance == nil && fallbackData.Performance != nil {
-				etfData.Performance = fallbackData.Performance
-			}
-			slog.Info("ETF holdings merged from fallback",
-				"ticker", ticker,
-				"holdingsCount", len(etfData.Holdings),
-				"sectorWeightsCount", len(etfData.SectorWeights),
-			)
-		}
-	}
-
-	return etfData, nil
+	return mapETFData(info, holdings, sectors, countries, profile, keyMetrics), nil
 }
 
 // GetAnalystEstimates implements FundamentalsProvider.
@@ -740,29 +681,6 @@ func (p *Provider) GetNews(ctx context.Context, ticker string, limit int) ([]mod
 	}
 
 	return result, nil
-}
-
-// getMostRecentFilingQuarter returns the most recent quarter with complete 13F filings.
-func getMostRecentFilingQuarter() (year int, quarter int) {
-	now := time.Now()
-	filingDeadline := now.AddDate(0, 0, -45)
-
-	year = filingDeadline.Year()
-	month := int(filingDeadline.Month())
-
-	switch {
-	case month >= 10:
-		quarter = 3
-	case month >= 7:
-		quarter = 2
-	case month >= 4:
-		quarter = 1
-	default:
-		quarter = 4
-		year--
-	}
-
-	return year, quarter
 }
 
 func min(a, b, c int) int {

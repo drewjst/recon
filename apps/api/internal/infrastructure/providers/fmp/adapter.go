@@ -11,7 +11,10 @@ import (
 
 // mapCompanyProfile converts FMP CompanyProfile to internal Company model.
 func mapCompanyProfile(fmp *CompanyProfile) *models.Company {
-	employees, _ := strconv.Atoi(fmp.FullTimeEmployees)
+	employees, err := strconv.Atoi(fmp.FullTimeEmployees)
+	if err != nil && fmp.FullTimeEmployees != "" {
+		slog.Debug("failed to parse employee count", "ticker", fmp.Symbol, "value", fmp.FullTimeEmployees, "error", err)
+	}
 
 	return &models.Company{
 		Ticker:      fmp.Symbol,
@@ -48,7 +51,10 @@ func mapQuote(fmp *Quote) *models.Quote {
 
 // mapFinancials converts FMP financial statements to internal Financials model.
 func mapFinancials(income *IncomeStatement, balance *BalanceSheet, cashFlow *CashFlowStatement) *models.Financials {
-	year, _ := parseYear(income.Date)
+	year, err := parseYear(income.Date)
+	if err != nil {
+		slog.Debug("failed to parse fiscal year", "ticker", income.Symbol, "date", income.Date, "error", err)
+	}
 
 	return &models.Financials{
 		Ticker:       income.Symbol,
@@ -260,8 +266,16 @@ func mapSearchResult(fmp *SearchResult) *models.SearchResult {
 }
 
 // parseDate parses a date string like "2024-09-30" to time.Time.
+// Returns zero time if parsing fails.
 func parseDate(date string) time.Time {
-	t, _ := time.Parse("2006-01-02", date)
+	if date == "" {
+		return time.Time{}
+	}
+	t, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		slog.Debug("failed to parse date", "date", date, "error", err)
+		return time.Time{}
+	}
 	return t
 }
 
@@ -308,7 +322,11 @@ func mapETFData(info *ETFInfo, holdings []ETFHolding, sectors []ETFSectorWeighti
 	regionWeights := make([]models.ETFRegionWeight, 0, len(countries))
 	for _, c := range countries {
 		weightStr := strings.TrimSuffix(c.WeightPercentage, "%")
-		weight, _ := strconv.ParseFloat(weightStr, 64)
+		weight, err := strconv.ParseFloat(weightStr, 64)
+		if err != nil {
+			slog.Debug("failed to parse country weight", "country", c.Country, "weight", c.WeightPercentage, "error", err)
+			continue
+		}
 		regionWeights = append(regionWeights, models.ETFRegionWeight{
 			Region:        c.Country,
 			WeightPercent: weight,

@@ -126,9 +126,8 @@ We use multiple external data sources:
 
 | Provider | Purpose | Key Endpoints |
 |----------|---------|---------------|
-| **FMP** (Primary) | Fundamentals, financials, ratios, holdings, insider trades, analyst estimates | See FMP endpoints table below |
+| **FMP** | Fundamentals, financials, ratios, holdings, insider trades, analyst estimates | See FMP endpoints table below |
 | **Polygon.io** | Ticker search, company metadata | `/v3/reference/tickers` (parallel ticker prefix + name search) |
-| **EODHD** (Fallback) | ETF holdings fallback, legacy support | `/fundamentals/{ticker}.US` |
 
 **FMP Endpoints Used:**
 
@@ -158,22 +157,18 @@ We use multiple external data sources:
 internal/infrastructure/providers/
 ├── interfaces.go       # FundamentalsProvider, QuoteProvider, SearchProvider
 ├── factory.go          # Provider creation based on config
-├── fmp/                # Primary provider
-│   ├── client.go       # HTTP client, auth, rate limiting
-│   ├── provider.go     # Interface implementation
-│   ├── adapter.go      # FMP response → canonical models
-│   └── types.go        # FMP-specific response types
-└── eodhd/              # Fallback provider (ETF holdings, legacy)
-    └── ...
+└── fmp/                # FMP provider
+    ├── client.go       # HTTP client, auth, rate limiting
+    ├── provider.go     # Interface implementation
+    ├── adapter.go      # FMP response → canonical models
+    └── types.go        # FMP-specific response types
 ```
 
 **Key patterns:**
-- FMP is the **default and recommended** provider
+- FMP is the **sole data provider** for stock fundamentals
 - Providers implement interfaces defined in `interfaces.go`
 - All external data maps to canonical models in `internal/domain/models/`
 - Services depend on interfaces, not concrete providers
-- Provider selection via `FUNDAMENTALS_PROVIDER` environment variable (default: `fmp`)
-- EODHD is used as fallback for ETF holdings (FMP requires premium tier)
 
 ### Caching Strategy
 
@@ -247,12 +242,10 @@ The ticker search uses parallel queries for better results:
 ### Environment Variables
 
 **Required API keys:**
-- `FMP_API_KEY` — Financial Modeling Prep API key ([financialmodelingprep.com](https://financialmodelingprep.com)) — Primary data source
+- `FMP_API_KEY` — Financial Modeling Prep API key ([financialmodelingprep.com](https://financialmodelingprep.com)) — Stock fundamentals
 - `POLYGON_API_KEY` — Polygon.io API key ([polygon.io](https://polygon.io)) — Ticker search
 
 **Optional:**
-- `EODHD_API_KEY` — EODHD API key ([eodhd.com](https://eodhd.com)) — Fallback for ETF holdings
-- `FUNDAMENTALS_PROVIDER` — `"fmp"` (default) or `"eodhd"`
 - `DATABASE_URL` — PostgreSQL connection (enables caching)
 
 ---

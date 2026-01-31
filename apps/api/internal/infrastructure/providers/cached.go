@@ -64,9 +64,14 @@ func NewCachedFundamentalsProvider(underlying FundamentalsProvider, cache CacheR
 // cached is a generic helper that handles cache get/set logic for pointer types.
 func cached[T any](p *CachedFundamentalsProvider, cacheType, key string, ttl time.Duration, fetch func() (*T, error)) (*T, error) {
 	if p.cache != nil {
-		if entry, _ := p.cache.GetProviderCache(cacheType, key); entry != nil && time.Now().Before(entry.ExpiresAt) {
+		entry, err := p.cache.GetProviderCache(cacheType, key)
+		if err != nil {
+			slog.Warn("cache get failed", "type", cacheType, "key", key, "error", err)
+		} else if entry != nil && time.Now().Before(entry.ExpiresAt) {
 			var result T
-			if json.Unmarshal(entry.Data, &result) == nil {
+			if err := json.Unmarshal(entry.Data, &result); err != nil {
+				slog.Warn("cache unmarshal failed", "type", cacheType, "key", key, "error", err)
+			} else {
 				slog.Debug("cache hit", "type", cacheType, "key", key)
 				return &result, nil
 			}
@@ -78,11 +83,14 @@ func cached[T any](p *CachedFundamentalsProvider, cacheType, key string, ttl tim
 		return nil, err
 	}
 	if result != nil && p.cache != nil {
-		if data, err := json.Marshal(result); err == nil {
-			_ = p.cache.SetProviderCache(&db.ProviderCache{
-				DataType: cacheType, Key: key, Data: datatypes.JSON(data),
-				Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
-			})
+		data, err := json.Marshal(result)
+		if err != nil {
+			slog.Warn("cache marshal failed", "type", cacheType, "key", key, "error", err)
+		} else if err := p.cache.SetProviderCache(&db.ProviderCache{
+			DataType: cacheType, Key: key, Data: datatypes.JSON(data),
+			Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
+		}); err != nil {
+			slog.Warn("cache set failed", "type", cacheType, "key", key, "error", err)
 		}
 	}
 	return result, nil
@@ -91,9 +99,14 @@ func cached[T any](p *CachedFundamentalsProvider, cacheType, key string, ttl tim
 // cachedSlice is a generic helper for slice types.
 func cachedSlice[T any](p *CachedFundamentalsProvider, cacheType, key string, ttl time.Duration, fetch func() ([]T, error)) ([]T, error) {
 	if p.cache != nil {
-		if entry, _ := p.cache.GetProviderCache(cacheType, key); entry != nil && time.Now().Before(entry.ExpiresAt) {
+		entry, err := p.cache.GetProviderCache(cacheType, key)
+		if err != nil {
+			slog.Warn("cache get failed", "type", cacheType, "key", key, "error", err)
+		} else if entry != nil && time.Now().Before(entry.ExpiresAt) {
 			var result []T
-			if json.Unmarshal(entry.Data, &result) == nil {
+			if err := json.Unmarshal(entry.Data, &result); err != nil {
+				slog.Warn("cache unmarshal failed", "type", cacheType, "key", key, "error", err)
+			} else {
 				slog.Debug("cache hit", "type", cacheType, "key", key)
 				return result, nil
 			}
@@ -105,11 +118,14 @@ func cachedSlice[T any](p *CachedFundamentalsProvider, cacheType, key string, tt
 		return nil, err
 	}
 	if len(result) > 0 && p.cache != nil {
-		if data, err := json.Marshal(result); err == nil {
-			_ = p.cache.SetProviderCache(&db.ProviderCache{
-				DataType: cacheType, Key: key, Data: datatypes.JSON(data),
-				Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
-			})
+		data, err := json.Marshal(result)
+		if err != nil {
+			slog.Warn("cache marshal failed", "type", cacheType, "key", key, "error", err)
+		} else if err := p.cache.SetProviderCache(&db.ProviderCache{
+			DataType: cacheType, Key: key, Data: datatypes.JSON(data),
+			Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
+		}); err != nil {
+			slog.Warn("cache set failed", "type", cacheType, "key", key, "error", err)
 		}
 	}
 	return result, nil
@@ -215,9 +231,14 @@ func (p *CachedFundamentalsProvider) GetIndustryPE(ctx context.Context, industry
 
 func (p *CachedFundamentalsProvider) IsETF(ctx context.Context, ticker string) (bool, error) {
 	if p.cache != nil {
-		if entry, _ := p.cache.GetProviderCache(cacheIsETF, ticker); entry != nil && time.Now().Before(entry.ExpiresAt) {
+		entry, err := p.cache.GetProviderCache(cacheIsETF, ticker)
+		if err != nil {
+			slog.Warn("cache get failed", "type", cacheIsETF, "key", ticker, "error", err)
+		} else if entry != nil && time.Now().Before(entry.ExpiresAt) {
 			var result bool
-			if json.Unmarshal(entry.Data, &result) == nil {
+			if err := json.Unmarshal(entry.Data, &result); err != nil {
+				slog.Warn("cache unmarshal failed", "type", cacheIsETF, "key", ticker, "error", err)
+			} else {
 				return result, nil
 			}
 		}
@@ -228,11 +249,14 @@ func (p *CachedFundamentalsProvider) IsETF(ctx context.Context, ticker string) (
 		return false, err
 	}
 	if p.cache != nil {
-		if data, err := json.Marshal(result); err == nil {
-			_ = p.cache.SetProviderCache(&db.ProviderCache{
-				DataType: cacheIsETF, Key: ticker, Data: datatypes.JSON(data),
-				Provider: p.provider, ExpiresAt: time.Now().Add(ttlDefault),
-			})
+		data, err := json.Marshal(result)
+		if err != nil {
+			slog.Warn("cache marshal failed", "type", cacheIsETF, "key", ticker, "error", err)
+		} else if err := p.cache.SetProviderCache(&db.ProviderCache{
+			DataType: cacheIsETF, Key: ticker, Data: datatypes.JSON(data),
+			Provider: p.provider, ExpiresAt: time.Now().Add(ttlDefault),
+		}); err != nil {
+			slog.Warn("cache set failed", "type", cacheIsETF, "key", ticker, "error", err)
 		}
 	}
 	return result, nil

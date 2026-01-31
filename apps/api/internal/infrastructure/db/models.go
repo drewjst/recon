@@ -15,7 +15,7 @@ type StockCache struct {
 	MarketCap    int64          `gorm:"index"`
 	RawData      datatypes.JSON `gorm:"type:jsonb"` // Original provider response
 	Fundamentals datatypes.JSON `gorm:"type:jsonb"` // Normalized StockDetailResponse
-	Provider     string         `gorm:"size:20"`    // "fmp", "eodhd"
+	Provider     string         `gorm:"size:20"`    // "fmp"
 	UpdatedAt    time.Time      `gorm:"index"`
 	CreatedAt    time.Time
 }
