@@ -24,6 +24,7 @@ type Config struct {
 	PolygonAPIKey  string
 	DatabaseURL    string
 	AllowedOrigins []string
+	APIKeys        []string // Valid API keys for authentication (empty = auth disabled)
 	CruxAI         CruxAIConfig
 }
 
@@ -45,6 +46,15 @@ func Load() (*Config, error) {
 		for _, origin := range rawOrigins {
 			if trimmed := strings.TrimSpace(origin); trimmed != "" {
 				cfg.AllowedOrigins = append(cfg.AllowedOrigins, trimmed)
+			}
+		}
+	}
+
+	// Parse API keys (comma-separated, empty = auth disabled)
+	if apiKeys := os.Getenv("API_KEYS"); apiKeys != "" {
+		for _, key := range strings.Split(apiKeys, ",") {
+			if trimmed := strings.TrimSpace(key); trimmed != "" {
+				cfg.APIKeys = append(cfg.APIKeys, trimmed)
 			}
 		}
 	}

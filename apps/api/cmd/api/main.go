@@ -189,7 +189,15 @@ func run() error {
 		FinancialsRepo:       financialsRepo,
 		PolygonSearcher:      polygonSearcher,
 		AllowedOrigins:       cfg.AllowedOrigins,
+		APIKeys:              cfg.APIKeys,
 	})
+
+	// Log auth status
+	if len(cfg.APIKeys) > 0 {
+		slog.Info("API key authentication enabled", "keyCount", len(cfg.APIKeys))
+	} else {
+		slog.Info("API key authentication disabled (no API_KEYS configured)")
+	}
 
 	// Create server
 	srv := &http.Server{

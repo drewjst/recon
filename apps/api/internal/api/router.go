@@ -25,6 +25,7 @@ type RouterDeps struct {
 	FinancialsRepo       repository.FinancialsRepository
 	PolygonSearcher      *search.PolygonSearcher
 	AllowedOrigins       []string
+	APIKeys              []string // Valid API keys (empty = auth disabled)
 }
 
 // NewRouter creates and configures the Chi router with all routes and middleware.
@@ -46,6 +47,9 @@ func NewRouter(deps RouterDeps) *chi.Mux {
 
 	// API routes
 	r.Route("/api", func(r chi.Router) {
+		// Apply API key authentication (disabled if no keys configured)
+		r.Use(middleware.APIKeyAuth(deps.APIKeys))
+
 		stockHandler := handlers.NewStockHandler(deps.StockService)
 		searchHandler := handlers.NewSearchHandler(deps.PolygonSearcher)
 		valuationHandler := handlers.NewValuationHandler(deps.ValuationService)
