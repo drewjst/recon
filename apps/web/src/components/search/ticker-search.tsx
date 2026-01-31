@@ -29,10 +29,17 @@ export function TickerSearch({
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [modifier, setModifier] = useState('⌘');
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { query, setQuery, results, isLoading } = useSearch();
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && /Win|Linux/.test(navigator.platform)) {
+      setModifier('Ctrl');
+    }
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -153,12 +160,15 @@ export function TickerSearch({
           )}
         />
         {!query && (
-          <div className={cn(
-            "pointer-events-none absolute right-24 top-1/2 -translate-y-1/2 hidden select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex text-muted-foreground",
-            isLarge && "right-28"
-          )}>
-            <span className="text-xs">⌘</span>K
-          </div>
+          <kbd
+            className={cn(
+              'pointer-events-none absolute right-24 top-1/2 -translate-y-1/2 hidden select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex text-muted-foreground',
+              isLarge && 'right-28'
+            )}
+            title={`${modifier} + K`}
+          >
+            <span className="text-xs">{modifier}</span>K
+          </kbd>
         )}
         <Button
           type="button"

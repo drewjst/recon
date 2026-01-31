@@ -15,3 +15,7 @@
 ## 2025-02-19 - Skip Links & Autofocus
 **Learning:** `autoFocus` on the main content (e.g. search input) can bypass the "Skip to Content" link for keyboard users on initial load, but the link remains critical for screen reader users and subsequent navigation.
 **Action:** Ensure "Skip to Content" links are always present in the root layout, even if the page has `autoFocus` elements, as they serve different accessibility needs.
+
+## 2026-01-31 - Platform-Specific Keyboard Hints
+**Learning:** Hardcoded Mac shortcuts (`⌘`) confuse Windows/Linux users and break muscle memory.
+**Action:** Always detect the user's platform to show the correct modifier key (`Ctrl` vs `⌘`), and use semantic `<kbd>` tags for better accessibility and consistent styling.
