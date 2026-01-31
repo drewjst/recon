@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import type { StockDetailResponse } from '@recon/shared';
 
 export const runtime = 'edge';
 export const alt = 'Stock Analysis';
@@ -7,16 +8,7 @@ export const contentType = 'image/png';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-interface StockData {
-  company: { ticker: string; name: string; sector: string };
-  scores?: {
-    piotroski: { score: number };
-    ruleOf40: { score: number; passed: boolean };
-    altmanZ: { score: number; zone: string };
-  };
-}
-
-function getOverallGrade(scores: StockData['scores']): { grade: string; color: string } {
+function getOverallGrade(scores: StockDetailResponse['scores']): { grade: string; color: string } {
   if (!scores) return { grade: 'N/A', color: '#6b7280' };
 
   const piotroski = scores.piotroski.score;
@@ -49,7 +41,7 @@ function getOverallGrade(scores: StockData['scores']): { grade: string; color: s
 export default async function Image({ params }: { params: { ticker: string } }) {
   const ticker = params.ticker.toUpperCase();
 
-  let data: StockData | null = null;
+  let data: StockDetailResponse | null = null;
   try {
     const res = await fetch(`${API_BASE}/api/stock/${ticker}`, {
       next: { revalidate: 300 },

@@ -5,7 +5,9 @@ import type { StockDetailResponse } from '@recon/shared';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const BASE_URL = 'https://cruxit.finance';
 
-function getOverallGrade(scores: StockDetailResponse['scores']): string {
+type StockData = StockDetailResponse;
+
+function getOverallGrade(scores: StockData['scores']): string {
   if (!scores) return 'N/A';
 
   const piotroski = scores.piotroski.score;
