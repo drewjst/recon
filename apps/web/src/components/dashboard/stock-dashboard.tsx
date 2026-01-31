@@ -6,6 +6,7 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 import { useStock } from '@/hooks/use-stock';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StockDetailResponse } from '@recon/shared';
 import {
   HeaderSection,
   ConvictionScoresSection,
@@ -86,11 +87,12 @@ const FooterSection = dynamic(
 
 interface StockDashboardProps {
   ticker: string;
+  initialData?: StockDetailResponse | null;
 }
 
-export function StockDashboard({ ticker }: StockDashboardProps) {
+export function StockDashboard({ ticker, initialData }: StockDashboardProps) {
   const router = useRouter();
-  const { data, isLoading, error } = useStock(ticker);
+  const { data, isLoading, error } = useStock(ticker, initialData);
 
   if (isLoading) {
     return (
