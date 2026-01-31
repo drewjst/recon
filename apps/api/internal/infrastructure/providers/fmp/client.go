@@ -120,6 +120,42 @@ func (c *Client) GetCashFlowStatement(ctx context.Context, ticker string, limit 
 	return statements, nil
 }
 
+// GetQuarterlyIncomeStatement retrieves quarterly income statement data.
+func (c *Client) GetQuarterlyIncomeStatement(ctx context.Context, ticker string, limit int) ([]IncomeStatement, error) {
+	url := fmt.Sprintf("%s/income-statement?symbol=%s&period=quarter&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
+
+	var statements []IncomeStatement
+	if err := c.get(ctx, url, &statements); err != nil {
+		return nil, fmt.Errorf("fetching quarterly income statement: %w", err)
+	}
+
+	return statements, nil
+}
+
+// GetQuarterlyBalanceSheet retrieves quarterly balance sheet data.
+func (c *Client) GetQuarterlyBalanceSheet(ctx context.Context, ticker string, limit int) ([]BalanceSheet, error) {
+	url := fmt.Sprintf("%s/balance-sheet-statement?symbol=%s&period=quarter&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
+
+	var statements []BalanceSheet
+	if err := c.get(ctx, url, &statements); err != nil {
+		return nil, fmt.Errorf("fetching quarterly balance sheet: %w", err)
+	}
+
+	return statements, nil
+}
+
+// GetQuarterlyCashFlowStatement retrieves quarterly cash flow statement data.
+func (c *Client) GetQuarterlyCashFlowStatement(ctx context.Context, ticker string, limit int) ([]CashFlowStatement, error) {
+	url := fmt.Sprintf("%s/cash-flow-statement?symbol=%s&period=quarter&limit=%d&apikey=%s", c.baseURL, normalizeTicker(ticker), limit, c.apiKey)
+
+	var statements []CashFlowStatement
+	if err := c.get(ctx, url, &statements); err != nil {
+		return nil, fmt.Errorf("fetching quarterly cash flow statement: %w", err)
+	}
+
+	return statements, nil
+}
+
 // SearchTicker searches for tickers matching a query.
 // Note: Search may return empty results on free tier.
 func (c *Client) SearchTicker(ctx context.Context, query string, limit int) ([]SearchResult, error) {
