@@ -6,7 +6,6 @@ import { SectionCard } from './section-card';
 import { Badge } from '@/components/ui/badge';
 import { useNewsSentiment } from '@/hooks/use-news-sentiment';
 import type { StockDetailResponse } from '@recon/shared';
-import type { NewsLink } from '@/lib/api';
 
 interface SignalsSectionProps {
   data: StockDetailResponse;
@@ -114,38 +113,6 @@ const getSignalIcon = (type: string) => {
       return null;
   }
 };
-
-function formatNewsDate(isoDate: string): { date: string; time: string } {
-  const d = new Date(isoDate);
-  const month = d.toLocaleDateString('en-US', { month: 'short' });
-  const day = d.getDate().toString().padStart(2, '0');
-  const year = d.getFullYear().toString().slice(-2);
-  const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '');
-  return { date: `${month}-${day}-${year}`, time };
-}
-
-function NewsArticleRow({ article }: { article: NewsLink }) {
-  const { date, time } = article.publishedAt ? formatNewsDate(article.publishedAt) : { date: '', time: '' };
-  return (
-    <div className="flex items-start gap-2 text-xs py-1 border-b border-border/20 last:border-0">
-      {date && (
-        <span className="text-muted-foreground/70 font-mono whitespace-nowrap">
-          {date} {time}
-        </span>
-      )}
-      <a
-        href={article.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-foreground hover:text-primary hover:underline truncate flex-1"
-        title={article.title}
-      >
-        {article.title}
-      </a>
-      <span className="text-muted-foreground/60 whitespace-nowrap">({article.site})</span>
-    </div>
-  );
-}
 
 function SignalsSectionComponent({ data }: SignalsSectionProps) {
   const { signals: rawSignals, performance, quote, analystEstimates, company } = data;
@@ -258,21 +225,6 @@ function SignalsSectionComponent({ data }: SignalsSectionProps) {
           ))
         )}
       </div>
-
-      {/* News Articles - Finviz style */}
-      {newsSentiment?.topArticles && newsSentiment.topArticles.length > 0 && (
-        <div className="pt-3 border-t border-border/30 mt-3">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Newspaper className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Recent News</span>
-          </div>
-          <div className="space-y-0">
-            {newsSentiment.topArticles.map((article, idx) => (
-              <NewsArticleRow key={`${article.url}-${idx}`} article={article} />
-            ))}
-          </div>
-        </div>
-      )}
     </SectionCard>
   );
 }

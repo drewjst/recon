@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Sparkles, RefreshCw, ExternalLink } from 'lucide-react';
-import { fetchInsight, type InsightSection, type NewsSentiment } from '@/lib/api';
+import { Sparkles, RefreshCw, Newspaper } from 'lucide-react';
+import { fetchInsight, type InsightSection, type NewsSentiment, type NewsLink } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 interface CruxAIInsightProps {
@@ -166,6 +166,26 @@ export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps
   );
 }
 
+// News article row component
+function NewsArticleRow({ article }: { article: NewsLink }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5 border-b border-border/20 last:border-0">
+      <a
+        href={article.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-xs text-foreground/80 hover:text-primary hover:underline truncate flex-1"
+        title={article.title}
+      >
+        {article.title}
+      </a>
+      <span className="text-xs text-muted-foreground/60 whitespace-nowrap">
+        ({article.site})
+      </span>
+    </div>
+  );
+}
+
 // Dedicated component for news sentiment display
 function NewsSentimentContent({ insight }: { insight: string }) {
   const parsed = parseNewsSentiment(insight);
@@ -182,7 +202,7 @@ function NewsSentimentContent({ insight }: { insight: string }) {
   const { color, bg } = getSentimentStyle(parsed.sentiment);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* Sentiment badge and summary */}
       <div className="flex items-start gap-3">
         <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium capitalize', color, bg)}>
@@ -195,7 +215,7 @@ function NewsSentimentContent({ insight }: { insight: string }) {
 
       {/* Themes */}
       {parsed.themes && parsed.themes.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs text-muted-foreground">Themes:</span>
           {parsed.themes.slice(0, 4).map((theme) => (
             <span
@@ -208,22 +228,20 @@ function NewsSentimentContent({ insight }: { insight: string }) {
         </div>
       )}
 
-      {/* Top Articles */}
+      {/* Recent News Articles */}
       {parsed.topArticles && parsed.topArticles.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          {parsed.topArticles.slice(0, 3).map((article, idx) => (
-            <a
-              key={idx}
-              href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors max-w-[200px] truncate"
-              title={article.title}
-            >
-              <ExternalLink className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">{article.site || 'Article'}</span>
-            </a>
-          ))}
+        <div className="pt-2 border-t border-border/30">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Newspaper className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Recent News
+            </span>
+          </div>
+          <div>
+            {parsed.topArticles.slice(0, 3).map((article, idx) => (
+              <NewsArticleRow key={`${article.url}-${idx}`} article={article} />
+            ))}
+          </div>
         </div>
       )}
     </div>
