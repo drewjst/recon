@@ -1,0 +1,19 @@
+{
+  "name": "crux",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stock fundamental analysis, distilled",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/drewjst/crux.git"
+  },
+  "scripts": {
+    "release": "semantic-release"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "conventional-changelog-conventionalcommits": "^8.0.0",
+    "semantic-release": "^24.0.0"
+  }
+}
