@@ -19,3 +19,7 @@
 ## 2026-01-31 - Platform-Specific Keyboard Hints
 **Learning:** Hardcoded Mac shortcuts (`⌘`) confuse Windows/Linux users and break muscle memory.
 **Action:** Always detect the user's platform to show the correct modifier key (`Ctrl` vs `⌘`), and use semantic `<kbd>` tags for better accessibility and consistent styling.
+
+## 2025-05-22 - Accessible Data Visualizations
+**Learning:** Visual-only data components (like range sliders constructed from divs) completely exclude screen reader users from critical financial data.
+**Action:** Always use `role="meter"` or `role="progressbar"` for visual indicators, and pair them with explicit `aria-valuenow`, `aria-valuemin`, and `aria-valuemax` attributes. Adding a `Tooltip` provides precision for all users while maintaining a clean UI.

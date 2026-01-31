@@ -4,6 +4,11 @@ import Link from 'next/link';
 import { ChevronRight, FileSpreadsheet } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ShareButton } from '@/components/ui/share-button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { MiniChart } from './mini-chart';
 import type { StockDetailResponse } from '@recon/shared';
 
@@ -121,17 +126,37 @@ export function HeaderSection({ data }: HeaderSectionProps) {
               <span className="text-[10px] sm:text-xs font-mono text-muted-foreground whitespace-nowrap">
                 ${quote.fiftyTwoWeekLow.toFixed(0)}
               </span>
-              <div className="flex-1 relative h-1.5 min-w-[80px]">
-                <div className="absolute inset-0 bg-muted rounded-full" />
-                <div
-                  className="absolute left-0 top-0 h-full bg-accent/30 rounded-full"
-                  style={{ width: `${rangePosition}%` }}
-                />
-                <div
-                  className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-accent rounded-full shadow-sm"
-                  style={{ left: `calc(${rangePosition}% - 5px)` }}
-                />
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className="flex-1 relative h-1.5 min-w-[80px] cursor-help"
+                    role="meter"
+                    aria-label="52-week price range"
+                    aria-valuemin={quote.fiftyTwoWeekLow}
+                    aria-valuemax={quote.fiftyTwoWeekHigh}
+                    aria-valuenow={quote.price}
+                    aria-valuetext={`Current price $${quote.price.toFixed(2)}, ${rangePosition.toFixed(0)}% of 52-week range`}
+                  >
+                    <div className="absolute inset-0 bg-muted rounded-full" />
+                    <div
+                      className="absolute left-0 top-0 h-full bg-accent/30 rounded-full"
+                      style={{ width: `${rangePosition}%` }}
+                    />
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-accent rounded-full shadow-sm"
+                      style={{ left: `calc(${rangePosition}% - 5px)` }}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-semibold">
+                    Current: ${quote.price.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {rangePosition.toFixed(0)}% of range
+                  </p>
+                </TooltipContent>
+              </Tooltip>
               <span className="text-[10px] sm:text-xs font-mono text-muted-foreground whitespace-nowrap">
                 ${quote.fiftyTwoWeekHigh.toFixed(0)}
               </span>
