@@ -19,3 +19,10 @@
 - Added 100-character length limit to `SearchHandler` query.
 - Added regex validation (`^[A-Z]{1,5}$`) to `InsightHandler` ticker using shared `isValidTicker`.
 - Added regression tests in `handlers_test.go` to verify validation logic.
+
+## 2026-01-31 - [Frontend Security Headers]
+**Vulnerability:** The Next.js frontend application was serving content without standard security headers (HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy). This exposed the application to potential clickjacking (X-Frame-Options) and MIME-type sniffing attacks, and failed to enforce HTTPS strictly (HSTS).
+**Learning:** Modern frameworks like Next.js require explicit configuration for security headers in `next.config.js`, as they are not enabled by default. This is a critical "defense in depth" layer for the client-side application.
+**Prevention:**
+- Configured `headers()` in `apps/web/next.config.js` to apply security headers globally (`/:path*`).
+- Enforced `Strict-Transport-Security`, `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: strict-origin-when-cross-origin`.
