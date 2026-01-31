@@ -66,7 +66,7 @@ jobs:
             --allow-unauthenticated \
             --port 8080 \
             --add-cloudsql-instances=recon-484118:us-central1:cruxit-db \
-            --set-secrets=FMP_API_KEY=fmp-api-key:latest,POLYGON_API_KEY=polygon-api-key:latest,DATABASE_URL=database-url:latest \
+            --set-secrets=FMP_API_KEY=fmp-api-key:latest,POLYGON_API_KEY=polygon-api-key:latest,DATABASE_URL=database-url:latest,API_KEYS=api-keys:latest \
             --set-env-vars="^@^ALLOWED_ORIGINS=https://cruxit.finance,https://crux-prod-web-273165967255.us-central1.run.app@FUNDAMENTALS_PROVIDER=fmp@CRUX_AI_ENABLED=true@GCP_PROJECT_ID=recon-484118@GCP_LOCATION=us-central1@CRUX_AI_MODEL=gemini-2.0-flash-001" \
             --memory 512Mi \
             --cpu 1 \
