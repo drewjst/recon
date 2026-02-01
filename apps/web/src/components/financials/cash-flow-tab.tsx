@@ -172,7 +172,7 @@ const CollapsibleSection = memo(function CollapsibleSection({
                 {/* Sparkline column */}
                 <div className="min-w-[80px] w-[80px] py-1 px-2 flex items-center justify-center">
                   {hasSparklineData && (
-                    <Sparkline data={rowSparklineData} width={70} height={24} color="auto" />
+                    <Sparkline data={rowSparklineData} width={70} height={24} />
                   )}
                 </div>
 
