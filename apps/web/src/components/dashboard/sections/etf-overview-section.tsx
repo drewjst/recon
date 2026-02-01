@@ -25,12 +25,12 @@ interface MetricCardProps {
 
 function MetricCard({ label, value, description }: MetricCardProps) {
   return (
-    <Card className="p-4 text-center">
-      <div className="text-xs text-muted-foreground uppercase tracking-widest mb-2">
+    <Card className="p-3 text-center">
+      <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
         {label}
       </div>
-      <div className="text-2xl font-bold font-mono mb-1">{value}</div>
-      <div className="text-xs text-muted-foreground">{description}</div>
+      <div className="text-lg font-bold font-mono mb-0.5">{value}</div>
+      <div className="text-[10px] text-muted-foreground">{description}</div>
     </Card>
   );
 }
@@ -89,7 +89,7 @@ function ETFOverviewSectionComponent({ data }: ETFOverviewSectionProps) {
 
   return (
     <SectionCard title="Fund Overview">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         {[...row1Metrics, ...row2Metrics].map((metric) => (
           <MetricCard
             key={metric.label}

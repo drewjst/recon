@@ -34,17 +34,21 @@ function ETFViewComponent({ data }: ETFViewProps) {
         </>
       )}
 
-      {/* Fund Overview (left) + Top Holdings (right) - side by side on desktop */}
+      {/* Top Holdings (left, wider) + Fund Overview (right, narrower) */}
       <DashboardDivider />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <HoldingsTableSection data={data} />
+        </div>
         <ETFOverviewSection data={data} />
-        <HoldingsTableSection data={data} />
       </div>
 
-      {/* Sector Allocation (left) + Geographic Allocation (right) - side by side on desktop */}
+      {/* Sector Allocation (left, wider) + Geographic Allocation (right, narrower) */}
       <DashboardDivider />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <SectorBreakdownSection data={data} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <SectorBreakdownSection data={data} />
+        </div>
         {hasRegions && <ETFRegionsSection data={data} />}
       </div>
 
