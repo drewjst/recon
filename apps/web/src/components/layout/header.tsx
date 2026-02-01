@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { TickerSearch } from '@/components/search/ticker-search';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -199,11 +200,14 @@ export function Header() {
             </Suspense>
           </div>
 
-          {/* Right side - Search + Mobile menu */}
+          {/* Right side - Search + Theme + Mobile menu */}
           <div className="flex items-center gap-3">
             <Suspense fallback={null}>
               <HeaderSearch />
             </Suspense>
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* Mobile Menu Button */}
             <button
