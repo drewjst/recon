@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { MiniChart } from './mini-chart';
+import { useTradingViewTheme } from '@/hooks/use-tradingview-theme';
 import type { StockDetailResponse } from '@recon/shared';
 
 function getPiotroskiGrade(score: number): string {
@@ -24,6 +25,7 @@ interface HeaderSectionProps {
 
 export function HeaderSection({ data }: HeaderSectionProps) {
   const { company, quote, performance, scores } = data;
+  const tvTheme = useTradingViewTheme();
 
   const piotroskiScore = scores?.piotroski.score ?? 0;
   const grade = getPiotroskiGrade(piotroskiScore);
@@ -101,7 +103,7 @@ export function HeaderSection({ data }: HeaderSectionProps) {
               exchange={company.exchange}
               height={200}
               dateRange="12M"
-              colorTheme="light"
+              colorTheme={tvTheme}
             />
           </div>
 

@@ -36,6 +36,7 @@ function Navigation() {
   const isScreenerActive = pathname === '/' || pathname.startsWith('/stock/');
   const isCompareActive = pathname.startsWith('/compare');
   const is10KActive = pathname.startsWith('/10k');
+  const isCryptoActive = pathname.startsWith('/crypto');
 
   return (
     <nav className="flex items-center gap-1">
@@ -47,6 +48,9 @@ function Navigation() {
       </NavLink>
       <NavLink href="/10k" isActive={is10KActive}>
         10-K
+      </NavLink>
+      <NavLink href="/crypto" isActive={isCryptoActive}>
+        Crypto
       </NavLink>
     </nav>
   );

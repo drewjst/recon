@@ -10,6 +10,7 @@ import { SymbolInfo } from './symbol-info';
 import { CryptoHeatmap } from './crypto-heatmap';
 import { CryptoScreener } from './crypto-screener';
 import { CryptoNews } from './crypto-news';
+import { useTradingViewTheme } from '@/hooks/use-tradingview-theme';
 
 const CRYPTO_SYMBOLS = [
   { label: 'BTC', symbol: 'BITSTAMP:BTCUSD' },
@@ -20,6 +21,7 @@ const CRYPTO_SYMBOLS = [
 
 export function CryptoDashboard() {
   const [selectedSymbol, setSelectedSymbol] = useState(CRYPTO_SYMBOLS[0].symbol);
+  const tvTheme = useTradingViewTheme();
 
   return (
     <div className="space-y-6">
@@ -60,7 +62,7 @@ export function CryptoDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <CryptoChart symbol={selectedSymbol} height={500} />
+              <CryptoChart symbol={selectedSymbol} height={500} colorTheme={tvTheme} />
             </CardContent>
           </Card>
         </div>
@@ -74,7 +76,7 @@ export function CryptoDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <TechnicalAnalysis symbol={selectedSymbol} height={468} />
+              <TechnicalAnalysis symbol={selectedSymbol} height={468} colorTheme={tvTheme} />
             </CardContent>
           </Card>
         </div>
@@ -88,7 +90,7 @@ export function CryptoDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <SymbolInfo symbol={selectedSymbol} height={250} />
+              <SymbolInfo symbol={selectedSymbol} height={250} colorTheme={tvTheme} />
             </CardContent>
           </Card>
         </div>
@@ -102,7 +104,7 @@ export function CryptoDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <CryptoHeatmap height={500} />
+              <CryptoHeatmap height={500} colorTheme={tvTheme} />
             </CardContent>
           </Card>
         </div>
@@ -116,7 +118,7 @@ export function CryptoDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <CryptoScreener height={500} />
+              <CryptoScreener height={500} colorTheme={tvTheme} />
             </CardContent>
           </Card>
         </div>
@@ -130,7 +132,7 @@ export function CryptoDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <CryptoNews symbol={selectedSymbol} height={468} />
+              <CryptoNews symbol={selectedSymbol} height={468} colorTheme={tvTheme} />
             </CardContent>
           </Card>
         </div>

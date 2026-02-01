@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AdvancedChart } from '@/components/dashboard/sections/advanced-chart';
 import { SectionCard, DashboardDivider } from '@/components/dashboard/sections/section-card';
 import { useStock } from '@/hooks/use-stock';
+import { useTradingViewTheme } from '@/hooks/use-tradingview-theme';
 import type { StockDetailResponse } from '@recon/shared';
 
 interface PageProps {
@@ -16,6 +17,7 @@ interface PageProps {
 export default function StockOverviewPage({ params }: PageProps) {
   const { ticker } = use(params);
   const { data, isLoading, error } = useStock(ticker);
+  const tvTheme = useTradingViewTheme();
 
   if (isLoading) {
     return (
@@ -65,6 +67,7 @@ export default function StockOverviewPage({ params }: PageProps) {
           symbol={data.company.ticker}
           exchange={data.company.exchange}
           height={450}
+          colorTheme={tvTheme}
         />
 
         <DashboardDivider />
