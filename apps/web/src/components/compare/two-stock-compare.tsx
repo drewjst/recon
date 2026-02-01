@@ -355,7 +355,7 @@ function StockHeader({ stock, align }: { stock: StockDetailResponse; align: 'lef
           <div className={cn(
             'flex items-center gap-1 text-sm font-mono mt-1',
             align === 'right' ? 'justify-end' : 'justify-start',
-            isPositive ? 'text-green-600' : 'text-red-600'
+            isPositive ? 'text-positive' : 'text-negative'
           )}>
             {isPositive ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
             {isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%
@@ -428,17 +428,17 @@ function MetricRow({ label, leftValue, rightValue, format, lowerIsBetter, showUn
     <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
       <div className={cn(
         'text-right font-mono',
-        leftWins && 'text-green-600 font-semibold'
+        leftWins && 'text-positive font-semibold'
       )}>
         {formatValue(leftValue, leftWins)}
-        {leftWins && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
+        {leftWins && <Trophy className="inline ml-1 h-3 w-3 text-warning" />}
       </div>
       <div className="text-center text-sm text-muted-foreground">{label}</div>
       <div className={cn(
         'text-left font-mono',
-        rightWins && 'text-green-600 font-semibold'
+        rightWins && 'text-positive font-semibold'
       )}>
-        {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
+        {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-warning" />}
         {formatValue(rightValue, rightWins)}
       </div>
     </div>
@@ -468,7 +468,7 @@ function ScoreBarRow({ label, leftValue, rightValue, maxValue, format }: ScoreBa
         <div className="flex items-center justify-end gap-2">
           <span className={cn(
             'font-mono text-sm',
-            leftWins && 'text-green-600 font-semibold'
+            leftWins && 'text-positive font-semibold'
           )}>
             {leftValue != null ? format(leftValue) : '-'}
           </span>
@@ -476,7 +476,7 @@ function ScoreBarRow({ label, leftValue, rightValue, maxValue, format }: ScoreBa
             <div
               className={cn(
                 'h-full rounded-full transition-all float-right',
-                leftWins ? 'bg-green-500' : 'bg-primary/60'
+                leftWins ? 'bg-positive' : 'bg-primary/60'
               )}
               style={{ width: `${leftPercent}%` }}
             />
@@ -492,14 +492,14 @@ function ScoreBarRow({ label, leftValue, rightValue, maxValue, format }: ScoreBa
             <div
               className={cn(
                 'h-full rounded-full transition-all',
-                rightWins ? 'bg-green-500' : 'bg-primary/60'
+                rightWins ? 'bg-positive' : 'bg-primary/60'
               )}
               style={{ width: `${rightPercent}%` }}
             />
           </div>
           <span className={cn(
             'font-mono text-sm',
-            rightWins && 'text-green-600 font-semibold'
+            rightWins && 'text-positive font-semibold'
           )}>
             {rightValue != null ? format(rightValue) : '-'}
           </span>
@@ -521,9 +521,9 @@ function InsiderRow({ left, right }: { left: StockDetailResponse; right: StockDe
     const net = activity.netValue90d;
     return (
       <div className="text-xs space-y-0.5">
-        <div className="text-green-600">{buys} buys</div>
-        <div className="text-red-600">{sells} sells</div>
-        <div className={net >= 0 ? 'text-green-600' : 'text-red-600'}>
+        <div className="text-positive">{buys} buys</div>
+        <div className="text-negative">{sells} sells</div>
+        <div className={net >= 0 ? 'text-positive' : 'text-negative'}>
           Net: {formatSignedCurrency(net)}
         </div>
       </div>
@@ -542,9 +542,9 @@ function InsiderRow({ left, right }: { left: StockDetailResponse; right: StockDe
 function AnalystRatingRow({ left, right }: { left: StockDetailResponse; right: StockDetailResponse }) {
   const getRatingColor = (score: number | undefined) => {
     if (!score) return 'text-muted-foreground';
-    if (score >= 4) return 'text-green-600';
-    if (score >= 3) return 'text-amber-600';
-    return 'text-red-600';
+    if (score >= 4) return 'text-positive';
+    if (score >= 3) return 'text-warning';
+    return 'text-negative';
   };
 
   const leftScore = left.analystEstimates?.ratingScore;
@@ -558,7 +558,7 @@ function AnalystRatingRow({ left, right }: { left: StockDetailResponse; right: S
         {left.analystEstimates ? (
           <span className={getRatingColor(leftScore)}>
             {left.analystEstimates.rating}
-            {leftWins && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
+            {leftWins && <Trophy className="inline ml-1 h-3 w-3 text-warning" />}
           </span>
         ) : '-'}
       </div>
@@ -566,7 +566,7 @@ function AnalystRatingRow({ left, right }: { left: StockDetailResponse; right: S
       <div className={cn('text-left', rightWins && 'font-semibold')}>
         {right.analystEstimates ? (
           <span className={getRatingColor(rightScore)}>
-            {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
+            {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-warning" />}
             {right.analystEstimates.rating}
           </span>
         ) : '-'}
@@ -583,11 +583,11 @@ function AnalystBreakdownRow({ left, right }: { left: StockDetailResponse; right
     const sell = (estimates.sellCount || 0) + (estimates.strongSellCount || 0);
     return (
       <span className="text-xs">
-        <span className="text-green-600">{buy}</span>
+        <span className="text-positive">{buy}</span>
         <span className="text-muted-foreground">/</span>
-        <span className="text-amber-600">{hold}</span>
+        <span className="text-warning">{hold}</span>
         <span className="text-muted-foreground">/</span>
-        <span className="text-red-600">{sell}</span>
+        <span className="text-negative">{sell}</span>
       </span>
     );
   };
@@ -617,7 +617,7 @@ function TargetUpsideRow({ left, right }: { left: StockDetailResponse; right: St
   const formatUpside = (upside: number | null) => {
     if (upside === null) return '-';
     const sign = upside >= 0 ? '+' : '';
-    const colorClass = upside >= 0 ? 'text-green-600' : 'text-red-600';
+    const colorClass = upside >= 0 ? 'text-positive' : 'text-negative';
     return <span className={colorClass}>{sign}{upside.toFixed(0)}%</span>;
   };
 
@@ -625,11 +625,11 @@ function TargetUpsideRow({ left, right }: { left: StockDetailResponse; right: St
     <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
       <div className={cn('text-right font-mono', leftWins && 'font-semibold')}>
         {formatUpside(leftUpside)}
-        {leftWins && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
+        {leftWins && <Trophy className="inline ml-1 h-3 w-3 text-warning" />}
       </div>
       <div className="text-center text-sm text-muted-foreground">Target Upside</div>
       <div className={cn('text-left font-mono', rightWins && 'font-semibold')}>
-        {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
+        {rightWins && <Trophy className="inline mr-1 h-3 w-3 text-warning" />}
         {formatUpside(rightUpside)}
       </div>
     </div>
@@ -657,44 +657,44 @@ function SignalsSummary({ left, right }: { left: StockDetailResponse; right: Sto
       <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
         <div className={cn(
           'text-right font-mono',
-          leftWinsBullish && 'text-green-600 font-semibold'
+          leftWinsBullish && 'text-positive font-semibold'
         )}>
           {leftSignals.bullish}
-          {leftWinsBullish && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
+          {leftWinsBullish && <Trophy className="inline ml-1 h-3 w-3 text-warning" />}
         </div>
         <div className="text-center text-sm text-muted-foreground">Bullish</div>
         <div className={cn(
           'text-left font-mono',
-          rightWinsBullish && 'text-green-600 font-semibold'
+          rightWinsBullish && 'text-positive font-semibold'
         )}>
-          {rightWinsBullish && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
+          {rightWinsBullish && <Trophy className="inline mr-1 h-3 w-3 text-warning" />}
           {rightSignals.bullish}
         </div>
       </div>
       <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
         <div className={cn(
           'text-right font-mono',
-          leftWinsBearish && 'text-green-600 font-semibold'
+          leftWinsBearish && 'text-positive font-semibold'
         )}>
           {leftSignals.bearish}
-          {leftWinsBearish && <Trophy className="inline ml-1 h-3 w-3 text-amber-500" />}
+          {leftWinsBearish && <Trophy className="inline ml-1 h-3 w-3 text-warning" />}
         </div>
         <div className="text-center text-sm text-muted-foreground">Bearish</div>
         <div className={cn(
           'text-left font-mono',
-          rightWinsBearish && 'text-green-600 font-semibold'
+          rightWinsBearish && 'text-positive font-semibold'
         )}>
-          {rightWinsBearish && <Trophy className="inline mr-1 h-3 w-3 text-amber-500" />}
+          {rightWinsBearish && <Trophy className="inline mr-1 h-3 w-3 text-warning" />}
           {rightSignals.bearish}
         </div>
       </div>
       {(leftSignals.warning > 0 || rightSignals.warning > 0) && (
         <div className="grid grid-cols-[1fr_120px_1fr] items-center py-2 px-4">
-          <div className="text-right font-mono text-amber-600">
+          <div className="text-right font-mono text-warning">
             {leftSignals.warning > 0 ? leftSignals.warning : '-'}
           </div>
           <div className="text-center text-sm text-muted-foreground">Warnings</div>
-          <div className="text-left font-mono text-amber-600">
+          <div className="text-left font-mono text-warning">
             {rightSignals.warning > 0 ? rightSignals.warning : '-'}
           </div>
         </div>
@@ -756,11 +756,11 @@ function SummarySection({
         <div className="grid grid-cols-2 gap-4">
           <div className={cn(
             'text-right p-3 rounded-lg',
-            leftRank?.rank === 1 ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/50'
+            leftRank?.rank === 1 ? 'bg-warning/10 border border-warning/30' : 'bg-muted/50'
           )}>
             <div className="flex items-center justify-end gap-2">
               <div className="text-lg font-bold">{left.company.ticker}</div>
-              {leftRank?.rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
+              {leftRank?.rank === 1 && <Trophy className="h-4 w-4 text-warning" />}
             </div>
             <div className="text-xl font-bold text-primary">{leftRank?.wins || 0} wins</div>
             {categoryWins.left.length > 0 && (
@@ -771,10 +771,10 @@ function SummarySection({
           </div>
           <div className={cn(
             'text-left p-3 rounded-lg',
-            rightRank?.rank === 1 ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/50'
+            rightRank?.rank === 1 ? 'bg-warning/10 border border-warning/30' : 'bg-muted/50'
           )}>
             <div className="flex items-center gap-2">
-              {rightRank?.rank === 1 && <Trophy className="h-4 w-4 text-amber-500" />}
+              {rightRank?.rank === 1 && <Trophy className="h-4 w-4 text-warning" />}
               <div className="text-lg font-bold">{right.company.ticker}</div>
             </div>
             <div className="text-xl font-bold text-primary">{rightRank?.wins || 0} wins</div>

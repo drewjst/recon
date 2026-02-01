@@ -84,7 +84,7 @@ export function CompareView({ tickers }: CompareViewProps) {
       <div className="space-y-6">
         {/* Warning for failed/ETF tickers */}
         {failedTickers.length > 0 && (
-          <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <div className="text-sm text-warning bg-warning/10 border border-warning/30 rounded-lg p-3">
             Could not load: {failedTickers.join(', ')} (ETFs or invalid tickers not
             supported in compare)
           </div>
@@ -104,7 +104,7 @@ export function CompareView({ tickers }: CompareViewProps) {
     <div className="space-y-6">
       {/* Warning for failed/ETF tickers */}
       {failedTickers.length > 0 && (
-        <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <div className="text-sm text-warning bg-warning/10 border border-warning/30 rounded-lg p-3">
           Could not load: {failedTickers.join(', ')} (ETFs or invalid tickers not
           supported in compare)
         </div>

@@ -17,7 +17,7 @@ function formatReturn(value: number | undefined): string {
 
 function getReturnColor(value: number | undefined): string {
   if (value === undefined || value === null) return 'text-muted-foreground';
-  return value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+  return value >= 0 ? 'text-positive' : 'text-negative';
 }
 
 interface PerformanceMetricProps {

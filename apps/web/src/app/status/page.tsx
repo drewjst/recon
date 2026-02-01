@@ -12,11 +12,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 function StatusIcon({ status }: { status: string }) {
   switch (status) {
     case 'healthy':
-      return <CheckCircle2 className="w-5 h-5 text-green-500" />;
+      return <CheckCircle2 className="w-5 h-5 text-positive" />;
     case 'degraded':
-      return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+      return <AlertCircle className="w-5 h-5 text-warning" />;
     case 'unhealthy':
-      return <XCircle className="w-5 h-5 text-red-500" />;
+      return <XCircle className="w-5 h-5 text-negative" />;
     default:
       return <AlertCircle className="w-5 h-5 text-muted-foreground" />;
   }
@@ -29,9 +29,9 @@ function StatusBadge({ status }: { status: string }) {
     unhealthy: 'destructive',
   };
   const colors: Record<string, string> = {
-    healthy: 'bg-green-500 hover:bg-green-500',
-    degraded: 'bg-yellow-500 hover:bg-yellow-500',
-    unhealthy: 'bg-red-500 hover:bg-red-500',
+    healthy: 'bg-positive hover:bg-positive',
+    degraded: 'bg-warning hover:bg-warning',
+    unhealthy: 'bg-negative hover:bg-negative',
   };
 
   return (
@@ -97,8 +97,8 @@ function StatusContent({ data, refetch, isRefetching }: { data: HealthResponse; 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-            data.status === 'healthy' ? 'bg-green-500/10' :
-            data.status === 'degraded' ? 'bg-yellow-500/10' : 'bg-red-500/10'
+            data.status === 'healthy' ? 'bg-positive/10' :
+            data.status === 'degraded' ? 'bg-warning/10' : 'bg-negative/10'
           }`}>
             <StatusIcon status={data.status} />
           </div>
@@ -230,10 +230,10 @@ export default function StatusPage() {
         {isLoading ? (
           <StatusSkeleton />
         ) : error ? (
-          <Card className="border-red-500/50">
+          <Card className="border-negative/50">
             <CardContent className="py-8">
               <div className="flex flex-col items-center text-center">
-                <XCircle className="w-12 h-12 text-red-500 mb-4" />
+                <XCircle className="w-12 h-12 text-negative mb-4" />
                 <h2 className="text-xl font-semibold mb-2">Unable to reach API</h2>
                 <p className="text-muted-foreground mb-4">
                   The API server may be down or experiencing issues.

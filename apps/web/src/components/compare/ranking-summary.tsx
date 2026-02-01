@@ -14,9 +14,9 @@ interface RankingSummaryProps {
 }
 
 const RANK_STYLES: Record<number, string> = {
-  1: 'bg-amber-500/10 border-amber-500/30 text-amber-700',
-  2: 'bg-gray-200/50 border-gray-400/30 text-gray-700',
-  3: 'bg-orange-400/10 border-orange-400/30 text-orange-700',
+  1: 'bg-warning/10 border-warning/30 text-warning',
+  2: 'bg-muted/50 border-muted-foreground/30 text-muted-foreground',
+  3: 'bg-warning/5 border-warning/20 text-warning',
   4: 'bg-muted border-border text-muted-foreground',
 };
 

@@ -57,7 +57,7 @@ function PositionBar({ metric }: { metric: SectorMetric }) {
   // Determine dot color based on percentile
   const getDotColor = () => {
     if (percentile >= 75) return 'bg-success';
-    if (percentile >= 25) return 'bg-amber-500';
+    if (percentile >= 25) return 'bg-warning';
     return 'bg-destructive';
   };
 

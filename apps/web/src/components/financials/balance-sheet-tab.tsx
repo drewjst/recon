@@ -383,7 +383,7 @@ export const BalanceSheetTab = memo(function BalanceSheetTab({
                 {isBalanced ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                 ) : (
-                  <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                  <AlertCircle className="h-3.5 w-3.5 text-warning" />
                 )}
                 L + E = Assets
               </div>
@@ -396,7 +396,7 @@ export const BalanceSheetTab = memo(function BalanceSheetTab({
                     key={period.periodEnd}
                     className={cn(
                       'min-w-[120px] flex-1 py-2.5 px-3 text-xs text-right font-mono',
-                      balanced ? 'text-success' : 'text-amber-500'
+                      balanced ? 'text-success' : 'text-warning'
                     )}
                   >
                     {balanced ? '✓' : '≈'}

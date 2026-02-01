@@ -40,7 +40,7 @@ function getSentimentStyle(sentiment: string): { color: string; bg: string } {
     case 'negative':
       return { color: 'text-destructive', bg: 'bg-destructive/10' };
     case 'mixed':
-      return { color: 'text-amber-500', bg: 'bg-amber-500/10' };
+      return { color: 'text-warning', bg: 'bg-warning/10' };
     default:
       return { color: 'text-muted-foreground', bg: 'bg-muted' };
   }

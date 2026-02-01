@@ -74,12 +74,12 @@ export const ScoreComparison = memo(function ScoreComparison({ stocks, layout }:
                       <span
                         className={cn(
                           'font-mono text-sm',
-                          isWinner && 'text-green-600 font-semibold'
+                          isWinner && 'text-positive font-semibold'
                         )}
                       >
                         {value !== null ? metric.format(value) : '-'}
                         {isWinner && (
-                          <Trophy className="inline-block ml-1 h-3 w-3 text-amber-500" />
+                          <Trophy className="inline-block ml-1 h-3 w-3 text-warning" />
                         )}
                       </span>
                     </div>

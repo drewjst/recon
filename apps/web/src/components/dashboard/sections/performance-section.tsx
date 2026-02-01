@@ -27,7 +27,7 @@ export const PerformanceSection = memo(function PerformanceSection({ data }: Per
         {performanceMetrics.map(({ label, value }) => (
           <div key={label} className="text-center">
             <div className="text-xs md:text-sm text-muted-foreground mb-1">{label}</div>
-            <div className={`text-sm md:text-lg font-semibold ${value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`text-sm md:text-lg font-semibold ${value >= 0 ? 'text-positive' : 'text-negative'}`}>
               {value > 0 ? '+' : ''}{value.toFixed(1)}%
             </div>
           </div>

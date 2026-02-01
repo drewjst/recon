@@ -87,7 +87,7 @@ function CompactIndicator({ indicator }: { indicator: TechnicalIndicator }) {
   const colors = {
     bullish: 'text-success',
     bearish: 'text-destructive',
-    warning: 'text-amber-500',
+    warning: 'text-warning',
     neutral: 'text-muted-foreground',
   };
 
@@ -106,7 +106,7 @@ const getSignalIcon = (type: string) => {
     case 'bullish':
       return <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" />;
     case 'warning':
-      return <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />;
+      return <AlertTriangle className="h-3.5 w-3.5 text-warning flex-shrink-0" />;
     case 'bearish':
       return <TrendingDown className="h-3.5 w-3.5 text-destructive flex-shrink-0" />;
     default:
@@ -182,7 +182,7 @@ function SignalsSectionComponent({ data }: SignalsSectionProps) {
             <span className={`text-sm font-semibold ${
               newsSentiment.sentiment === 'positive' ? 'text-success' :
               newsSentiment.sentiment === 'negative' ? 'text-destructive' :
-              newsSentiment.sentiment === 'mixed' ? 'text-amber-500' :
+              newsSentiment.sentiment === 'mixed' ? 'text-warning' :
               'text-muted-foreground'
             }`}>
               {newsSentiment.sentiment.charAt(0).toUpperCase() + newsSentiment.sentiment.slice(1)}
@@ -203,7 +203,7 @@ function SignalsSectionComponent({ data }: SignalsSectionProps) {
           {totalBearish} Bearish
         </Badge>
         {totalWarning > 0 && (
-          <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/5 text-xs px-2 py-0.5">
+          <Badge variant="outline" className="text-warning border-warning/30 bg-warning/5 text-xs px-2 py-0.5">
             {totalWarning} Warning
           </Badge>
         )}

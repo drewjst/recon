@@ -54,7 +54,7 @@ function getPercentColor(value: number | null | undefined, threshold = 0): strin
 function getShortInterestColor(value: number | null | undefined): string {
   if (value === null || value === undefined) return 'text-muted-foreground';
   if (value >= 20) return 'text-destructive';
-  if (value >= 10) return 'text-amber-500';
+  if (value >= 10) return 'text-warning';
   return 'text-foreground';
 }
 

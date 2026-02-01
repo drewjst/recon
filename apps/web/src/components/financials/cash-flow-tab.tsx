@@ -259,11 +259,11 @@ const CashFlowWaterfall = memo(function CashFlowWaterfall({
   const scale = (val: number) => (Math.abs(val) / maxValue) * 100;
 
   const items = [
-    { label: 'CFO', value: cfo, color: 'bg-emerald-500', width: scale(cfo) },
-    { label: 'CapEx', value: -capex, color: 'bg-amber-500', width: scale(capex) },
+    { label: 'CFO', value: cfo, color: 'bg-positive', width: scale(cfo) },
+    { label: 'CapEx', value: -capex, color: 'bg-warning', width: scale(capex) },
     { label: 'FCF', value: fcf, color: 'bg-primary', width: scale(fcf) },
-    { label: 'Buybacks', value: -buybacks, color: 'bg-rose-500/70', width: scale(buybacks) },
-    { label: 'Dividends', value: -dividends, color: 'bg-rose-500/50', width: scale(dividends) },
+    { label: 'Buybacks', value: -buybacks, color: 'bg-negative/70', width: scale(buybacks) },
+    { label: 'Dividends', value: -dividends, color: 'bg-negative/50', width: scale(dividends) },
   ];
 
   return (

@@ -54,10 +54,10 @@ export const SCORE_THRESHOLDS = {
 };
 
 export const SIGNAL_COLORS = {
-  bullish: 'text-green-600 bg-green-50 border-green-200',
-  bearish: 'text-red-600 bg-red-50 border-red-200',
-  warning: 'text-amber-600 bg-amber-50 border-amber-200',
-  neutral: 'text-gray-600 bg-gray-50 border-gray-200',
+  bullish: 'text-positive bg-positive/10 border-positive/30',
+  bearish: 'text-negative bg-negative/10 border-negative/30',
+  warning: 'text-warning bg-warning/10 border-warning/30',
+  neutral: 'text-muted-foreground bg-muted border-border',
 } as const;
 
 export const COMPARE_LIMITS = {

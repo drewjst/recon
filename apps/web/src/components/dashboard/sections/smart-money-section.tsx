@@ -113,7 +113,7 @@ const HolderRow = memo(function HolderRow({ holder, type }: HolderRowProps) {
 
 function getShortInterestColor(percent: number): string {
   if (percent >= 20) return 'text-destructive';
-  if (percent >= 10) return 'text-amber-500';
+  if (percent >= 10) return 'text-warning';
   return 'text-foreground';
 }
 
@@ -272,7 +272,7 @@ export const SmartMoneySection = memo(function SmartMoneySection({ data }: Smart
             </p>
           )}
           {shortInterest.shortPercentFloat >= 10 && shortInterest.shortPercentFloat < 20 && (
-            <p className="text-xs text-amber-500 mt-2">
+            <p className="text-xs text-warning mt-2">
               Elevated short interest indicates increased bearish sentiment
             </p>
           )}

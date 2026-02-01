@@ -14,7 +14,7 @@ interface SmartMoneySummaryProps {
 
 function getShortInterestColor(percent: number): string {
   if (percent >= 20) return 'text-destructive';
-  if (percent >= 10) return 'text-amber-500';
+  if (percent >= 10) return 'text-warning';
   return 'text-foreground';
 }
 

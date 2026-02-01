@@ -124,7 +124,7 @@ export const QuickStatsSection = memo(function QuickStatsSection({
               shortPercent >= 20
                 ? 'text-destructive'
                 : shortPercent >= 10
-                  ? 'text-amber-500'
+                  ? 'text-warning'
                   : ''
             }`}
           >

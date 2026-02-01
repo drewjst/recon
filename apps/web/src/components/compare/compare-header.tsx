@@ -72,7 +72,7 @@ const StockHeaderCard = memo(function StockHeaderCard({ stock, compact = false }
             <span
               className={cn(
                 'font-mono text-sm',
-                isPositive ? 'text-green-600' : 'text-red-600'
+                isPositive ? 'text-positive' : 'text-negative'
               )}
             >
               {isPositive ? '+' : ''}

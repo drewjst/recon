@@ -57,7 +57,7 @@ export const MetricTable = memo(function MetricTable({ title, stocks, metrics, l
                         key={tickers[idx]}
                         className={cn(
                           'text-center font-mono',
-                          isWinner && 'text-green-600 font-semibold'
+                          isWinner && 'text-positive font-semibold'
                         )}
                       >
                         {displayValue}
