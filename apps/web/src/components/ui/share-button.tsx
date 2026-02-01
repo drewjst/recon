@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -7,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Share2 } from 'lucide-react';
+import { Share2, Check, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /** X (formerly Twitter) brand logo */
@@ -79,6 +80,9 @@ export function ShareButton({
   className,
   ...props
 }: ShareButtonProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasCopied, setHasCopied] = useState(false);
+
   const shareText = text ?? `Check out $${ticker} analysis on Crux`;
   const sharePageUrl = url ?? `${BASE_URL}/?ticker=${ticker}`;
 
@@ -96,8 +100,19 @@ export function ShareButton({
     openShareWindow(intentUrl);
   };
 
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(sharePageUrl);
+    setHasCopied(true);
+    setTimeout(() => {
+      setHasCopied(false);
+      setIsOpen(false);
+    }, 1000);
+  };
+
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant={variant}
@@ -117,6 +132,19 @@ export function ShareButton({
         <DropdownMenuItem onClick={handleShareThreads} className="cursor-pointer">
           <ThreadsIcon className="h-4 w-4 mr-2" />
           Share on Threads
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleCopy} className="cursor-pointer">
+          {hasCopied ? (
+            <>
+              <Check className="h-4 w-4 mr-2" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Link
+            </>
+          )}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -166,6 +194,8 @@ export function InlineShareLinks({
   hashtags = DEFAULT_HASHTAGS,
   className,
 }: InlineShareLinksProps) {
+  const [hasCopied, setHasCopied] = useState(false);
+
   const handleShareX = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -178,6 +208,16 @@ export function InlineShareLinks({
     e.stopPropagation();
     const intentUrl = buildThreadsShareUrl(url, text);
     openShareWindow(intentUrl);
+  };
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(url);
+    setHasCopied(true);
+    setTimeout(() => {
+      setHasCopied(false);
+    }, 2000);
   };
 
   return (
@@ -199,6 +239,19 @@ export function InlineShareLinks({
         title="Share on Threads"
       >
         <ThreadsIcon className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        aria-label={hasCopied ? "Copied!" : "Copy link"}
+        title={hasCopied ? "Copied!" : "Copy link"}
+      >
+        {hasCopied ? (
+          <Check className="h-3.5 w-3.5" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
       </button>
     </div>
   );
