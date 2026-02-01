@@ -50,9 +50,10 @@ async function getStockData(ticker: string): Promise<StockData | null> {
 
 export async function GET(
   request: Request,
-  { params }: { params: { tickers: string[] } }
+  { params }: { params: Promise<{ tickers: string[] }> }
 ) {
-  const tickers = params.tickers.map((t) => t.toUpperCase()).slice(0, 4);
+  const { tickers: rawTickers } = await params;
+  const tickers = rawTickers.map((t) => t.toUpperCase()).slice(0, 4);
 
   // Fetch all stock data in parallel
   const stocksData = await Promise.all(tickers.map(getStockData));

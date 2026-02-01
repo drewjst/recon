@@ -1,5 +1,6 @@
 'use client';
 
+import { use } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useValuation } from '@/hooks/use-valuation';
@@ -14,11 +15,11 @@ import { ValuationSignalsSection } from '@/components/valuation/valuation-signal
 import { DashboardDivider } from '@/components/dashboard/sections/section-card';
 
 interface PageProps {
-  params: { ticker: string };
+  params: Promise<{ ticker: string }>;
 }
 
 export default function ValuationPage({ params }: PageProps) {
-  const { ticker } = params;
+  const { ticker } = use(params);
   const { data, isLoading, error } = useValuation(ticker);
 
   if (isLoading) {

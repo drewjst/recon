@@ -1,5 +1,6 @@
 'use client';
 
+import { use } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Users, UserCheck, Landmark } from 'lucide-react';
 import { useEffect } from 'react';
@@ -15,11 +16,11 @@ import {
 } from '@/components/smart-money';
 
 interface PageProps {
-  params: { ticker: string };
+  params: Promise<{ ticker: string }>;
 }
 
 export default function SmartMoneyPage({ params }: PageProps) {
-  const { ticker } = params;
+  const { ticker } = use(params);
   const { data, isLoading, error } = useStock(ticker);
 
   // Set dynamic page title

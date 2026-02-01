@@ -1,5 +1,6 @@
 'use client';
 
+import { use } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ArrowUp, ArrowDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,11 +10,11 @@ import { useStock } from '@/hooks/use-stock';
 import type { StockDetailResponse } from '@recon/shared';
 
 interface PageProps {
-  params: { ticker: string };
+  params: Promise<{ ticker: string }>;
 }
 
 export default function StockOverviewPage({ params }: PageProps) {
-  const { ticker } = params;
+  const { ticker } = use(params);
   const { data, isLoading, error } = useStock(ticker);
 
   if (isLoading) {

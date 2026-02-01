@@ -39,11 +39,12 @@ async function getStockData(ticker: string): Promise<StockDetailResponse | null>
 }
 
 interface PageProps {
-  params: { ticker: string };
+  params: Promise<{ ticker: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const ticker = params.ticker.toUpperCase();
+  const { ticker: rawTicker } = await params;
+  const ticker = rawTicker.toUpperCase();
   const data = await getStockData(ticker);
 
   const companyName = data?.company.name ?? ticker;
@@ -74,7 +75,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function StockPage({ params }: PageProps) {
-  const ticker = params.ticker.toUpperCase();
+  const { ticker: rawTicker } = await params;
+  const ticker = rawTicker.toUpperCase();
   const data = await getStockData(ticker);
 
   return (

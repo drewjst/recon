@@ -46,8 +46,9 @@ function getOverallGrade(scores: StockData['scores']): { grade: string; color: s
   return { grade: 'F', color: '#ef4444' };
 }
 
-export default async function Image({ params }: { params: { ticker: string } }) {
-  const ticker = params.ticker.toUpperCase();
+export default async function Image({ params }: { params: Promise<{ ticker: string }> }) {
+  const { ticker: rawTicker } = await params;
+  const ticker = rawTicker.toUpperCase();
 
   let data: StockData | null = null;
   try {

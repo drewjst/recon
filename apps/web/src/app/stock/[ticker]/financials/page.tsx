@@ -1,5 +1,6 @@
 'use client';
 
+import { use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, FileText, BarChart3, Wallet, PieChart } from 'lucide-react';
@@ -21,13 +22,13 @@ import {
 import type { FinancialsPeriodType } from '@/lib/api';
 
 interface PageProps {
-  params: { ticker: string };
+  params: Promise<{ ticker: string }>;
 }
 
 type TabValue = 'income' | 'balance' | 'cashflow' | 'segments';
 
 export default function FinancialsPage({ params }: PageProps) {
-  const { ticker } = params;
+  const { ticker } = use(params);
   const router = useRouter();
   const { data: stockData, isLoading: stockLoading, error: stockError } = useStock(ticker);
 
