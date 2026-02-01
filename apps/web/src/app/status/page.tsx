@@ -178,31 +178,6 @@ function StatusContent({ data, refetch, isRefetching }: { data: HealthResponse; 
           </CardContent>
         </Card>
       )}
-
-      {/* System info */}
-      {data.system && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">System Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <div className="text-muted-foreground">Go Version</div>
-                <div className="font-medium">{data.system.goVersion}</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">Goroutines</div>
-                <div className="font-medium">{data.system.numGoroutine}</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">CPUs</div>
-                <div className="font-medium">{data.system.numCPU}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
@@ -210,7 +185,7 @@ function StatusContent({ data, refetch, isRefetching }: { data: HealthResponse; 
 export default function StatusPage() {
   const { data, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['health'],
-    queryFn: () => fetchHealth(true),
+    queryFn: () => fetchHealth(),
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 

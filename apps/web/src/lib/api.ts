@@ -385,23 +385,16 @@ export interface HealthCheck {
   latency?: string;
 }
 
-export interface SystemInfo {
-  goVersion: string;
-  numGoroutine: number;
-  numCPU: number;
-}
-
 export interface HealthResponse {
   status: 'healthy' | 'degraded' | 'unhealthy';
   timestamp: string;
   version: string;
   uptime: string;
   checks: HealthCheck[];
-  system?: SystemInfo;
 }
 
-export async function fetchHealth(detailed = false): Promise<HealthResponse> {
-  const url = detailed ? '/health?detailed=true' : '/health';
+export async function fetchHealth(): Promise<HealthResponse> {
+  const url = '/health';
   const response = await fetch(`${API_BASE}${url}`);
   if (!response.ok) {
     throw new ApiError('HEALTH_ERROR', `Health check failed: ${response.statusText}`, response.status);

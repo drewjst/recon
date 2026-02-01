@@ -33,3 +33,11 @@
 **Prevention:**
 - Modified `RealIP` middleware to validate extracted IPs using `net.ParseIP`.
 - Added comprehensive regression tests in `real_ip_test.go` to ensure invalid headers are ignored.
+
+## 2026-02-05 - [Information Leakage in Health Check]
+**Vulnerability:** The `/health` endpoint exposed sensitive system metrics (Go version, goroutine count, CPU count) via an unauthenticated `detailed=true` query parameter. This allowed potential attackers to fingerprint the runtime environment and profile the server.
+**Learning:** Developers often add "debug" features to public endpoints for convenience, forgetting that these become public interfaces. Health checks should return minimal status (pass/fail), not diagnostics.
+**Prevention:**
+- Removed `SystemInfo` struct and logic from `HealthHandler`.
+- Updated frontend to remove dependency on these metrics.
+- Added regression test `TestHealthHandler_NoInfoLeak` to ensure no sensitive fields are returned.

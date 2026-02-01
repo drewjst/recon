@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"runtime"
 	"time"
 
 	"gorm.io/gorm"
@@ -24,12 +23,11 @@ func NewHealthHandler(db *gorm.DB) *HealthHandler {
 
 // HealthResponse represents the health check response.
 type HealthResponse struct {
-	Status    string         `json:"status"`
-	Timestamp string         `json:"timestamp"`
-	Version   string         `json:"version"`
-	Uptime    string         `json:"uptime"`
-	Checks    []HealthCheck  `json:"checks"`
-	System    *SystemInfo    `json:"system,omitempty"`
+	Status    string        `json:"status"`
+	Timestamp string        `json:"timestamp"`
+	Version   string        `json:"version"`
+	Uptime    string        `json:"uptime"`
+	Checks    []HealthCheck `json:"checks"`
 }
 
 // HealthCheck represents an individual health check result.
@@ -38,13 +36,6 @@ type HealthCheck struct {
 	Status  string `json:"status"` // "healthy", "degraded", "unhealthy"
 	Message string `json:"message,omitempty"`
 	Latency string `json:"latency,omitempty"`
-}
-
-// SystemInfo contains system-level information.
-type SystemInfo struct {
-	GoVersion   string `json:"goVersion"`
-	NumGoroutine int   `json:"numGoroutine"`
-	NumCPU      int    `json:"numCPU"`
 }
 
 // Health handles GET /health requests.
@@ -66,23 +57,12 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 	uptime := time.Since(startTime)
 	uptimeStr := formatDuration(uptime)
 
-	// Get system info only if detailed query param is present
-	var systemInfo *SystemInfo
-	if r.URL.Query().Get("detailed") == "true" {
-		systemInfo = &SystemInfo{
-			GoVersion:    runtime.Version(),
-			NumGoroutine: runtime.NumGoroutine(),
-			NumCPU:       runtime.NumCPU(),
-		}
-	}
-
 	response := HealthResponse{
 		Status:    overallStatus,
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 		Version:   "0.1.0",
 		Uptime:    uptimeStr,
 		Checks:    checks,
-		System:    systemInfo,
 	}
 
 	writeJSON(w, http.StatusOK, response)
