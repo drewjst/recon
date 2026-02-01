@@ -47,33 +47,39 @@ export const SmartMoneySummary = memo(function SmartMoneySummary({ data, ticker 
   return (
     <Card className="bg-card/50 backdrop-blur-sm">
       <CardContent className="p-3">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             {/* Institutional */}
             {ownershipPercent != null && ownershipPercent > 0 && (
-              <div className="flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">Institutional:</span>
-                <span className="font-mono font-medium">{ownershipPercent.toFixed(0)}%</span>
-                {ownershipChange != null && ownershipChange !== 0 && (
-                  <span className={`font-mono text-xs ${ownershipChange >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    ({ownershipChange >= 0 ? '+' : ''}{ownershipChange.toFixed(1)}% QoQ)
-                  </span>
-                )}
-              </div>
+              <>
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground">Institutional:</span>
+                  <span className="font-mono font-medium">{ownershipPercent.toFixed(0)}%</span>
+                  {ownershipChange != null && ownershipChange !== 0 && (
+                    <span className={`font-mono text-xs ${ownershipChange >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      ({ownershipChange >= 0 ? '+' : ''}{ownershipChange.toFixed(1)}% QoQ)
+                    </span>
+                  )}
+                </div>
+                <span className="text-muted-foreground/50">·</span>
+              </>
             )}
 
             {/* Short Interest */}
             {shortInterest && shortInterest.shortPercentFloat > 0 && (
-              <div className="flex items-center gap-1.5">
-                {shortInterest.shortPercentFloat >= 10 && (
-                  <TriangleAlert className={`h-3.5 w-3.5 ${getShortInterestColor(shortInterest.shortPercentFloat)}`} />
-                )}
-                <span className="text-muted-foreground">Short:</span>
-                <span className={`font-mono font-medium ${getShortInterestColor(shortInterest.shortPercentFloat)}`}>
-                  {shortInterest.shortPercentFloat.toFixed(1)}%
-                </span>
-              </div>
+              <>
+                <div className="flex items-center gap-1.5">
+                  {shortInterest.shortPercentFloat >= 10 && (
+                    <TriangleAlert className={`h-3.5 w-3.5 ${getShortInterestColor(shortInterest.shortPercentFloat)}`} />
+                  )}
+                  <span className="text-muted-foreground">Short:</span>
+                  <span className={`font-mono font-medium ${getShortInterestColor(shortInterest.shortPercentFloat)}`}>
+                    {shortInterest.shortPercentFloat.toFixed(1)}%
+                  </span>
+                </div>
+                <span className="text-muted-foreground/50">·</span>
+              </>
             )}
 
             {/* Congress */}
@@ -96,6 +102,7 @@ export const SmartMoneySummary = memo(function SmartMoneySummary({ data, ticker 
                 <span className="text-muted-foreground/70">No activity</span>
               )}
             </div>
+            <span className="text-muted-foreground/50">·</span>
 
             {/* Insiders */}
             <div className="flex items-center gap-1.5">
@@ -112,7 +119,7 @@ export const SmartMoneySummary = memo(function SmartMoneySummary({ data, ticker 
                     <span className="font-mono text-destructive">{sellCount} sell{sellCount !== 1 ? 's' : ''}</span>
                   )}
                   {netValue !== 0 && (
-                    <span className={`font-mono text-xs ${netValue >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    <span className={`hidden lg:inline font-mono text-xs ${netValue >= 0 ? 'text-success' : 'text-destructive'}`}>
                       ({netValue >= 0 ? '+' : ''}{formatCurrency(netValue)})
                     </span>
                   )}

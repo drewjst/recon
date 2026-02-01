@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, FileText, BarChart3, Wallet, PieChart } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useStock } from '@/hooks/use-stock';
 import { useIncomeStatements, useBalanceSheets, useCashFlowStatements } from '@/hooks/use-financials';
 import { CruxAIInsight } from '@/components/cruxai';
+import { TickerSearch } from '@/components/search/ticker-search';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   IncomeStatementTab,
@@ -26,7 +28,12 @@ type TabValue = 'income' | 'balance' | 'cashflow' | 'segments';
 
 export default function FinancialsPage({ params }: PageProps) {
   const { ticker } = params;
+  const router = useRouter();
   const { data: stockData, isLoading: stockLoading, error: stockError } = useStock(ticker);
+
+  const handleTickerSelect = useCallback((newTicker: string) => {
+    router.push(`/stock/${newTicker.toUpperCase()}/financials`);
+  }, [router]);
 
   // Controls state
   const [periodType, setPeriodType] = useState<FinancialsPeriodType>('annual');
@@ -193,14 +200,24 @@ export default function FinancialsPage({ params }: PageProps) {
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="py-8 space-y-6">
-        {/* Back Link */}
-        <Link
-          href={`/stock/${ticker.toUpperCase()}`}
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
-        >
-          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-          Back to {ticker.toUpperCase()}
-        </Link>
+        {/* Search and Back Link Row */}
+        <div className="flex items-center justify-between gap-4">
+          <Link
+            href={`/stock/${ticker.toUpperCase()}`}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+          >
+            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+            Back to {ticker.toUpperCase()}
+          </Link>
+          <div className="w-64">
+            <TickerSearch
+              onSelect={handleTickerSelect}
+              placeholder="Search ticker..."
+              buttonLabel="View"
+              size="default"
+            />
+          </div>
+        </div>
 
         {/* Page Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
