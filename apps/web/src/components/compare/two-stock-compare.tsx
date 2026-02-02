@@ -703,31 +703,19 @@ function SignalsSummary({ left, right }: { left: StockDetailResponse; right: Sto
   );
 }
 
-function SummarySection({
-  left,
-  right,
-  rankings
-}: {
-  left: StockDetailResponse;
-  right: StockDetailResponse;
-  rankings: RankingResult[];
-}) {
-  const leftRank = rankings.find(r => r.ticker === left.company.ticker);
-  const rightRank = rankings.find(r => r.ticker === right.company.ticker);
+const CATEGORY_NAMES: Record<string, string> = {
+  scores: 'Scores',
+  valuation: 'Valuation',
+  growth: 'Growth',
+  profitability: 'Margins',
+  financialHealth: 'Balance Sheet',
+  earningsQuality: 'Operations',
+  smartMoney: 'Smart Money',
+  analyst: 'Analysts',
+  performance: 'Performance',
+};
 
-  // Calculate category wins
-  const categoryNames: Record<string, string> = {
-    scores: 'Scores',
-    valuation: 'Valuation',
-    growth: 'Growth',
-    profitability: 'Margins',
-    financialHealth: 'Balance Sheet',
-    earningsQuality: 'Operations',
-    smartMoney: 'Smart Money',
-    analyst: 'Analysts',
-    performance: 'Performance',
-  };
-
+export function calculateCategoryWins(left: StockDetailResponse, right: StockDetailResponse) {
   const categoryWins: { left: string[]; right: string[] } = { left: [], right: [] };
 
   for (const [categoryKey, metrics] of Object.entries(COMPARE_METRICS)) {
@@ -741,11 +729,28 @@ function SummarySection({
       else if (winnerIdx === 1) rightWins++;
     }
     if (leftWins > rightWins) {
-      categoryWins.left.push(categoryNames[categoryKey] || categoryKey);
+      categoryWins.left.push(CATEGORY_NAMES[categoryKey] || categoryKey);
     } else if (rightWins > leftWins) {
-      categoryWins.right.push(categoryNames[categoryKey] || categoryKey);
+      categoryWins.right.push(CATEGORY_NAMES[categoryKey] || categoryKey);
     }
   }
+  return categoryWins;
+}
+
+function SummarySection({
+  left,
+  right,
+  rankings
+}: {
+  left: StockDetailResponse;
+  right: StockDetailResponse;
+  rankings: RankingResult[];
+}) {
+  const leftRank = rankings.find(r => r.ticker === left.company.ticker);
+  const rightRank = rankings.find(r => r.ticker === right.company.ticker);
+
+  // Calculate category wins
+  const categoryWins = useMemo(() => calculateCategoryWins(left, right), [left, right]);
 
   return (
     <Card>
