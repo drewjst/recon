@@ -54,13 +54,13 @@ func TestRateLimit_WorksWithJustIP(t *testing.T) {
 		t.Fatalf("Request 1 failed: %v", w1.Code)
 	}
 
-    // Request 2 same IP string
-    req2 := httptest.NewRequest("GET", "/", nil)
+	// Request 2 same IP string
+	req2 := httptest.NewRequest("GET", "/", nil)
 	req2.RemoteAddr = "1.2.3.4"
 	w2 := httptest.NewRecorder()
 	handler.ServeHTTP(w2, req2)
 
-    if w2.Code != http.StatusTooManyRequests {
+	if w2.Code != http.StatusTooManyRequests {
 		t.Errorf("Request 2 allowed! Status: %v. Expected 429.", w2.Code)
 	}
 }

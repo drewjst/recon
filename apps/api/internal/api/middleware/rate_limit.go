@@ -8,11 +8,17 @@ import (
 	"time"
 )
 
+const shardCount = 256
+
+type shard struct {
+	mu       sync.Mutex
+	visitors map[string]*visitor
+}
+
 // RateLimiter manages rate limiting state with proper cleanup.
 type RateLimiter struct {
 	requestsPerSecond int
-	visitors          map[string]*visitor
-	mu                sync.Mutex
+	shards            [shardCount]*shard
 	done              chan struct{}
 }
 
@@ -25,14 +31,29 @@ type visitor struct {
 func NewRateLimiter(requestsPerSecond int) *RateLimiter {
 	rl := &RateLimiter{
 		requestsPerSecond: requestsPerSecond,
-		visitors:          make(map[string]*visitor),
 		done:              make(chan struct{}),
+	}
+
+	for i := 0; i < shardCount; i++ {
+		rl.shards[i] = &shard{
+			visitors: make(map[string]*visitor),
+		}
 	}
 
 	// Clean up old visitors periodically
 	go rl.cleanup()
 
 	return rl
+}
+
+func (rl *RateLimiter) getShard(ip string) *shard {
+	// FNV-1a hash algorithm inline to avoid allocations
+	h := uint32(2166136261)
+	for i := 0; i < len(ip); i++ {
+		h ^= uint32(ip[i])
+		h *= 16777619
+	}
+	return rl.shards[h%shardCount]
 }
 
 // cleanup runs the periodic visitor cleanup loop.
@@ -45,13 +66,15 @@ func (rl *RateLimiter) cleanup() {
 		case <-rl.done:
 			return
 		case <-ticker.C:
-			rl.mu.Lock()
-			for ip, v := range rl.visitors {
-				if time.Since(v.lastSeen) > time.Minute {
-					delete(rl.visitors, ip)
+			for _, s := range rl.shards {
+				s.mu.Lock()
+				for ip, v := range s.visitors {
+					if time.Since(v.lastSeen) > time.Minute {
+						delete(s.visitors, ip)
+					}
 				}
+				s.mu.Unlock()
 			}
-			rl.mu.Unlock()
 		}
 	}
 }
@@ -71,11 +94,13 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 			ip = host
 		}
 
-		rl.mu.Lock()
-		v, exists := rl.visitors[ip]
+		s := rl.getShard(ip)
+		s.mu.Lock()
+
+		v, exists := s.visitors[ip]
 		if !exists {
-			rl.visitors[ip] = &visitor{lastSeen: time.Now(), count: 1}
-			rl.mu.Unlock()
+			s.visitors[ip] = &visitor{lastSeen: time.Now(), count: 1}
+			s.mu.Unlock()
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -84,7 +109,7 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 		if time.Since(v.lastSeen) > time.Second {
 			v.count = 1
 			v.lastSeen = time.Now()
-			rl.mu.Unlock()
+			s.mu.Unlock()
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -93,12 +118,12 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 		v.lastSeen = time.Now()
 
 		if v.count > rl.requestsPerSecond {
-			rl.mu.Unlock()
+			s.mu.Unlock()
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
 
-		rl.mu.Unlock()
+		s.mu.Unlock()
 		next.ServeHTTP(w, r)
 	})
 }
