@@ -7,7 +7,6 @@ import { ArrowLeft, FileText, BarChart3, Wallet, PieChart } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useStock } from '@/hooks/use-stock';
 import { useIncomeStatements, useBalanceSheets, useCashFlowStatements } from '@/hooks/use-financials';
-import { CruxAIInsight } from '@/components/cruxai';
 import { TickerSearch } from '@/components/search/ticker-search';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -236,8 +235,6 @@ export default function FinancialsPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* CruxAI Financial Summary */}
-        <CruxAIInsight ticker={ticker} section="financial-summary" />
 
         {/* Controls Bar */}
         <FinancialsControls

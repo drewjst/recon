@@ -49,7 +49,7 @@ export async function fetchValuation(ticker: string): Promise<ValuationDeepDive>
 }
 
 // CruxAI Insight types
-export type InsightSection = 'valuation-summary' | 'position-summary' | 'news-sentiment' | 'smart-money-summary' | 'financial-summary';
+export type InsightSection = 'valuation-summary' | 'position-summary' | 'news-sentiment' | 'smart-money-summary';
 
 export interface InsightResponse {
   ticker: string;
@@ -84,19 +84,6 @@ export async function fetchInsight(
   return fetchApi<InsightResponse>(
     `/api/v1/insights/${section}?ticker=${ticker.toUpperCase()}`
   );
-}
-
-export async function fetchNewsSentiment(ticker: string): Promise<NewsSentiment | null> {
-  try {
-    const response = await fetchApi<InsightResponse>(
-      `/api/v1/insights/news-sentiment?ticker=${ticker.toUpperCase()}`
-    );
-    // Parse the JSON insight string into NewsSentiment
-    return JSON.parse(response.insight) as NewsSentiment;
-  } catch {
-    // Fail silently - news sentiment is optional
-    return null;
-  }
 }
 
 // Institutional Detail types
