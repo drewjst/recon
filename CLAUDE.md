@@ -1,6 +1,6 @@
-# Claude Code Guidelines for Recon
+# Claude Code Guidelines for Crux
 
-This document establishes the coding standards, architectural decisions, and development philosophy for the Recon project. Follow these guidelines when writing or reviewing code.
+This document establishes the coding standards, architectural decisions, and development philosophy for the Crux project. Follow these guidelines when writing or reviewing code.
 
 ## Project Philosophy
 
@@ -162,6 +162,7 @@ We use multiple external data sources:
 | `/stable/grades-consensus` | Analyst ratings | Paid |
 | `/stable/price-target-consensus` | Price targets | Paid |
 | `/stable/analyst-estimates` | EPS/revenue estimates | Paid |
+| `/stable/financial-growth` | Pre-calculated YoY growth rates | Free |
 | `/stable/sector-pe` | Sector P/E ratios | Paid |
 | `/stable/industry-pe` | Industry P/E ratios | Paid |
 
@@ -170,9 +171,10 @@ We use multiple external data sources:
 internal/infrastructure/providers/
 ├── interfaces.go       # FundamentalsProvider, QuoteProvider, SearchProvider
 ├── factory.go          # Provider creation based on config
+├── cached.go           # CachedFundamentalsProvider (DB cache wrapper, 24h default TTL)
 └── fmp/                # FMP provider
     ├── client.go       # HTTP client, auth, rate limiting
-    ├── provider.go     # Interface implementation
+    ├── provider.go     # Interface implementation (ratios, growth, statements)
     ├── adapter.go      # FMP response → canonical models
     └── types.go        # FMP-specific response types
 ```
@@ -182,6 +184,18 @@ internal/infrastructure/providers/
 - Providers implement interfaces defined in `interfaces.go`
 - All external data maps to canonical models in `internal/domain/models/`
 - Services depend on interfaces, not concrete providers
+
+**Growth metric fallback pattern:**
+FMP's `/stable/financial-growth` endpoint provides some pre-calculated YoY growth rates (revenue, EPS diluted, FCF) but omits others (net income, operating income, operating cash flow). When a field is missing (returns 0), the provider calculates it from 2 years of income/cash flow statements:
+```go
+// Fallback: calculate from statements when financial-growth endpoint doesn't provide the value
+if ratios.NetIncomeGrowthYoY == 0 && priorNetIncome != 0 {
+    ratios.NetIncomeGrowthYoY = (current - prior) / abs(prior) * 100
+}
+```
+
+**Sector percentile ranking (SectorMetric):**
+Growth, profitability, and financial health metrics are enriched with sector context via the `SectorMetric` struct. Each metric includes the stock's value, sector min/median/max, and a percentile (0-100). Sector ranges are hardcoded in `service.go` for all 11 GICS sectors. When adding new metrics that use `SectorMetric`, you must add range data for every sector.
 
 ### Caching Strategy
 

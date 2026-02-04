@@ -2,21 +2,23 @@
 
 **Stock fundamental analysis, distilled.** Enter a ticker, get the crux in 30 seconds.
 
-Crux synthesizes financial data into conviction scores and actionable signals—cutting through noise to surface what matters for investment decisions.
+Crux synthesizes financial data into conviction scores and actionable signals — cutting through noise to surface what matters for investment decisions.
 
 ## Features
 
 - **AI Insights** — Vertex AI-powered summaries for valuation, position analysis, and news sentiment
 - **Financial Health Scores** — Piotroski F-Score (0-9), Rule of 40, Altman Z-Score, DCF Valuation
+- **Growth** — Revenue, EPS, net income, operating income, projected EPS/revenue, FCF, and operating cash flow growth with sector percentile rankings
 - **Performance** — 1D, 1W, 1M, YTD, 1Y returns with 52-week range visualization
 - **Valuation** — P/E, Forward P/E, PEG, EV/EBITDA, P/FCF, P/B with sector percentiles
+- **Profitability** — ROIC, ROE, operating/gross/net margins with sector comparisons
 - **10-K Financials** — Detailed income statement, balance sheet, and cash flow with multi-period comparison, common-size analysis, and CSV export
 - **Smart Money** — Institutional ownership trends, insider activity, congressional trades, short interest
 - **Smart Money Deep Dive** — Comprehensive institutional ownership analysis with holder breakdown and activity tracking
 - **News Sentiment** — AI-analyzed news with sentiment, themes, and recent article links
 - **Signals** — Automated bullish/bearish/warning flags based on score thresholds
 - **Stock Compare** — Side-by-side comparison of 2-4 stocks
-- **ETF Support** — Fund overview, holdings, and sector breakdown
+- **ETF Support** — Fund overview, holdings, sector breakdown, and performance
 
 ## Tech Stack
 
@@ -33,10 +35,10 @@ Crux synthesizes financial data into conviction scores and actionable signals—
 
 | Provider | Data Type | Usage |
 |----------|-----------|-------|
-| [FMP](https://financialmodelingprep.com) | Fundamentals, ratios, financials, holdings, insider trades, congress trades, estimates | Primary |
+| [FMP](https://financialmodelingprep.com) | Fundamentals, ratios, financials, growth, holdings, insider trades, congress trades, analyst estimates | Primary |
 | [Polygon.io](https://polygon.io) | Ticker search (stocks, ETFs, ADRs) | Search |
 
-Data is cached in PostgreSQL for 24 hours to minimize API calls.
+Data is cached in PostgreSQL (24h for most data, 7 days for financial statements) to minimize API calls. Growth metrics that aren't available from FMP's pre-calculated endpoints are derived from year-over-year financial statement comparisons.
 
 ## Local Development
 
@@ -118,6 +120,7 @@ cd apps/web && pnpm dev
 - `valuation-summary` — Valuation analysis for the valuation deep dive
 - `smart-money-summary` — Smart money activity overview
 - `news-sentiment` — AI-analyzed news sentiment with key article links
+- `smart-money-summary` — Smart money activity overview
 
 ## Scoring Systems
 
@@ -161,6 +164,8 @@ Crux uses **Google Vertex AI** (Gemini 2.0 Flash) to generate contextual investm
 
 - **Position Summary** — Quality signals, valuation snapshot, key factors to monitor
 - **Valuation Summary** — Whether the stock appears cheap/expensive with supporting evidence
+- **Smart Money Summary** — Institutional and insider activity patterns
+- **News Sentiment** — Recent news with sentiment analysis, key themes, and article links
 
 Insights are generated on-demand and cached for 24 hours. The AI receives structured financial data (not raw text) ensuring consistent, data-driven analysis.
 

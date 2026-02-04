@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, X } from 'lucide-react';
+import { Github, Search, X } from 'lucide-react';
 import { TickerSearch } from '@/components/search/ticker-search';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
@@ -136,6 +136,17 @@ export function Header() {
             >
               <Search className="h-4 w-4" />
             </button>
+
+            {/* GitHub */}
+            <a
+              href="https://github.com/drewjst/crux"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="View source on GitHub"
+            >
+              <Github className="h-4 w-4" />
+            </a>
 
             {/* Theme Toggle */}
             <ThemeToggle />

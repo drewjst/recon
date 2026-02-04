@@ -1,5 +1,6 @@
 'use client';
 
+import { Github } from 'lucide-react';
 import { LegalModal } from '@/components/legal-modal';
 import { AboutContent, DisclaimerContent, PrivacyContent, TermsContent } from '@/components/legal-content';
 
@@ -23,6 +24,15 @@ export function Footer() {
           <LegalModal trigger="Terms" title="Terms of Service">
             <TermsContent />
           </LegalModal>
+          <a
+            href="https://github.com/drewjst/crux"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground flex items-center gap-1.5"
+          >
+            <Github className="h-3.5 w-3.5" />
+            GitHub
+          </a>
         </div>
       </div>
     </footer>
