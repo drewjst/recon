@@ -14,6 +14,7 @@ import (
 	"github.com/drewjst/crux/apps/api/internal/domain/institutional"
 	"github.com/drewjst/crux/apps/api/internal/domain/repository"
 	"github.com/drewjst/crux/apps/api/internal/domain/search"
+	"github.com/drewjst/crux/apps/api/internal/domain/sector"
 	"github.com/drewjst/crux/apps/api/internal/domain/stock"
 	"github.com/drewjst/crux/apps/api/internal/domain/valuation"
 )
@@ -26,6 +27,7 @@ type RouterDeps struct {
 	InsightService       *services.InsightService
 	FinancialsRepo       repository.FinancialsRepository
 	PolygonSearcher      *search.PolygonSearcher
+	SectorService        *sector.Service
 	AllowedOrigins       []string
 	APIKeys              []string // Valid API keys (empty = auth disabled)
 	DB                   *gorm.DB // Database connection (for health checks)
@@ -79,6 +81,14 @@ func NewRouter(deps RouterDeps) *chi.Mux {
 				r.Get("/segments", financialsHandler.GetRevenueSegments)
 			})
 			slog.Info("financials routes registered", "path", "/api/stock/{ticker}/financials/*")
+		}
+
+		// Sector overview (heatmap)
+		if deps.SectorService != nil {
+			sectorHandler := handlers.NewSectorHandler(deps.SectorService)
+			r.Get("/sectors", sectorHandler.ListSectors)
+			r.Get("/sectors/{sector}/overview", sectorHandler.GetSectorOverview)
+			slog.Info("sector routes registered", "path", "/api/sectors/{sector}/overview")
 		}
 
 		// CruxAI insight routes (v1)

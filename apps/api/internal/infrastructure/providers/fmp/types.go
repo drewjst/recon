@@ -561,6 +561,25 @@ type FinancialGrowth struct {
 }
 
 // =============================================================================
+// Screener Types
+// =============================================================================
+
+// ScreenerResult represents a single result from FMP's company screener endpoint.
+type ScreenerResult struct {
+	Symbol    string  `json:"symbol"`
+	Name      string  `json:"companyName"`
+	MarketCap float64 `json:"marketCap"`
+	Sector    string  `json:"sector"`
+	Industry  string  `json:"industry"`
+	Exchange  string  `json:"exchange"`
+	Price     float64 `json:"price"`
+	Beta      float64 `json:"beta"`
+	Volume    int64   `json:"volume"`
+	Country   string  `json:"country"`
+	Image     string  `json:"image"`
+}
+
+// =============================================================================
 // News Types
 // =============================================================================
 

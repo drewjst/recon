@@ -20,12 +20,14 @@ import (
 	"github.com/drewjst/crux/apps/api/internal/domain/institutional"
 	"github.com/drewjst/crux/apps/api/internal/domain/repository"
 	"github.com/drewjst/crux/apps/api/internal/domain/search"
+	"github.com/drewjst/crux/apps/api/internal/domain/sector"
 	"github.com/drewjst/crux/apps/api/internal/domain/stock"
 	"github.com/drewjst/crux/apps/api/internal/domain/valuation"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/ai"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/db"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/external/polygon"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/providers"
+	"github.com/drewjst/crux/apps/api/internal/infrastructure/cache"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/providers/fmp"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/providers/massive"
 	infrarepo "github.com/drewjst/crux/apps/api/internal/infrastructure/repository"
@@ -101,8 +103,23 @@ func run() error {
 
 	// Initialize Massive (Polygon) client for price data and technical indicators
 	massiveClient := massive.NewClient(cfg.PolygonAPIKey)
-	_ = massiveClient // routes added in a later step
 	slog.Info("massive price client initialized")
+
+	// Initialize FMP direct client (used by institutional, financials, and sector services)
+	var fmpClient *fmp.Client
+	if cfg.FMPAPIKey != "" {
+		fmpClient = fmp.NewClient(fmp.Config{APIKey: cfg.FMPAPIKey})
+	}
+
+	// Initialize sector service (requires DB for tiered cache)
+	var sectorService *sector.Service
+	if gormDB != nil && fmpClient != nil {
+		tieredCache := cache.NewTieredCache(gormDB)
+		sectorService = sector.NewService(fmpClient, massiveClient, tieredCache)
+		slog.Info("sector service initialized")
+	} else {
+		slog.Info("sector service disabled (requires database)")
+	}
 
 	// Initialize stock service with cached provider and Polygon client
 	stockService := stock.NewCachedService(
@@ -118,12 +135,10 @@ func run() error {
 	valuationService := valuation.NewService(fundamentalsProvider, rawProvider)
 	slog.Info("valuation service initialized", "caching", cacheRepo != nil)
 
-	// Initialize institutional service with FMP client
+	// Initialize institutional service and financials repository
 	var institutionalService *institutional.Service
 	var financialsRepo repository.FinancialsRepository
-	var fmpClient *fmp.Client
-	if cfg.FMPAPIKey != "" {
-		fmpClient = fmp.NewClient(fmp.Config{APIKey: cfg.FMPAPIKey})
+	if fmpClient != nil {
 		institutionalService = institutional.NewService(fmpClient)
 		slog.Info("institutional service initialized")
 
@@ -194,6 +209,7 @@ func run() error {
 		InsightService:       insightService,
 		FinancialsRepo:       financialsRepo,
 		PolygonSearcher:      polygonSearcher,
+		SectorService:        sectorService,
 		AllowedOrigins:       cfg.AllowedOrigins,
 		APIKeys:              cfg.APIKeys,
 		DB:                   gormDB,

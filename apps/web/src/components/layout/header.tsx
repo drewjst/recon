@@ -36,6 +36,7 @@ function Navigation() {
   const isScreenerActive = pathname === '/' || pathname.startsWith('/stock/');
   const isCompareActive = pathname.startsWith('/compare');
   const is10KActive = pathname.startsWith('/10k');
+  const isSectorsActive = pathname.startsWith('/sectors');
   const isCryptoActive = pathname.startsWith('/crypto');
 
   return (
@@ -48,6 +49,9 @@ function Navigation() {
       </NavLink>
       <NavLink href="/10k" isActive={is10KActive}>
         10-K
+      </NavLink>
+      <NavLink href="/sectors" isActive={isSectorsActive}>
+        Sectors
       </NavLink>
       <NavLink href="/crypto" isActive={isCryptoActive}>
         Crypto

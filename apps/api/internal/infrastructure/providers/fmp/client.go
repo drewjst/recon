@@ -625,6 +625,22 @@ func (c *Client) GetNews(ctx context.Context, ticker string, limit int) ([]NewsA
 	return articles, nil
 }
 
+// GetStockScreener retrieves stocks matching the given sector from FMP's screener.
+// Results are sorted by market cap descending and filtered to actively traded US stocks.
+func (c *Client) GetStockScreener(ctx context.Context, sector string, limit int) ([]ScreenerResult, error) {
+	url := fmt.Sprintf(
+		"%s/company-screener?sector=%s&limit=%d&country=US&exchange=NYSE,NASDAQ&isActivelyTrading=true&apikey=%s",
+		c.baseURL, sector, limit, c.apiKey,
+	)
+
+	var results []ScreenerResult
+	if err := c.get(ctx, url, &results); err != nil {
+		return nil, fmt.Errorf("fetching screener for sector %s: %w", sector, err)
+	}
+
+	return results, nil
+}
+
 // get makes an HTTP GET request and unmarshals the response.
 func (c *Client) get(ctx context.Context, url string, dest any) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)

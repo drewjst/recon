@@ -380,6 +380,75 @@ export interface HealthResponse {
   checks: HealthCheck[];
 }
 
+// =============================================================================
+// Sector Heatmap Types
+// =============================================================================
+
+export interface SectorStock {
+  ticker: string;
+  name: string;
+  logoUrl?: string;
+  price: number;
+  marketCap: number;
+  ps: number | null;
+  pe: number | null;
+  ytdChange: number | null;
+  oneMonthChange: number | null;
+  oneYearChange: number | null;
+  from52wHigh: number | null;
+  yearHigh: number | null;
+  yearLow: number | null;
+  sma20: boolean | null;
+  sma50: boolean | null;
+  sma200: boolean | null;
+  rsRank: number | null;
+  sparkline: number[];
+  chartData1Y: number[];
+}
+
+export interface SectorSummary {
+  avgPs: number | null;
+  avgPe: number | null;
+  medianYtd: number | null;
+  median1y: number | null;
+}
+
+export interface SectorOverviewResponse {
+  sector: string;
+  stockCount: number;
+  updatedAt: string;
+  summary: SectorSummary;
+  stocks: SectorStock[];
+}
+
+export interface SectorListResponse {
+  sectors: string[];
+}
+
+export type SectorSortField = '52whigh' | 'ytd' | '1y' | 'marketcap' | 'ps' | 'pe';
+
+export async function fetchSectors(): Promise<SectorListResponse> {
+  return fetchApi<SectorListResponse>('/api/sectors');
+}
+
+export async function fetchSectorOverview(
+  sector: string,
+  sort: SectorSortField = '52whigh',
+  limit: number = 20
+): Promise<SectorOverviewResponse> {
+  const encodedSector = encodeURIComponent(sector.replace(/ /g, '-'));
+  const params = new URLSearchParams();
+  params.set('sort', sort);
+  params.set('limit', limit.toString());
+  return fetchApi<SectorOverviewResponse>(
+    `/api/sectors/${encodedSector}/overview?${params.toString()}`
+  );
+}
+
+// =============================================================================
+// Health / Status Types
+// =============================================================================
+
 export async function fetchHealth(): Promise<HealthResponse> {
   const url = '/health';
   const response = await fetch(`${API_BASE}${url}`);
