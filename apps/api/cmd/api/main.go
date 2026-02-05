@@ -27,6 +27,7 @@ import (
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/external/polygon"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/providers"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/providers/fmp"
+	"github.com/drewjst/crux/apps/api/internal/infrastructure/providers/massive"
 	infrarepo "github.com/drewjst/crux/apps/api/internal/infrastructure/repository"
 )
 
@@ -97,6 +98,11 @@ func run() error {
 	polygonClient := polygon.NewClient(cfg.PolygonAPIKey)
 	polygonSearcher := search.NewPolygonSearcher(polygonClient)
 	slog.Info("polygon search initialized")
+
+	// Initialize Massive (Polygon) client for price data and technical indicators
+	massiveClient := massive.NewClient(cfg.PolygonAPIKey)
+	_ = massiveClient // routes added in a later step
+	slog.Info("massive price client initialized")
 
 	// Initialize stock service with cached provider and Polygon client
 	stockService := stock.NewCachedService(
