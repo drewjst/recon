@@ -24,9 +24,9 @@ function getHeatmapStyle(
       break;
     }
     case 'from52w': {
-      // Range: -50..0 (0 = at the high). 0 → +1, -50 → -1
+      // Range: -50..0 (0 = at the high). 0 → neutral, -50 → very red
       const clamped = Math.max(-50, Math.min(0, value));
-      normalized = 1 + clamped / 25;
+      normalized = clamped / 50;
       break;
     }
     case 'rank': {

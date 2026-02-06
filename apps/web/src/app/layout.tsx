@@ -75,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <Providers>
-          <TooltipProvider>
+          <TooltipProvider delayDuration={200}>
             {/* Header spans full width */}
             <Header />
             {/* Content container with max-width and borders */}

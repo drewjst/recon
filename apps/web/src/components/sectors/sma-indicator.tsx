@@ -24,6 +24,12 @@ function getSmaColor(value: boolean | null): string {
   return 'text-muted-foreground/40';
 }
 
+function getSmaArrow(value: boolean | null): string {
+  if (value === true) return '▲';
+  if (value === false) return '▼';
+  return '';
+}
+
 function getSmaStatus(value: boolean | null): string {
   if (value === true) return 'Above';
   if (value === false) return 'Below';
@@ -40,15 +46,22 @@ export function SmaIndicator({ sma20, sma50, sma200 }: SmaIndicatorProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="flex items-center gap-1.5 justify-end">
-          {SMA_PERIODS.map(({ key, period }) => (
-            <span
-              key={key}
-              className={`text-xs tabular-nums font-medium ${getSmaColor(values[key])}`}
-            >
-              {period}
-            </span>
-          ))}
+        <div className="flex items-center gap-2 justify-end">
+          {SMA_PERIODS.map(({ key, period }) => {
+            const value = values[key];
+            const arrow = getSmaArrow(value);
+            return (
+              <span
+                key={key}
+                className={`inline-flex items-center gap-px text-xs tabular-nums font-medium ${getSmaColor(value)}`}
+              >
+                {period}
+                {arrow && (
+                  <span className="text-[9px] leading-none">{arrow}</span>
+                )}
+              </span>
+            );
+          })}
         </div>
       </TooltipTrigger>
       <TooltipContent side="top">
