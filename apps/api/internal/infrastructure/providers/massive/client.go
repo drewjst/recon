@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const baseURL = "https://api.polygon.io"
+const baseURL = "https://api.massive.com"
 
 const maxConcurrent = 5
 
@@ -67,14 +67,14 @@ func (c *Client) get(ctx context.Context, url string, dest interface{}) error {
 	case http.StatusNotFound:
 		return errNotFound
 	case http.StatusTooManyRequests:
-		slog.Warn("polygon rate limit hit", "url", url)
-		return fmt.Errorf("polygon rate limit exceeded (429): %w", errRateLimited)
+		slog.Warn("massive rate limit hit", "url", url)
+		return fmt.Errorf("massive rate limit exceeded (429): %w", errRateLimited)
 	case http.StatusUnauthorized, http.StatusForbidden:
 		msg := parseErrorMessage(body)
-		return fmt.Errorf("polygon auth error (%d): %s", resp.StatusCode, msg)
+		return fmt.Errorf("massive auth error (%d): %s", resp.StatusCode, msg)
 	default:
 		msg := parseErrorMessage(body)
-		return fmt.Errorf("polygon API error (%d): %s", resp.StatusCode, msg)
+		return fmt.Errorf("massive API error (%d): %s", resp.StatusCode, msg)
 	}
 
 	if err := json.Unmarshal(body, dest); err != nil {

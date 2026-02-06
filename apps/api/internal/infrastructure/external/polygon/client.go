@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const baseURL = "https://api.polygon.io"
+const baseURL = "https://api.massive.com"
 
 // Client is a Polygon.io API client.
 type Client struct {

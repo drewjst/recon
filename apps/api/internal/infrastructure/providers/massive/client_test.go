@@ -29,7 +29,7 @@ func TestNewClient(t *testing.T) {
 func TestBuildURL(t *testing.T) {
 	c := NewClient("abc123")
 	got := c.buildURL("/v2/snapshot/locale/us/markets/stocks/tickers/AAPL")
-	want := "https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/AAPL"
+	want := "https://api.massive.com/v2/snapshot/locale/us/markets/stocks/tickers/AAPL"
 	if got != want {
 		t.Errorf("buildURL:\n  got  %q\n  want %q", got, want)
 	}
@@ -45,13 +45,13 @@ func TestAppendKey(t *testing.T) {
 	}{
 		{
 			name: "no existing params",
-			url:  "https://api.polygon.io/v2/snapshot",
-			want: "https://api.polygon.io/v2/snapshot?apiKey=mykey",
+			url:  "https://api.massive.com/v2/snapshot",
+			want: "https://api.massive.com/v2/snapshot?apiKey=mykey",
 		},
 		{
 			name: "with existing params",
-			url:  "https://api.polygon.io/v2/aggs?adjusted=true",
-			want: "https://api.polygon.io/v2/aggs?adjusted=true&apiKey=mykey",
+			url:  "https://api.massive.com/v2/aggs?adjusted=true",
+			want: "https://api.massive.com/v2/aggs?adjusted=true&apiKey=mykey",
 		},
 	}
 
@@ -253,6 +253,96 @@ func TestGet_RateLimit(t *testing.T) {
 	}
 	if !IsRateLimited(err) && !strings.Contains(err.Error(), "rate limit") {
 		t.Errorf("expected rate limit error, got: %v", err)
+	}
+}
+
+func TestGetDividends_Success(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := dividendResponse{
+			Status: "OK",
+			Results: []dividendWire{
+				{
+					CashAmount:     0.25,
+					Currency:       "USD",
+					ExDividendDate: "2025-08-11",
+					PayDate:        "2025-08-14",
+					RecordDate:     "2025-08-11",
+					Frequency:      4,
+					Type:           "recurring",
+					Ticker:         "AAPL",
+				},
+				{
+					CashAmount:     0.24,
+					Currency:       "USD",
+					ExDividendDate: "2025-05-12",
+					PayDate:        "2025-05-15",
+					RecordDate:     "2025-05-12",
+					Frequency:      4,
+					Type:           "recurring",
+					Ticker:         "AAPL",
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(srv.URL, "test-key")
+	divs, err := c.GetDividends(context.Background(), "AAPL")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(divs) != 2 {
+		t.Fatalf("expected 2 dividends, got %d", len(divs))
+	}
+	if divs[0].CashAmount != 0.25 {
+		t.Errorf("expected cash amount 0.25, got %f", divs[0].CashAmount)
+	}
+	if divs[0].ExDate != "2025-08-11" {
+		t.Errorf("expected ex date 2025-08-11, got %s", divs[0].ExDate)
+	}
+	if divs[0].Frequency != 4 {
+		t.Errorf("expected frequency 4, got %d", divs[0].Frequency)
+	}
+	if divs[0].Type != "recurring" {
+		t.Errorf("expected type recurring, got %s", divs[0].Type)
+	}
+}
+
+func TestGetDividends_NotFound(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(polygonError{Status: "ERROR", Error: "not found"})
+	}))
+	defer srv.Close()
+
+	c := newTestClient(srv.URL, "test-key")
+	divs, err := c.GetDividends(context.Background(), "INVALID")
+	if err != nil {
+		t.Fatalf("expected nil error for 404, got: %v", err)
+	}
+	if divs != nil {
+		t.Error("expected nil dividends for 404")
+	}
+}
+
+func TestGetDividends_EmptyResults(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := dividendResponse{
+			Status:  "OK",
+			Results: []dividendWire{},
+		}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(srv.URL, "test-key")
+	divs, err := c.GetDividends(context.Background(), "GOOGL")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if divs != nil {
+		t.Error("expected nil for empty results")
 	}
 }
 

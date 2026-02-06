@@ -52,7 +52,19 @@ type TechnicalIndicators struct {
 	Above200 bool
 }
 
-// --- Polygon wire types (JSON response shapes) ---
+// Dividend represents a single cash dividend distribution for a ticker.
+type Dividend struct {
+	Ticker     string
+	CashAmount float64
+	Currency   string
+	ExDate     string // yyyy-mm-dd
+	PayDate    string // yyyy-mm-dd
+	RecordDate string // yyyy-mm-dd
+	Frequency  int    // 1=annual, 2=semi-annual, 4=quarterly, 12=monthly
+	Type       string // "recurring", "special", etc.
+}
+
+// --- Massive wire types (JSON response shapes) ---
 
 // polygonError is the standard Polygon error response.
 type polygonError struct {
@@ -128,4 +140,23 @@ type indicatorResults struct {
 type indicatorValue struct {
 	Value     float64 `json:"value"`
 	Timestamp int64   `json:"timestamp"`
+}
+
+// dividendResponse wraps the /stocks/v1/dividends response.
+type dividendResponse struct {
+	Status  string         `json:"status"`
+	Results []dividendWire `json:"results"`
+	NextURL string         `json:"next_url"`
+}
+
+// dividendWire is the wire format for a single dividend record.
+type dividendWire struct {
+	CashAmount     float64 `json:"cash_amount"`
+	Currency       string  `json:"currency"`
+	ExDividendDate string  `json:"ex_dividend_date"`
+	PayDate        string  `json:"pay_date"`
+	RecordDate     string  `json:"record_date"`
+	Frequency      int     `json:"frequency"`
+	Type           string  `json:"distribution_type"`
+	Ticker         string  `json:"ticker"`
 }
