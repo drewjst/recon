@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Github, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { TickerSearch } from '@/components/search/ticker-search';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
@@ -39,23 +39,26 @@ function Navigation() {
   const isSectorsActive = pathname.startsWith('/sectors');
   const isCryptoActive = pathname.startsWith('/crypto');
 
+  const links = [
+    { href: '/', label: 'Screener', isActive: isScreenerActive },
+    { href: '/compare', label: 'Compare', isActive: isCompareActive },
+    { href: '/10k', label: '10-K', isActive: is10KActive },
+    { href: '/sectors', label: 'Sectors', isActive: isSectorsActive },
+    { href: '/crypto', label: 'Crypto', isActive: isCryptoActive },
+  ];
+
   return (
     <nav className="flex items-center gap-1">
-      <NavLink href="/" isActive={isScreenerActive}>
-        Screener
-      </NavLink>
-      <NavLink href="/compare" isActive={isCompareActive}>
-        Compare
-      </NavLink>
-      <NavLink href="/10k" isActive={is10KActive}>
-        10-K
-      </NavLink>
-      <NavLink href="/sectors" isActive={isSectorsActive}>
-        Sectors
-      </NavLink>
-      <NavLink href="/crypto" isActive={isCryptoActive}>
-        Crypto
-      </NavLink>
+      {links.map((link, i) => (
+        <span key={link.href} className="flex items-center">
+          {i > 0 && (
+            <span className="h-3.5 w-px bg-border/60 mx-1" />
+          )}
+          <NavLink href={link.href} isActive={link.isActive}>
+            {link.label}
+          </NavLink>
+        </span>
+      ))}
     </nav>
   );
 }
@@ -107,8 +110,8 @@ export function Header() {
     <>
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex h-14 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-          {/* Left - Logo (fixed width for balance) */}
-          <div className="w-24 shrink-0">
+          {/* Left - Logo */}
+          <div className="shrink-0 mr-6">
             <Link href="/" className="flex items-center">
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 Cruxit
@@ -124,7 +127,7 @@ export function Header() {
           </div>
 
           {/* Right - Search + Theme toggle */}
-          <div className="flex items-center justify-end gap-3 flex-1 md:flex-none md:w-80">
+          <div className="flex items-center justify-end gap-3 flex-1 md:flex-none md:w-96">
             {/* Desktop Search */}
             <div className="hidden md:flex flex-1">
               <Suspense fallback={null}>
@@ -140,17 +143,6 @@ export function Header() {
             >
               <Search className="h-4 w-4" />
             </button>
-
-            {/* GitHub */}
-            <a
-              href="https://github.com/drewjst/crux"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="View source on GitHub"
-            >
-              <Github className="h-4 w-4" />
-            </a>
 
             {/* Theme Toggle */}
             <ThemeToggle />
