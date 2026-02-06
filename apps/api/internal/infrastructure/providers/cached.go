@@ -86,11 +86,15 @@ func cached[T any](p *CachedFundamentalsProvider, cacheType, key string, ttl tim
 		data, err := json.Marshal(result)
 		if err != nil {
 			slog.Warn("cache marshal failed", "type", cacheType, "key", key, "error", err)
-		} else if err := p.cache.SetProviderCache(&db.ProviderCache{
-			DataType: cacheType, Key: key, Data: datatypes.JSON(data),
-			Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
-		}); err != nil {
-			slog.Warn("cache set failed", "type", cacheType, "key", key, "error", err)
+		} else {
+			go func() {
+				if err := p.cache.SetProviderCache(&db.ProviderCache{
+					DataType: cacheType, Key: key, Data: datatypes.JSON(data),
+					Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
+				}); err != nil {
+					slog.Warn("cache set failed", "type", cacheType, "key", key, "error", err)
+				}
+			}()
 		}
 	}
 	return result, nil
@@ -121,11 +125,15 @@ func cachedSlice[T any](p *CachedFundamentalsProvider, cacheType, key string, tt
 		data, err := json.Marshal(result)
 		if err != nil {
 			slog.Warn("cache marshal failed", "type", cacheType, "key", key, "error", err)
-		} else if err := p.cache.SetProviderCache(&db.ProviderCache{
-			DataType: cacheType, Key: key, Data: datatypes.JSON(data),
-			Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
-		}); err != nil {
-			slog.Warn("cache set failed", "type", cacheType, "key", key, "error", err)
+		} else {
+			go func() {
+				if err := p.cache.SetProviderCache(&db.ProviderCache{
+					DataType: cacheType, Key: key, Data: datatypes.JSON(data),
+					Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
+				}); err != nil {
+					slog.Warn("cache set failed", "type", cacheType, "key", key, "error", err)
+				}
+			}()
 		}
 	}
 	return result, nil
@@ -252,11 +260,15 @@ func (p *CachedFundamentalsProvider) IsETF(ctx context.Context, ticker string) (
 		data, err := json.Marshal(result)
 		if err != nil {
 			slog.Warn("cache marshal failed", "type", cacheIsETF, "key", ticker, "error", err)
-		} else if err := p.cache.SetProviderCache(&db.ProviderCache{
-			DataType: cacheIsETF, Key: ticker, Data: datatypes.JSON(data),
-			Provider: p.provider, ExpiresAt: time.Now().Add(ttlDefault),
-		}); err != nil {
-			slog.Warn("cache set failed", "type", cacheIsETF, "key", ticker, "error", err)
+		} else {
+			go func() {
+				if err := p.cache.SetProviderCache(&db.ProviderCache{
+					DataType: cacheIsETF, Key: ticker, Data: datatypes.JSON(data),
+					Provider: p.provider, ExpiresAt: time.Now().Add(ttlDefault),
+				}); err != nil {
+					slog.Warn("cache set failed", "type", cacheIsETF, "key", ticker, "error", err)
+				}
+			}()
 		}
 	}
 	return result, nil
