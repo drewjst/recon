@@ -88,7 +88,7 @@ func (c *Client) GetQuote(ctx context.Context, ticker string) (*Quote, error) {
 // GetBatchQuotes retrieves real-time quote data for multiple tickers in a single call.
 func (c *Client) GetBatchQuotes(ctx context.Context, tickers []string) ([]Quote, error) {
 	symbols := strings.Join(tickers, ",")
-	url := fmt.Sprintf("%s/quote?symbol=%s&apikey=%s", c.baseURL, symbols, c.apiKey)
+	url := fmt.Sprintf("%s/batch-quote?symbols=%s&apikey=%s", c.baseURL, symbols, c.apiKey)
 
 	var quotes []Quote
 	if err := c.get(ctx, url, &quotes); err != nil {

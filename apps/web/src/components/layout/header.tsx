@@ -149,7 +149,7 @@ export function Header() {
           {/* Right - Search + Theme toggle */}
           <div className="flex flex-1 items-center justify-end gap-3">
             {/* Desktop Search */}
-            <div className="hidden md:flex w-72">
+            <div className="hidden md:flex flex-1">
               <Suspense fallback={null}>
                 <TickerSearch placeholder="Search stocks..." />
               </Suspense>
