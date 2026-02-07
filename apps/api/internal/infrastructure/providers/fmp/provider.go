@@ -72,96 +72,162 @@ func (p *Provider) GetFinancials(ctx context.Context, ticker string, periods int
 
 // GetRatios implements FundamentalsProvider.
 func (p *Provider) GetRatios(ctx context.Context, ticker string) (*models.Ratios, error) {
-	var ratios *models.Ratios
+	// Fetch all data in parallel — API calls are independent
+	var (
+		ratiosTTM  []RatiosTTM
+		metricsTTM []KeyMetricsTTM
+		growth     []FinancialGrowth
+		income     []IncomeStatement
+		cashFlow   []CashFlowStatement
+	)
 
-	// Try TTM first for most current data
-	ratiosTTM, err := p.client.GetRatiosTTM(ctx, ticker)
-	if err != nil {
-		slog.Debug("FMP TTM ratios fetch failed, falling back to annual", "ticker", ticker, "error", err)
-	} else if len(ratiosTTM) == 0 {
-		slog.Debug("FMP TTM ratios returned empty array", "ticker", ticker)
-	} else {
-		metricsTTM, _ := p.client.GetKeyMetricsTTM(ctx, ticker)
+	g, gctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		r, err := p.client.GetRatiosTTM(gctx, ticker)
+		if err != nil {
+			slog.Debug("FMP TTM ratios fetch failed", "ticker", ticker, "error", err)
+			return nil
+		}
+		ratiosTTM = r
+		return nil
+	})
+
+	g.Go(func() error {
+		m, _ := p.client.GetKeyMetricsTTM(gctx, ticker)
+		metricsTTM = m
+		return nil
+	})
+
+	g.Go(func() error {
+		gr, err := p.client.GetFinancialGrowth(gctx, ticker, 1)
+		if err != nil {
+			slog.Debug("failed to fetch financial growth", "ticker", ticker, "error", err)
+			return nil
+		}
+		growth = gr
+		return nil
+	})
+
+	g.Go(func() error {
+		inc, err := p.client.GetIncomeStatement(gctx, ticker, 2)
+		if err != nil {
+			slog.Debug("failed to fetch income statement", "ticker", ticker, "error", err)
+			return nil
+		}
+		income = inc
+		return nil
+	})
+
+	g.Go(func() error {
+		cf, err := p.client.GetCashFlowStatement(gctx, ticker, 2)
+		if err != nil {
+			slog.Debug("failed to fetch cash flow for FCF", "ticker", ticker, "error", err)
+			return nil
+		}
+		cashFlow = cf
+		return nil
+	})
+
+	_ = g.Wait()
+
+	// Build base ratios from TTM data
+	ratios := p.buildBaseRatios(ctx, ticker, ratiosTTM, metricsTTM)
+	if ratios == nil {
+		return nil, nil
+	}
+
+	// Apply growth metrics (preferred source)
+	applyGrowthMetrics(ratios, growth, ticker)
+
+	// Apply income statement data + fallback growth calculations
+	applyIncomeData(ratios, income)
+
+	// Apply cash flow data + fallback growth calculations
+	applyCashFlowData(ratios, cashFlow)
+
+	return ratios, nil
+}
+
+// buildBaseRatios constructs the ratios from TTM data, falling back to annual.
+func (p *Provider) buildBaseRatios(ctx context.Context, ticker string, ratiosTTM []RatiosTTM, metricsTTM []KeyMetricsTTM) *models.Ratios {
+	if len(ratiosTTM) > 0 {
 		var metrics *KeyMetricsTTM
 		if len(metricsTTM) > 0 {
 			metrics = &metricsTTM[0]
 		}
-		ratios = mapRatiosTTM(&ratiosTTM[0], metrics)
+		return mapRatiosTTM(&ratiosTTM[0], metrics)
 	}
 
-	// Fall back to annual ratios if TTM not available
-	if ratios == nil {
-		annualRatios, err := p.client.GetRatios(ctx, ticker, 1)
-		if err != nil {
-			return nil, fmt.Errorf("fetching ratios: %w", err)
-		}
-		if len(annualRatios) == 0 {
-			return nil, nil
-		}
-
-		metrics, _ := p.client.GetKeyMetrics(ctx, ticker, 1)
-		var keyMetrics *KeyMetrics
-		if len(metrics) > 0 {
-			keyMetrics = &metrics[0]
-		}
-		ratios = mapRatios(&annualRatios[0], keyMetrics)
-	}
-
-	// Fetch pre-calculated growth metrics from FMP financial-growth endpoint
-	// This gives us more accurate YoY growth rates than manual calculation
-	growth, err := p.client.GetFinancialGrowth(ctx, ticker, 1)
+	slog.Debug("FMP TTM ratios unavailable, falling back to annual", "ticker", ticker)
+	annualRatios, err := p.client.GetRatios(ctx, ticker, 1)
 	if err != nil {
-		slog.Debug("failed to fetch financial growth", "ticker", ticker, "error", err)
-	} else if len(growth) > 0 {
-		g := growth[0]
-		// FMP returns growth rates as decimals (0.15 = 15%), convert to percentage
-		ratios.RevenueGrowthYoY = g.RevenueGrowth * 100
-		ratios.EPSGrowthYoY = g.EPSDilutedGrowth * 100
-		ratios.CashFlowGrowthYoY = g.FreeCashFlowGrowth * 100
-		ratios.NetIncomeGrowthYoY = g.NetIncomeGrowth * 100
-		ratios.OperatingIncomeGrowthYoY = g.OperatingIncomeGrowth * 100
-		ratios.OperatingCFGrowthYoY = g.OperatingCFGrowth * 100
-		slog.Debug("FMP financial growth",
-			"ticker", ticker,
-			"revenueGrowth", ratios.RevenueGrowthYoY,
-			"epsGrowth", ratios.EPSGrowthYoY,
-			"fcfGrowth", ratios.CashFlowGrowthYoY,
-			"netIncomeGrowth", ratios.NetIncomeGrowthYoY,
-			"operatingIncomeGrowth", ratios.OperatingIncomeGrowthYoY,
-			"operatingCFGrowth", ratios.OperatingCFGrowthYoY)
+		slog.Debug("fetching annual ratios failed", "ticker", ticker, "error", err)
+		return nil
+	}
+	if len(annualRatios) == 0 {
+		return nil
 	}
 
-	// Fetch 2 years of income statements for RevenueTTM, NetIncomeTTM, and YoY growth calculation
-	income, err := p.client.GetIncomeStatement(ctx, ticker, 2)
-	if err != nil {
-		slog.Debug("failed to fetch income statement", "ticker", ticker, "error", err)
-	} else if len(income) >= 1 {
-		ratios.RevenueTTM = income[0].Revenue
-		ratios.NetIncomeTTM = income[0].NetIncome
-
-		// Calculate YoY growth from statements when financial-growth endpoint didn't provide them
-		if len(income) >= 2 && income[1].NetIncome != 0 && ratios.NetIncomeGrowthYoY == 0 {
-			ratios.NetIncomeGrowthYoY = (income[0].NetIncome - income[1].NetIncome) / abs(income[1].NetIncome) * 100
-		}
-		if len(income) >= 2 && income[1].OperatingIncome != 0 && ratios.OperatingIncomeGrowthYoY == 0 {
-			ratios.OperatingIncomeGrowthYoY = (income[0].OperatingIncome - income[1].OperatingIncome) / abs(income[1].OperatingIncome) * 100
-		}
+	annualMetrics, _ := p.client.GetKeyMetrics(ctx, ticker, 1)
+	var keyMetrics *KeyMetrics
+	if len(annualMetrics) > 0 {
+		keyMetrics = &annualMetrics[0]
 	}
+	return mapRatios(&annualRatios[0], keyMetrics)
+}
 
-	// Fetch 2 years of cash flow statements for FCF TTM and operating CF growth
-	cashFlow, err := p.client.GetCashFlowStatement(ctx, ticker, 2)
-	if err != nil {
-		slog.Debug("failed to fetch cash flow for FCF", "ticker", ticker, "error", err)
-	} else if len(cashFlow) >= 1 {
-		ratios.FreeCashFlowTTM = cashFlow[0].FreeCashFlow
-
-		// Calculate operating CF growth when financial-growth endpoint didn't provide it
-		if len(cashFlow) >= 2 && cashFlow[1].OperatingCashFlow != 0 && ratios.OperatingCFGrowthYoY == 0 {
-			ratios.OperatingCFGrowthYoY = (cashFlow[0].OperatingCashFlow - cashFlow[1].OperatingCashFlow) / abs(cashFlow[1].OperatingCashFlow) * 100
-		}
+// applyGrowthMetrics sets pre-calculated YoY growth rates from FMP.
+func applyGrowthMetrics(ratios *models.Ratios, growth []FinancialGrowth, ticker string) {
+	if len(growth) == 0 {
+		return
 	}
+	gr := growth[0]
+	// FMP returns growth rates as decimals (0.15 = 15%), convert to percentage
+	ratios.RevenueGrowthYoY = gr.RevenueGrowth * 100
+	ratios.EPSGrowthYoY = gr.EPSDilutedGrowth * 100
+	ratios.CashFlowGrowthYoY = gr.FreeCashFlowGrowth * 100
+	ratios.NetIncomeGrowthYoY = gr.NetIncomeGrowth * 100
+	ratios.OperatingIncomeGrowthYoY = gr.OperatingIncomeGrowth * 100
+	ratios.OperatingCFGrowthYoY = gr.OperatingCFGrowth * 100
+	slog.Debug("FMP financial growth",
+		"ticker", ticker,
+		"revenueGrowth", ratios.RevenueGrowthYoY,
+		"epsGrowth", ratios.EPSGrowthYoY,
+		"fcfGrowth", ratios.CashFlowGrowthYoY,
+		"netIncomeGrowth", ratios.NetIncomeGrowthYoY,
+		"operatingIncomeGrowth", ratios.OperatingIncomeGrowthYoY,
+		"operatingCFGrowth", ratios.OperatingCFGrowthYoY)
+}
 
-	return ratios, nil
+// applyIncomeData sets RevenueTTM, NetIncomeTTM, and fallback growth calculations.
+func applyIncomeData(ratios *models.Ratios, income []IncomeStatement) {
+	if len(income) == 0 {
+		return
+	}
+	ratios.RevenueTTM = income[0].Revenue
+	ratios.NetIncomeTTM = income[0].NetIncome
+
+	// Calculate YoY growth from statements when financial-growth endpoint didn't provide them
+	if len(income) >= 2 && income[1].NetIncome != 0 && ratios.NetIncomeGrowthYoY == 0 {
+		ratios.NetIncomeGrowthYoY = (income[0].NetIncome - income[1].NetIncome) / abs(income[1].NetIncome) * 100
+	}
+	if len(income) >= 2 && income[1].OperatingIncome != 0 && ratios.OperatingIncomeGrowthYoY == 0 {
+		ratios.OperatingIncomeGrowthYoY = (income[0].OperatingIncome - income[1].OperatingIncome) / abs(income[1].OperatingIncome) * 100
+	}
+}
+
+// applyCashFlowData sets FreeCashFlowTTM and fallback operating CF growth.
+func applyCashFlowData(ratios *models.Ratios, cashFlow []CashFlowStatement) {
+	if len(cashFlow) == 0 {
+		return
+	}
+	ratios.FreeCashFlowTTM = cashFlow[0].FreeCashFlow
+
+	// Calculate operating CF growth when financial-growth endpoint didn't provide it
+	if len(cashFlow) >= 2 && cashFlow[1].OperatingCashFlow != 0 && ratios.OperatingCFGrowthYoY == 0 {
+		ratios.OperatingCFGrowthYoY = (cashFlow[0].OperatingCashFlow - cashFlow[1].OperatingCashFlow) / abs(cashFlow[1].OperatingCashFlow) * 100
+	}
 }
 
 // abs returns the absolute value of a float64.

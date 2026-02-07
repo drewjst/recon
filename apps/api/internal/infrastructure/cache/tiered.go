@@ -60,9 +60,16 @@ var CacheConfigs = map[string]CacheConfig{
 	"rs_rank":         {TTL: 24 * time.Hour, Source: "computed"},
 }
 
+// CacheKey identifies a single cache entry by data type and key.
+type CacheKey struct {
+	DataType string
+	Key      string
+}
+
 // TieredCache provides data-type-aware caching with market-sensitive TTLs.
 type TieredCache interface {
 	Get(ctx context.Context, dataType string, key string, dest interface{}) (bool, error)
+	GetMulti(ctx context.Context, keys []CacheKey) (map[string]json.RawMessage, error)
 	Set(ctx context.Context, dataType string, key string, value interface{}) error
 	Invalidate(ctx context.Context, dataType string, key string) error
 }
@@ -108,6 +115,45 @@ func (c *tieredCache) Get(ctx context.Context, dataType string, key string, dest
 	}
 
 	return true, nil
+}
+
+// GetMulti retrieves multiple cache entries in a single query.
+// Returns a map keyed by "dataType:key" → raw JSON for cache hits.
+// Entries that are missing or expired are omitted from the result.
+func (c *tieredCache) GetMulti(ctx context.Context, keys []CacheKey) (map[string]json.RawMessage, error) {
+	if len(keys) == 0 {
+		return nil, nil
+	}
+
+	// Build pairs for WHERE clause: (data_type = ? AND key = ?) OR ...
+	// GORM doesn't support tuple IN for composite keys, so use OR conditions.
+	tx := c.db.WithContext(ctx)
+	scope := tx.Where("1 = 0") // start with false, OR in each pair
+	for _, k := range keys {
+		scope = scope.Or("data_type = ? AND key = ?", k.DataType, k.Key)
+	}
+
+	var entries []db.ProviderCache
+	if err := scope.Find(&entries).Error; err != nil {
+		return nil, fmt.Errorf("batch querying tiered cache: %w", err)
+	}
+
+	now := time.Now()
+	results := make(map[string]json.RawMessage, len(entries))
+	for _, entry := range entries {
+		cfg, ok := CacheConfigs[entry.DataType]
+		if !ok {
+			continue
+		}
+		expiresAt := entry.UpdatedAt.Add(cfg.EffectiveTTL())
+		if now.After(expiresAt) {
+			continue
+		}
+		mapKey := entry.DataType + ":" + entry.Key
+		results[mapKey] = json.RawMessage(entry.Data)
+	}
+
+	return results, nil
 }
 
 // Set stores a value in the cache. The ExpiresAt column is set to the maximum

@@ -10,6 +10,7 @@ import (
 
 	"github.com/drewjst/crux/apps/api/internal/domain/models"
 	"github.com/drewjst/crux/apps/api/internal/infrastructure/db"
+	"golang.org/x/sync/singleflight"
 	"gorm.io/datatypes"
 )
 
@@ -50,10 +51,13 @@ type CacheRepository interface {
 }
 
 // CachedFundamentalsProvider wraps a FundamentalsProvider with caching.
+// Uses singleflight to deduplicate concurrent fetches for the same key,
+// preventing cache stampede when multiple requests cache-miss simultaneously.
 type CachedFundamentalsProvider struct {
 	underlying FundamentalsProvider
 	cache      CacheRepository
 	provider   string
+	sf         singleflight.Group
 }
 
 // NewCachedFundamentalsProvider creates a new cached provider wrapper.
@@ -62,6 +66,7 @@ func NewCachedFundamentalsProvider(underlying FundamentalsProvider, cache CacheR
 }
 
 // cached is a generic helper that handles cache get/set logic for pointer types.
+// Uses singleflight to deduplicate concurrent fetches for the same cache key.
 func cached[T any](p *CachedFundamentalsProvider, cacheType, key string, ttl time.Duration, fetch func() (*T, error)) (*T, error) {
 	if p.cache != nil {
 		entry, err := p.cache.GetProviderCache(cacheType, key)
@@ -78,29 +83,41 @@ func cached[T any](p *CachedFundamentalsProvider, cacheType, key string, ttl tim
 		}
 	}
 
-	result, err := fetch()
+	// Deduplicate concurrent fetches for the same key
+	sfKey := cacheType + ":" + key
+	v, err, _ := p.sf.Do(sfKey, func() (interface{}, error) {
+		result, err := fetch()
+		if err != nil {
+			return nil, err
+		}
+		if result != nil && p.cache != nil {
+			data, marshalErr := json.Marshal(result)
+			if marshalErr != nil {
+				slog.Warn("cache marshal failed", "type", cacheType, "key", key, "error", marshalErr)
+			} else {
+				go func() {
+					if setErr := p.cache.SetProviderCache(&db.ProviderCache{
+						DataType: cacheType, Key: key, Data: datatypes.JSON(data),
+						Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
+					}); setErr != nil {
+						slog.Warn("cache set failed", "type", cacheType, "key", key, "error", setErr)
+					}
+				}()
+			}
+		}
+		return result, nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if result != nil && p.cache != nil {
-		data, err := json.Marshal(result)
-		if err != nil {
-			slog.Warn("cache marshal failed", "type", cacheType, "key", key, "error", err)
-		} else {
-			go func() {
-				if err := p.cache.SetProviderCache(&db.ProviderCache{
-					DataType: cacheType, Key: key, Data: datatypes.JSON(data),
-					Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
-				}); err != nil {
-					slog.Warn("cache set failed", "type", cacheType, "key", key, "error", err)
-				}
-			}()
-		}
+	if v == nil {
+		return nil, nil
 	}
-	return result, nil
+	return v.(*T), nil
 }
 
 // cachedSlice is a generic helper for slice types.
+// Uses singleflight to deduplicate concurrent fetches for the same cache key.
 func cachedSlice[T any](p *CachedFundamentalsProvider, cacheType, key string, ttl time.Duration, fetch func() ([]T, error)) ([]T, error) {
 	if p.cache != nil {
 		entry, err := p.cache.GetProviderCache(cacheType, key)
@@ -117,26 +134,37 @@ func cachedSlice[T any](p *CachedFundamentalsProvider, cacheType, key string, tt
 		}
 	}
 
-	result, err := fetch()
+	// Deduplicate concurrent fetches for the same key
+	sfKey := cacheType + ":" + key
+	v, err, _ := p.sf.Do(sfKey, func() (interface{}, error) {
+		result, err := fetch()
+		if err != nil {
+			return nil, err
+		}
+		if len(result) > 0 && p.cache != nil {
+			data, marshalErr := json.Marshal(result)
+			if marshalErr != nil {
+				slog.Warn("cache marshal failed", "type", cacheType, "key", key, "error", marshalErr)
+			} else {
+				go func() {
+					if setErr := p.cache.SetProviderCache(&db.ProviderCache{
+						DataType: cacheType, Key: key, Data: datatypes.JSON(data),
+						Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
+					}); setErr != nil {
+						slog.Warn("cache set failed", "type", cacheType, "key", key, "error", setErr)
+					}
+				}()
+			}
+		}
+		return result, nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if len(result) > 0 && p.cache != nil {
-		data, err := json.Marshal(result)
-		if err != nil {
-			slog.Warn("cache marshal failed", "type", cacheType, "key", key, "error", err)
-		} else {
-			go func() {
-				if err := p.cache.SetProviderCache(&db.ProviderCache{
-					DataType: cacheType, Key: key, Data: datatypes.JSON(data),
-					Provider: p.provider, ExpiresAt: time.Now().Add(ttl),
-				}); err != nil {
-					slog.Warn("cache set failed", "type", cacheType, "key", key, "error", err)
-				}
-			}()
-		}
+	if v == nil {
+		return nil, nil
 	}
-	return result, nil
+	return v.([]T), nil
 }
 
 // Interface implementations using generic helpers.

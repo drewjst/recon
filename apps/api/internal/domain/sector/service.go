@@ -3,6 +3,7 @@ package sector
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"math"
@@ -358,16 +359,34 @@ func (s *Service) enrichEntries(ctx context.Context, tickers []string, entries [
 	wg.Wait()
 }
 
+// technicalDataTypes lists the cache data types for technical indicators.
+var technicalDataTypes = []string{"sma_20", "sma_50", "sma_200", "rsi_14"}
+
 // fetchTechnicals fetches SMA/RSI for each ticker with bounded concurrency.
+// Uses batch cache prefetch to reduce DB queries from 4*N to 1.
 func (s *Service) fetchTechnicals(ctx context.Context, tickers []string, entries []StockEntry, tickerIndex map[string]int, mu *sync.Mutex) {
+	// Batch-prefetch all technical indicator cache entries in one query
+	prefetched := s.prefetchTechnicals(ctx, tickers, entries, tickerIndex)
+
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(maxConcurrent)
 
 	for _, ticker := range tickers {
+		// Use prefetched data if available, otherwise fetch from Massive
+		if ti, ok := prefetched[ticker]; ok {
+			mu.Lock()
+			idx := tickerIndex[ticker]
+			entries[idx].SMA20 = boolPtr(ti.Above20)
+			entries[idx].SMA50 = boolPtr(ti.Above50)
+			entries[idx].SMA200 = boolPtr(ti.Above200)
+			mu.Unlock()
+			continue
+		}
+
 		g.Go(func() error {
 			price := entries[tickerIndex[ticker]].Price
 			v, err, _ := s.sfTechnicals.Do(ticker, func() (interface{}, error) {
-				return s.getCachedTechnicals(gCtx, ticker, price)
+				return s.fetchAndCacheTechnicals(gCtx, ticker, price)
 			})
 			if err != nil {
 				slog.Debug("technicals failed", "ticker", ticker, "error", err)
@@ -390,36 +409,51 @@ func (s *Service) fetchTechnicals(ctx context.Context, tickers []string, entries
 	_ = g.Wait()
 }
 
-// getCachedTechnicals checks individual SMA/RSI caches before calling Massive.
-func (s *Service) getCachedTechnicals(ctx context.Context, ticker string, price float64) (*massive.TechnicalIndicators, error) {
-	// Check if we have all cached
-	var sma20, sma50, sma200 massive.IndicatorResult
-	var rsi14 massive.IndicatorResult
-	allCached := true
-
-	for _, item := range []struct {
-		dataType string
-		dest     *massive.IndicatorResult
-	}{
-		{"sma_20", &sma20},
-		{"sma_50", &sma50},
-		{"sma_200", &sma200},
-		{"rsi_14", &rsi14},
-	} {
-		hit, err := s.cache.Get(ctx, item.dataType, ticker, item.dest)
-		if err != nil {
-			slog.Debug("indicator cache error", "dataType", item.dataType, "ticker", ticker, "error", err)
-			allCached = false
-			break
-		}
-		if !hit {
-			allCached = false
-			break
+// prefetchTechnicals batch-reads all technical indicator cache entries for the
+// given tickers in a single DB query, returning assembled results per ticker.
+func (s *Service) prefetchTechnicals(ctx context.Context, tickers []string, entries []StockEntry, tickerIndex map[string]int) map[string]*massive.TechnicalIndicators {
+	keys := make([]cache.CacheKey, 0, len(tickers)*len(technicalDataTypes))
+	for _, t := range tickers {
+		for _, dt := range technicalDataTypes {
+			keys = append(keys, cache.CacheKey{DataType: dt, Key: t})
 		}
 	}
 
-	if allCached {
-		return &massive.TechnicalIndicators{
+	raw, err := s.cache.GetMulti(ctx, keys)
+	if err != nil {
+		slog.Debug("batch technical cache prefetch failed", "error", err)
+		return nil
+	}
+
+	result := make(map[string]*massive.TechnicalIndicators, len(tickers))
+	for _, ticker := range tickers {
+		var sma20, sma50, sma200, rsi14 massive.IndicatorResult
+		allHit := true
+		for _, item := range []struct {
+			dt   string
+			dest *massive.IndicatorResult
+		}{
+			{"sma_20", &sma20},
+			{"sma_50", &sma50},
+			{"sma_200", &sma200},
+			{"rsi_14", &rsi14},
+		} {
+			data, ok := raw[item.dt+":"+ticker]
+			if !ok {
+				allHit = false
+				break
+			}
+			if err := json.Unmarshal(data, item.dest); err != nil {
+				allHit = false
+				break
+			}
+		}
+		if !allHit {
+			continue
+		}
+
+		price := entries[tickerIndex[ticker]].Price
+		result[ticker] = &massive.TechnicalIndicators{
 			SMA20:    sma20.Value,
 			SMA50:    sma50.Value,
 			SMA200:   sma200.Value,
@@ -427,10 +461,14 @@ func (s *Service) getCachedTechnicals(ctx context.Context, ticker string, price 
 			Above20:  price > sma20.Value && sma20.Value > 0,
 			Above50:  price > sma50.Value && sma50.Value > 0,
 			Above200: price > sma200.Value && sma200.Value > 0,
-		}, nil
+		}
 	}
 
-	// Cache miss — fetch from Massive
+	return result
+}
+
+// fetchAndCacheTechnicals fetches technicals from Massive and caches results.
+func (s *Service) fetchAndCacheTechnicals(ctx context.Context, ticker string, price float64) (*massive.TechnicalIndicators, error) {
 	ti, err := s.massive.GetTechnicals(ctx, ticker, price)
 	if err != nil {
 		return nil, err
@@ -439,7 +477,6 @@ func (s *Service) getCachedTechnicals(ctx context.Context, ticker string, price 
 		return nil, nil
 	}
 
-	// Cache individual results
 	s.cacheIndicator(ctx, "sma_20", ticker, ti.SMA20)
 	s.cacheIndicator(ctx, "sma_50", ticker, ti.SMA50)
 	s.cacheIndicator(ctx, "sma_200", ticker, ti.SMA200)
