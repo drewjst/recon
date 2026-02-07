@@ -34,12 +34,19 @@ var ValidSectors = []string{
 	"Real Estate",
 	"Utilities",
 	// Custom curated watchlists
+	"Dow 30",
 	"Software",
 }
 
 // CustomSectors maps custom sector names to their curated ticker lists.
 // These bypass the FMP screener and use batch quotes instead.
 var CustomSectors = map[string][]string{
+	"Dow 30": {
+		"AAPL", "AMGN", "AMZN", "AXP", "BA", "CAT", "CRM", "CSCO",
+		"CVX", "DIS", "GS", "HD", "HON", "IBM", "JNJ", "JPM",
+		"KO", "MCD", "MMM", "MRK", "MSFT", "NKE", "NVDA", "PG",
+		"SHW", "TRV", "UNH", "V", "VZ", "WMT",
+	},
 	"Software": {
 		"FIG", "TTD", "DUOL", "HUBS", "MNDY", "WIX", "TEAM", "ASAN",
 		"CVLT", "DOCS", "KVYO", "BRZE", "IOT", "GTLB", "NOW", "DOCU",
