@@ -10,7 +10,7 @@ import { SummaryBar } from './summary-bar';
 import { HeatmapTable, HeatmapTableSkeleton } from './heatmap-table';
 
 const DEFAULT_SECTOR = 'Technology';
-const DEFAULT_SORT: SectorSortField = '52whigh';
+const DEFAULT_SORT: SectorSortField = 'marketcap';
 const DEFAULT_LIMIT = 30;
 
 const SORT_OPTIONS: { value: SectorSortField; label: string }[] = [
