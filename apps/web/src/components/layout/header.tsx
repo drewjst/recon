@@ -131,7 +131,7 @@ export function Header() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex h-14 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
           {/* Left - Logo */}
-          <div className="shrink-0 mr-6">
+          <div className="flex flex-1 items-center">
             <Link href="/" className="flex items-center">
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 Cruxit
@@ -140,16 +140,16 @@ export function Header() {
           </div>
 
           {/* Center - Navigation */}
-          <div className="hidden md:flex flex-1 justify-center">
+          <div className="hidden md:flex shrink-0">
             <Suspense fallback={null}>
               <Navigation />
             </Suspense>
           </div>
 
           {/* Right - Search + Theme toggle */}
-          <div className="flex items-center justify-end gap-3 flex-1 md:flex-none md:w-96">
+          <div className="flex flex-1 items-center justify-end gap-3">
             {/* Desktop Search */}
-            <div className="hidden md:flex flex-1">
+            <div className="hidden md:flex w-72">
               <Suspense fallback={null}>
                 <TickerSearch placeholder="Search stocks..." />
               </Suspense>
