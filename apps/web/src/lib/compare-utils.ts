@@ -378,18 +378,32 @@ export const COMPARE_METRICS: Record<string, MetricConfig[]> = {
   ],
 };
 
+const pathCache = new Map<string, string[]>();
+const MAX_CACHE_SIZE = 1000;
+
 /**
  * Safely access a nested property using dot notation.
  */
 export function getNestedValue(obj: unknown, path: string): number | null {
-  const value = path.split('.').reduce<unknown>((acc, key) => {
-    if (acc && typeof acc === 'object' && key in acc) {
-      return (acc as Record<string, unknown>)[key];
+  let parts = pathCache.get(path);
+  if (!parts) {
+    if (pathCache.size >= MAX_CACHE_SIZE) {
+      pathCache.clear();
     }
-    return undefined;
-  }, obj);
+    parts = path.split('.');
+    pathCache.set(path, parts);
+  }
 
-  return typeof value === 'number' && !isNaN(value) ? value : null;
+  let current: any = obj;
+  for (const key of parts) {
+    if (current && typeof current === 'object' && key in current) {
+      current = current[key];
+    } else {
+      return null;
+    }
+  }
+
+  return typeof current === 'number' && !isNaN(current) ? current : null;
 }
 
 /**

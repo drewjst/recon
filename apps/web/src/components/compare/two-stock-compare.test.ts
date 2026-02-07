@@ -1,6 +1,6 @@
 
 import { describe, it, bench } from 'vitest';
-import { calculateCategoryWins } from './two-stock-compare';
+import { calculateCategoryWins } from '../../lib/compare-logic';
 import type { StockDetailResponse } from '@recon/shared';
 
 // Mock data generator
