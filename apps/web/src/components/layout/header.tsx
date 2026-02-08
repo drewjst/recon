@@ -34,7 +34,7 @@ function NavLink({ href, children, isActive }: NavLinkProps) {
 }
 
 const NAV_LINKS = [
-  { href: '/', label: 'Screener', match: (p: string) => p === '/' || p.startsWith('/stock/') },
+  { href: '/', label: 'Distill', match: (p: string) => p === '/' || p.startsWith('/stock/') },
   { href: '/compare', label: 'Compare', match: (p: string) => p.startsWith('/compare') },
   { href: '/10k', label: '10-K', match: (p: string) => p.startsWith('/10k') },
   { href: '/sectors', label: 'Sectors', match: (p: string) => p.startsWith('/sectors') },

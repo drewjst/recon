@@ -234,8 +234,8 @@ function CompareContent() {
 
         {/* Empty slots with add button */}
         {emptySlots > 0 && (
-          <Card className="border-dashed">
-            <CardContent className="p-4 h-[100px]">
+          <Card className="border-dashed overflow-visible">
+            <CardContent className="p-4 h-[100px] overflow-visible">
               <StockPicker
                 onSelect={addTicker}
                 placeholder={tickers.length === 0 ? 'Add first stock...' : 'Add stock...'}

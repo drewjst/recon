@@ -20,6 +20,11 @@ function pctColor(value: number | null): string {
   return 'text-muted-foreground';
 }
 
+function formatMultiple(value: number | null): string {
+  if (value == null) return '--';
+  return value.toFixed(1) + 'x';
+}
+
 function BreadthBar({ label, value }: { label: string; value: number | null }) {
   const pct = value ?? 0;
   return (
@@ -43,30 +48,33 @@ function BreadthBar({ label, value }: { label: string; value: number | null }) {
 
 function StatCard({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('rounded-lg border bg-card px-4 py-3', className)}>
+    <div className={cn('rounded-lg border bg-card px-3 py-2.5', className)}>
       {children}
     </div>
   );
 }
 
-function StatItem({ label, value, className }: { label: string; value: string; className?: string }) {
+function StatItem({ label, value, sub, className }: { label: string; value: string; sub?: string; className?: string }) {
   return (
     <div>
-      <div className="text-[11px] text-muted-foreground uppercase tracking-wider">{label}</div>
-      <div className={cn('text-sm font-semibold tabular-nums mt-0.5', className)}>{value}</div>
+      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</div>
+      <div className={cn('text-sm font-semibold tabular-nums mt-0.5', className)}>
+        {value}
+        {sub && <span className="text-[10px] font-normal text-muted-foreground ml-1">{sub}</span>}
+      </div>
     </div>
   );
 }
 
 export function SummaryBar({ summary, stockCount }: SummaryBarProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
       {/* Overview */}
       <StatCard>
-        <div className="flex items-baseline justify-between gap-4">
+        <div className="flex items-baseline justify-between gap-3">
           <StatItem label="Stocks" value={stockCount.toString()} />
           <StatItem
-            label="Total Mkt Cap"
+            label="Mkt Cap"
             value={summary.totalMarketCap != null ? formatMarketCap(summary.totalMarketCap) : '--'}
           />
         </div>
@@ -74,28 +82,27 @@ export function SummaryBar({ summary, stockCount }: SummaryBarProps) {
 
       {/* Valuation */}
       <StatCard>
-        <div className="flex items-baseline justify-between gap-4">
+        <div className="flex items-baseline justify-between gap-3">
           <StatItem
-            label="Med P/S"
-            value={summary.medianPs != null ? summary.medianPs.toFixed(1) + 'x' : '--'}
+            label="P/S"
+            value={formatMultiple(summary.medianPs)}
+            sub={summary.avgPs != null ? `avg ${formatMultiple(summary.avgPs)}` : undefined}
           />
           <StatItem
-            label="Med P/E"
-            value={summary.medianPe != null ? summary.medianPe.toFixed(1) + 'x' : '--'}
-          />
-          <StatItem
-            label="ROIC"
-            value={summary.avgRoic != null ? summary.avgRoic.toFixed(1) + '%' : '--'}
+            label="P/E"
+            value={formatMultiple(summary.medianPe)}
+            sub={summary.avgPe != null ? `avg ${formatMultiple(summary.avgPe)}` : undefined}
           />
         </div>
       </StatCard>
 
-      {/* Performance */}
+      {/* Quality */}
       <StatCard>
-        <div className="flex items-baseline justify-between gap-4">
-          <StatItem label="1M" value={formatPct(summary.median1m)} className={pctColor(summary.median1m)} />
-          <StatItem label="YTD" value={formatPct(summary.medianYtd)} className={pctColor(summary.medianYtd)} />
-          <StatItem label="1Y" value={formatPct(summary.median1y)} className={pctColor(summary.median1y)} />
+        <div className="flex items-baseline justify-between gap-3">
+          <StatItem
+            label="ROIC"
+            value={summary.avgRoic != null ? summary.avgRoic.toFixed(1) + '%' : '--'}
+          />
           <StatItem
             label="52W Hi"
             value={formatPct(summary.medianFrom52wHigh)}
@@ -104,10 +111,19 @@ export function SummaryBar({ summary, stockCount }: SummaryBarProps) {
         </div>
       </StatCard>
 
+      {/* Performance */}
+      <StatCard>
+        <div className="flex items-baseline justify-between gap-3">
+          <StatItem label="1M" value={formatPct(summary.median1m)} className={pctColor(summary.median1m)} />
+          <StatItem label="YTD" value={formatPct(summary.medianYtd)} className={pctColor(summary.medianYtd)} />
+          <StatItem label="1Y" value={formatPct(summary.median1y)} className={pctColor(summary.median1y)} />
+        </div>
+      </StatCard>
+
       {/* SMA Breadth */}
       <StatCard>
-        <div className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">Breadth</div>
-        <div className="space-y-1.5">
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Breadth</div>
+        <div className="space-y-1">
           <BreadthBar label="20d" value={summary.pctAboveSma20} />
           <BreadthBar label="50d" value={summary.pctAboveSma50} />
           <BreadthBar label="200d" value={summary.pctAboveSma200} />

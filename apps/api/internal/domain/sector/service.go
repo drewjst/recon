@@ -385,9 +385,7 @@ func (s *Service) fetchTechnicals(ctx context.Context, tickers []string, entries
 		if ti, ok := prefetched[ticker]; ok {
 			mu.Lock()
 			idx := tickerIndex[ticker]
-			entries[idx].SMA20 = boolPtr(ti.Above20)
-			entries[idx].SMA50 = boolPtr(ti.Above50)
-			entries[idx].SMA200 = boolPtr(ti.Above200)
+			setSMABools(&entries[idx], ti)
 			mu.Unlock()
 			continue
 		}
@@ -408,9 +406,7 @@ func (s *Service) fetchTechnicals(ctx context.Context, tickers []string, entries
 			ti := v.(*massive.TechnicalIndicators)
 			mu.Lock()
 			idx := tickerIndex[ticker]
-			entries[idx].SMA20 = boolPtr(ti.Above20)
-			entries[idx].SMA50 = boolPtr(ti.Above50)
-			entries[idx].SMA200 = boolPtr(ti.Above200)
+			setSMABools(&entries[idx], ti)
 			mu.Unlock()
 			return nil
 		})
@@ -492,6 +488,19 @@ func (s *Service) fetchAndCacheTechnicals(ctx context.Context, ticker string, pr
 	s.cacheIndicator(ctx, "rsi_14", ticker, ti.RSI14)
 
 	return ti, nil
+}
+
+// setSMABools sets SMA above/below bools on an entry, leaving nil when no data.
+func setSMABools(e *StockEntry, ti *massive.TechnicalIndicators) {
+	if ti.SMA20 > 0 {
+		e.SMA20 = boolPtr(ti.Above20)
+	}
+	if ti.SMA50 > 0 {
+		e.SMA50 = boolPtr(ti.Above50)
+	}
+	if ti.SMA200 > 0 {
+		e.SMA200 = boolPtr(ti.Above200)
+	}
 }
 
 func (s *Service) cacheIndicator(ctx context.Context, dataType, ticker string, value float64) {
