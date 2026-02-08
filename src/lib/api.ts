@@ -14,7 +14,17 @@ export class ApiError extends Error {
 }
 
 async function fetchApi<T>(endpoint: string): Promise<T> {
-  const response = await fetch(`${API_BASE}${endpoint}`);
+  const headers: HeadersInit = {};
+
+  // Server-side requests don't include an Origin header, so authenticate with API key
+  if (typeof window === 'undefined') {
+    const apiKey = process.env.API_KEY;
+    if (apiKey) {
+      headers['X-API-Key'] = apiKey;
+    }
+  }
+
+  const response = await fetch(`${API_BASE}${endpoint}`, { headers });
 
   if (!response.ok) {
     let errorData;

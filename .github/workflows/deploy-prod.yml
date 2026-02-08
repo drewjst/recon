@@ -64,6 +64,7 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --port 3000 \
+            --set-secrets=API_KEY=api-keys:latest \
             --memory 512Mi \
             --cpu 1 \
             --min-instances 0 \
