@@ -1,13 +1,11 @@
 # Dependencies
 node_modules/
-vendor/
 
 # Build outputs
 .next/
 out/
 dist/
 build/
-bin/
 
 # Environment files
 .env
@@ -31,19 +29,10 @@ logs/
 
 # Test coverage
 coverage/
-*.out
-
-# Go
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-__debug_bin*
-apps/api/api
 
 # TypeScript
 *.tsbuildinfo
+next-env.d.ts
 
 # Docker
 .docker/
@@ -52,9 +41,7 @@ apps/api/api
 tmp/
 temp/
 .cache/
+*.pem
 
-# Package Managers
-pnpm-lock.yaml
-yarn.lock
-# Allow app lockfiles for Docker builds
-!apps/*/package-lock.json
+# Vercel
+.vercel

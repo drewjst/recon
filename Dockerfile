@@ -4,20 +4,16 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Copy package files for dependency installation
-COPY apps/web/package.json apps/web/package-lock.json ./apps/web/
+COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 
 # Install dependencies
-WORKDIR /app/apps/web
 RUN npm ci
 
 # Copy source files
-WORKDIR /app
 COPY packages/shared ./packages/shared
-COPY apps/web ./apps/web
-
-# Build web app
-WORKDIR /app/apps/web
+COPY src ./src
+COPY next.config.js tsconfig.json postcss.config.js ./
 
 # Accept build-time env var for API URL
 ARG NEXT_PUBLIC_API_URL
@@ -37,8 +33,8 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # Copy standalone output
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
