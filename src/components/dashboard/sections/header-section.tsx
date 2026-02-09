@@ -63,6 +63,20 @@ export function HeaderSection({ data }: HeaderSectionProps) {
               <div className="flex items-baseline gap-2 mb-1">
                 <span className="font-semibold text-lg tracking-tight">{company.ticker}</span>
                 <span className="text-muted-foreground text-sm truncate">{company.name}</span>
+                {company.website && (
+                  <>
+                    <span className="text-muted-foreground/50 text-sm">|</span>
+                    <a
+                      href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors truncate"
+                    >
+                      {company.website.replace(/^https?:\/\//, '')}
+                    </a>
+                  </>
+                )}
               </div>
               {/* Meta info - wraps naturally on mobile */}
               <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-1.5 gap-y-0.5">

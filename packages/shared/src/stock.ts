@@ -26,6 +26,8 @@ export interface Company {
   industry: string;
   /** Brief company description/business summary */
   description?: string;
+  /** Company website URL */
+  website?: string;
 }
 
 // =============================================================================
