@@ -75,6 +75,20 @@ export function formatGrowth(
   return `${sign}${value.toFixed(decimals)}%`;
 }
 
+const NUMBER_FORMATTERS = new Map<number, Intl.NumberFormat>();
+
+function getNumberFormatter(decimals: number): Intl.NumberFormat {
+  let formatter = NUMBER_FORMATTERS.get(decimals);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+    NUMBER_FORMATTERS.set(decimals, formatter);
+  }
+  return formatter;
+}
+
 /**
  * Format number with thousands separators.
  * @example formatNumber(1234567) → "1,234,567"
@@ -85,10 +99,7 @@ export function formatNumber(
 ): string {
   if (value == null || isNaN(value)) return '—';
 
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
+  return getNumberFormatter(decimals).format(value);
 }
 
 /**
@@ -115,6 +126,12 @@ export function getGrowthColor(value: number | null | undefined): string {
   return 'text-muted-foreground';
 }
 
+const DEFAULT_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+
 /**
  * Format a date for display.
  * @example formatDate("2024-03-31") → "Mar 31, 2024"
@@ -125,15 +142,14 @@ export function formatDate(
 ): string {
   if (date == null) return '—';
 
-  const defaultOptions: Intl.DateTimeFormatOptions = {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  };
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) return '—';
 
-  return new Intl.DateTimeFormat('en-US', options ?? defaultOptions).format(
-    new Date(date)
-  );
+  if (options) {
+    return new Intl.DateTimeFormat('en-US', options).format(dateObj);
+  }
+
+  return DEFAULT_DATE_FORMATTER.format(dateObj);
 }
 
 /**
