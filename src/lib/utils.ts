@@ -57,15 +57,16 @@ export function formatPercent(value: number, decimals = 2): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
 }
 
+const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+
 export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(new Date(date));
+  return DATE_FORMATTER.format(new Date(date));
 }
 
-// eslint-disable-next-line
 export function debounce<T extends (...args: any[]) => void>(
   func: T,
   wait: number
