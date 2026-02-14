@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Sparkles, RefreshCw, Newspaper } from 'lucide-react';
+import { Sparkles, Newspaper } from 'lucide-react';
 import { fetchInsight, type InsightSection, type NewsSentiment, type NewsLink } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +46,7 @@ function getSentimentStyle(sentiment: string): { color: string; bg: string } {
 }
 
 export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps) {
-  const { data, isLoading, error, refetch, isFetching } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['insight', ticker.toUpperCase(), section],
     queryFn: () => fetchInsight(ticker, section),
     staleTime: INSIGHT_STALE_TIME,
@@ -122,28 +122,11 @@ export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps
             CRUX.AI
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          {data.cached && (
-            <span className="text-[10px] text-muted-foreground/70">
-              {formattedTime}
-            </span>
-          )}
-          <button
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className={cn(
-              'p-1 rounded-md hover:bg-muted transition-colors',
-              'text-muted-foreground/70 hover:text-foreground',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
-            title="Refresh insight"
-            aria-label="Refresh insight"
-          >
-            <RefreshCw
-              className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')}
-            />
-          </button>
-        </div>
+        {data.cached && (
+          <span className="text-[10px] text-muted-foreground/70">
+            {formattedTime}
+          </span>
+        )}
       </div>
 
       {/* Insight content - special handling for news-sentiment */}
