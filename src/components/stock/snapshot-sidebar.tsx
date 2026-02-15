@@ -189,6 +189,7 @@ export function SnapshotSidebar({ data }: SnapshotSidebarProps) {
         {/* Actions */}
         <Section title="Actions">
           <ActionLink href={`/stock/${company.ticker}/valuation`} label="Valuation Deep Dive" />
+          <ActionLink href={`/stock/${company.ticker}/smart-money`} label="Institutional Deep Dive" />
         </Section>
       </div>
     </aside>
