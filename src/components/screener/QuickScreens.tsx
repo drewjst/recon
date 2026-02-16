@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { filtersMatch } from '@/lib/screener-utils';
 import type { ScreenerFilters } from '@/lib/api';
 
 // =============================================================================
@@ -143,58 +144,6 @@ const PRESET_SCREENS: PresetScreen[] = [
   },
 ];
 
-// =============================================================================
-// Matching logic
-// =============================================================================
-
-/** Keys to compare when checking if a preset is active (ignore sort/pagination). */
-const FILTER_COMPARE_KEYS: (keyof ScreenerFilters)[] = [
-  'sectors', 'industry',
-  'marketCapMin', 'marketCapMax',
-  'peMin', 'peMax', 'forwardPeMin', 'forwardPeMax',
-  'psMin', 'psMax', 'pbMin', 'pbMax',
-  'evEbitdaMin', 'evEbitdaMax', 'pegMin', 'pegMax',
-  'dividendYieldMin', 'dividendYieldMax',
-  'revenueGrowthMin', 'revenueGrowthMax',
-  'epsGrowthMin', 'epsGrowthMax',
-  'grossMarginMin', 'grossMarginMax',
-  'operatingMarginMin', 'operatingMarginMax',
-  'netMarginMin', 'netMarginMax',
-  'fcfMarginMin', 'fcfMarginMax',
-  'roeMin', 'roeMax', 'roicMin', 'roicMax',
-  'debtToEquityMin', 'debtToEquityMax',
-  'currentRatioMin', 'currentRatioMax',
-  'piotroskiScoreMin', 'altmanZMin',
-];
-
-function arraysEqual(a: unknown[], b: unknown[]): boolean {
-  if (a.length !== b.length) return false;
-  const sorted1 = [...a].sort();
-  const sorted2 = [...b].sort();
-  return sorted1.every((v, i) => v === sorted2[i]);
-}
-
-/** Check if a preset's non-sort filters match the current active filters. */
-function isPresetActive(preset: PresetScreen, active: ScreenerFilters): boolean {
-  for (const key of FILTER_COMPARE_KEYS) {
-    const pv = preset.filters[key];
-    const av = active[key];
-
-    const pvSet = pv != null && (Array.isArray(pv) ? pv.length > 0 : true);
-    const avSet = av != null && (Array.isArray(av) ? av.length > 0 : true);
-
-    if (pvSet !== avSet) return false;
-    if (!pvSet) continue;
-
-    if (Array.isArray(pv) && Array.isArray(av)) {
-      if (!arraysEqual(pv, av)) return false;
-    } else if (pv !== av) {
-      return false;
-    }
-  }
-
-  return true;
-}
 
 // =============================================================================
 // Component
@@ -207,7 +156,7 @@ interface QuickScreensProps {
 
 export function QuickScreens({ onSelect, activeFilters }: QuickScreensProps) {
   const activePresetId = useMemo(() => {
-    const match = PRESET_SCREENS.find((preset) => isPresetActive(preset, activeFilters));
+    const match = PRESET_SCREENS.find((preset) => filtersMatch(preset.filters, activeFilters));
     return match?.id ?? null;
   }, [activeFilters]);
 

@@ -15,6 +15,7 @@ import {
 import { QuickScreens } from '@/components/screener/QuickScreens';
 import { ScreenerResults } from '@/components/screener/ScreenerResults';
 import type { ScreenerFilters } from '@/lib/api';
+import { SECTORS } from '@/lib/screener-utils';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -180,11 +181,6 @@ function FilterPanel({
   );
 }
 
-const GICS_SECTORS = [
-  'Technology', 'Healthcare', 'Financial Services', 'Consumer Cyclical',
-  'Communication Services', 'Industrials', 'Consumer Defensive', 'Energy',
-  'Utilities', 'Real Estate', 'Basic Materials',
-];
 
 function SectorFilter({
   selected,
@@ -207,7 +203,7 @@ function SectorFilter({
         Sector
       </h4>
       <div className="flex flex-wrap gap-1.5">
-        {GICS_SECTORS.map((sector) => {
+        {SECTORS.map((sector) => {
           const isActive = selected.includes(sector);
           return (
             <button
