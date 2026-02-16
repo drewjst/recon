@@ -1,200 +1,25 @@
 'use client';
 
-import { Suspense, useCallback, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { Suspense, useCallback, useState } from 'react';
 import {
-  ArrowUpDown,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
   Share2,
   SlidersHorizontal,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   useScreenerFilters,
   useScreenerResults,
 } from '@/hooks/use-screener';
 import { QuickScreens } from '@/components/screener/QuickScreens';
-import type { ScreenerFilters, ScreenerStock } from '@/lib/api';
-import { formatCurrency, formatPercent, formatGrowth, formatRatio, formatDate, getGrowthColor } from '@/lib/format';
+import { ScreenerResults } from '@/components/screener/ScreenerResults';
+import type { ScreenerFilters } from '@/lib/api';
+import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 // =============================================================================
-// Column definitions
-// =============================================================================
-
-interface ColumnDef {
-  key: string;
-  label: string;
-  shortLabel?: string;
-  sortKey?: string;
-  format: (stock: ScreenerStock) => string;
-  colorFn?: (stock: ScreenerStock) => string;
-  align?: 'left' | 'right';
-  minWidth?: string;
-}
-
-const COLUMNS: ColumnDef[] = [
-  {
-    key: 'ticker',
-    label: 'Ticker',
-    sortKey: 'ticker',
-    format: (s) => s.ticker,
-    align: 'left',
-    minWidth: 'min-w-[60px]',
-  },
-  {
-    key: 'name',
-    label: 'Company',
-    sortKey: 'name',
-    format: (s) => s.name || '—',
-    align: 'left',
-    minWidth: 'min-w-[140px]',
-  },
-  {
-    key: 'sector',
-    label: 'Sector',
-    format: (s) => s.sector || '—',
-    align: 'left',
-    minWidth: 'min-w-[100px]',
-  },
-  {
-    key: 'marketCap',
-    label: 'Market Cap',
-    shortLabel: 'Mkt Cap',
-    sortKey: 'market_cap',
-    format: (s) => formatCurrency(s.marketCap),
-    align: 'right',
-    minWidth: 'min-w-[90px]',
-  },
-  {
-    key: 'price',
-    label: 'Price',
-    sortKey: 'price',
-    format: (s) => s.price != null ? `$${s.price.toFixed(2)}` : '—',
-    align: 'right',
-    minWidth: 'min-w-[70px]',
-  },
-  {
-    key: 'changePct',
-    label: 'Chg %',
-    sortKey: 'change_pct',
-    format: (s) => formatGrowth(s.changePct),
-    colorFn: (s) => getGrowthColor(s.changePct),
-    align: 'right',
-    minWidth: 'min-w-[60px]',
-  },
-  {
-    key: 'pe',
-    label: 'P/E',
-    sortKey: 'pe',
-    format: (s) => formatRatio(s.pe),
-    align: 'right',
-    minWidth: 'min-w-[60px]',
-  },
-  {
-    key: 'ps',
-    label: 'P/S',
-    sortKey: 'ps',
-    format: (s) => formatRatio(s.ps),
-    align: 'right',
-    minWidth: 'min-w-[60px]',
-  },
-  {
-    key: 'pb',
-    label: 'P/B',
-    sortKey: 'pb',
-    format: (s) => formatRatio(s.pb),
-    align: 'right',
-    minWidth: 'min-w-[60px]',
-  },
-  {
-    key: 'evEbitda',
-    label: 'EV/EBITDA',
-    sortKey: 'ev_ebitda',
-    format: (s) => formatRatio(s.evEbitda),
-    align: 'right',
-    minWidth: 'min-w-[80px]',
-  },
-  {
-    key: 'dividendYield',
-    label: 'Div Yield',
-    sortKey: 'dividend_yield',
-    format: (s) => formatPercent(s.dividendYield, 1, true),
-    align: 'right',
-    minWidth: 'min-w-[70px]',
-  },
-  {
-    key: 'revenueGrowth',
-    label: 'Rev Growth',
-    sortKey: 'revenue_growth',
-    format: (s) => formatPercent(s.revenueGrowth, 1, true),
-    colorFn: (s) => getGrowthColor(s.revenueGrowth),
-    align: 'right',
-    minWidth: 'min-w-[80px]',
-  },
-  {
-    key: 'grossMargin',
-    label: 'Gross Margin',
-    sortKey: 'gross_margin',
-    format: (s) => formatPercent(s.grossMargin, 1, true),
-    align: 'right',
-    minWidth: 'min-w-[90px]',
-  },
-  {
-    key: 'roe',
-    label: 'ROE',
-    sortKey: 'roe',
-    format: (s) => formatPercent(s.roe, 1, true),
-    align: 'right',
-    minWidth: 'min-w-[60px]',
-  },
-  {
-    key: 'roic',
-    label: 'ROIC',
-    sortKey: 'roic',
-    format: (s) => formatPercent(s.roic, 1, true),
-    align: 'right',
-    minWidth: 'min-w-[60px]',
-  },
-  {
-    key: 'debtToEquity',
-    label: 'D/E',
-    sortKey: 'debt_to_equity',
-    format: (s) => formatRatio(s.debtToEquity),
-    align: 'right',
-    minWidth: 'min-w-[50px]',
-  },
-  {
-    key: 'piotroskiScore',
-    label: 'Piotroski',
-    sortKey: 'piotroski_score',
-    format: (s) => s.piotroskiScore != null ? `${s.piotroskiScore}/9` : '—',
-    align: 'right',
-    minWidth: 'min-w-[70px]',
-  },
-  {
-    key: 'altmanZ',
-    label: 'Altman Z',
-    sortKey: 'altman_z',
-    format: (s) => formatRatio(s.altmanZ),
-    align: 'right',
-    minWidth: 'min-w-[70px]',
-  },
-];
-
-/** Default visible columns for the table. */
-const DEFAULT_VISIBLE = new Set([
-  'ticker', 'name', 'marketCap', 'price', 'changePct',
-  'pe', 'revenueGrowth', 'roe', 'piotroskiScore',
-]);
-
-// =============================================================================
-// Filter category definitions (for the expandable filter panel)
+// Filter category definitions
 // =============================================================================
 
 interface FilterField {
@@ -269,7 +94,7 @@ const FILTER_CATEGORIES: FilterCategory[] = [
 ];
 
 // =============================================================================
-// Sub-components
+// Filter sub-components
 // =============================================================================
 
 function FilterPanel({
@@ -287,7 +112,6 @@ function FilterPanel({
 
   return (
     <div className="rounded-lg border bg-card">
-      {/* Toggle bar */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors"
@@ -322,16 +146,13 @@ function FilterPanel({
         </div>
       </button>
 
-      {/* Filter grid */}
       {isOpen && (
         <div className="border-t px-4 py-4 space-y-6">
-          {/* Sector chips */}
           <SectorFilter
             selected={filters.sectors || []}
             onChange={(sectors) => onUpdate('sectors', sectors.length > 0 ? sectors : undefined)}
           />
 
-          {/* Metric ranges */}
           {FILTER_CATEGORIES.map((cat) => (
             <div key={cat.label}>
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
@@ -461,230 +282,11 @@ function RangeInput({
   );
 }
 
-function ResultsTable({
-  stocks,
-  isLoading,
-  sort,
-  order,
-  onSort,
-  visibleColumns,
-}: {
-  stocks: ScreenerStock[];
-  isLoading: boolean;
-  sort?: string;
-  order?: 'asc' | 'desc';
-  onSort: (sortKey: string) => void;
-  visibleColumns: Set<string>;
-}) {
-  const columns = useMemo(
-    () => COLUMNS.filter((col) => visibleColumns.has(col.key)),
-    [visibleColumns]
-  );
-
-  const handleSort = (col: ColumnDef) => {
-    if (col.sortKey) onSort(col.sortKey);
-  };
-
-  return (
-    <div className="overflow-x-auto rounded-lg border">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/30">
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                className={cn(
-                  'px-3 py-2.5 text-xs font-medium text-muted-foreground whitespace-nowrap',
-                  col.align === 'right' ? 'text-right' : 'text-left',
-                  col.minWidth,
-                  col.sortKey && 'cursor-pointer select-none hover:text-foreground transition-colors'
-                )}
-                onClick={() => handleSort(col)}
-              >
-                <span className="inline-flex items-center gap-1">
-                  {col.shortLabel || col.label}
-                  {col.sortKey && sort === col.sortKey && (
-                    <ArrowUpDown className={cn('h-3 w-3', order === 'asc' && 'rotate-180')} />
-                  )}
-                </span>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {isLoading && stocks.length === 0 ? (
-            Array.from({ length: 10 }).map((_, i) => (
-              <tr key={i} className="border-b last:border-b-0">
-                {columns.map((col) => (
-                  <td key={col.key} className="px-3 py-2.5">
-                    <Skeleton className="h-4 w-full" />
-                  </td>
-                ))}
-              </tr>
-            ))
-          ) : stocks.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-12 text-center text-muted-foreground">
-                <Filter className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                <p className="font-medium">No stocks match your filters</p>
-                <p className="text-xs mt-1">Try adjusting your criteria</p>
-              </td>
-            </tr>
-          ) : (
-            stocks.map((stock) => (
-              <tr
-                key={stock.ticker}
-                className="border-b last:border-b-0 hover:bg-muted/30 transition-colors"
-              >
-                {columns.map((col) => (
-                  <td
-                    key={col.key}
-                    className={cn(
-                      'px-3 py-2.5 whitespace-nowrap tabular-nums',
-                      col.align === 'right' ? 'text-right' : 'text-left',
-                      col.colorFn ? col.colorFn(stock) : ''
-                    )}
-                  >
-                    {col.key === 'ticker' ? (
-                      <Link
-                        href={`/stock/${stock.ticker}`}
-                        className="font-semibold text-primary hover:underline"
-                      >
-                        {stock.ticker}
-                      </Link>
-                    ) : col.key === 'name' ? (
-                      <span className="text-foreground max-w-[200px] truncate block">
-                        {col.format(stock)}
-                      </span>
-                    ) : (
-                      col.format(stock)
-                    )}
-                  </td>
-                ))}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function Pagination({
-  total,
-  limit,
-  offset,
-  onPageChange,
-}: {
-  total: number;
-  limit: number;
-  offset: number;
-  onPageChange: (offset: number) => void;
-}) {
-  const totalPages = Math.ceil(total / limit);
-  const currentPage = Math.floor(offset / limit) + 1;
-
-  if (totalPages <= 1) return null;
-
-  const hasPrev = currentPage > 1;
-  const hasNext = currentPage < totalPages;
-
-  return (
-    <div className="flex items-center justify-between">
-      <p className="text-xs text-muted-foreground">
-        Showing {offset + 1}–{Math.min(offset + limit, total)} of {total.toLocaleString()} stocks
-      </p>
-      <div className="flex items-center gap-1">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!hasPrev}
-          onClick={() => onPageChange(offset - limit)}
-          className="h-8 w-8 p-0"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <span className="px-3 text-xs tabular-nums text-muted-foreground">
-          {currentPage} / {totalPages}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!hasNext}
-          onClick={() => onPageChange(offset + limit)}
-          className="h-8 w-8 p-0"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function ColumnPicker({
-  visible,
-  onChange,
-}: {
-  visible: Set<string>;
-  onChange: (cols: Set<string>) => void;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const toggle = (key: string) => {
-    const next = new Set(visible);
-    if (next.has(key)) {
-      // Don't allow removing ticker
-      if (key === 'ticker') return;
-      next.delete(key);
-    } else {
-      next.add(key);
-    }
-    onChange(next);
-  };
-
-  return (
-    <div className="relative">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="h-8 text-xs"
-      >
-        Columns
-        <ChevronDown className={cn('ml-1 h-3 w-3 transition-transform', isOpen && 'rotate-180')} />
-      </Button>
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border bg-popover shadow-lg p-2 space-y-0.5">
-            {COLUMNS.map((col) => (
-              <label
-                key={col.key}
-                className="flex items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-muted cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={visible.has(col.key)}
-                  onChange={() => toggle(col.key)}
-                  disabled={col.key === 'ticker'}
-                  className="rounded border-border"
-                />
-                {col.label}
-              </label>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function ShareButton({ filters }: { filters: ScreenerFilters }) {
+function ShareButton() {
   const [copied, setCopied] = useState(false);
 
   const handleShare = () => {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -699,19 +301,17 @@ function ShareButton({ filters }: { filters: ScreenerFilters }) {
 }
 
 // =============================================================================
-// Main page (wrapped in Suspense for useSearchParams)
+// Main page
 // =============================================================================
 
 function ScreenerContent() {
-  const { filters, setFilters, updateFilter, clearFilters, activeFilterCount } = useScreenerFilters();
+  const { filters, setFilters, updateFilter, clearFilters, activeFilterCount } =
+    useScreenerFilters();
   const { data, isLoading, isFetching } = useScreenerResults(filters);
-  const [visibleColumns, setVisibleColumns] = useState(DEFAULT_VISIBLE);
 
   const handleSort = useCallback(
-    (sortKey: string) => {
-      const newOrder: 'asc' | 'desc' =
-        filters.sort === sortKey && filters.order !== 'asc' ? 'asc' : 'desc';
-      setFilters({ ...filters, sort: sortKey, order: newOrder, offset: undefined });
+    (field: string, order: 'asc' | 'desc') => {
+      setFilters({ ...filters, sort: field, order, offset: undefined });
     },
     [filters, setFilters]
   );
@@ -722,11 +322,6 @@ function ScreenerContent() {
     },
     [updateFilter]
   );
-
-  const stocks = data?.stocks || [];
-  const total = data?.total || 0;
-  const limit = data?.limit || 25;
-  const offset = filters.offset || 0;
 
   return (
     <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -740,10 +335,7 @@ function ScreenerContent() {
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <ShareButton filters={filters} />
-          <ColumnPicker visible={visibleColumns} onChange={setVisibleColumns} />
-        </div>
+        <ShareButton />
       </div>
 
       {/* Quick Screens */}
@@ -757,7 +349,7 @@ function ScreenerContent() {
         activeCount={activeFilterCount}
       />
 
-      {/* Active filter pills */}
+      {/* Active sector pills */}
       {filters.sectors && filters.sectors.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {filters.sectors.map((sector) => (
@@ -782,37 +374,13 @@ function ScreenerContent() {
         </div>
       )}
 
-      {/* Results count + loading indicator */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {isLoading ? (
-            <Skeleton className="h-4 w-32 inline-block" />
-          ) : (
-            <>{total.toLocaleString()} stocks found</>
-          )}
-        </p>
-        {isFetching && !isLoading && (
-          <div className="h-1 w-16 rounded-full bg-primary/20 overflow-hidden">
-            <div className="h-full w-1/2 bg-primary rounded-full animate-pulse" />
-          </div>
-        )}
-      </div>
-
-      {/* Results Table */}
-      <ResultsTable
-        stocks={stocks}
+      {/* Results */}
+      <ScreenerResults
+        data={data}
         isLoading={isLoading}
-        sort={filters.sort}
-        order={filters.order}
+        isFetching={isFetching}
+        filters={filters}
         onSort={handleSort}
-        visibleColumns={visibleColumns}
-      />
-
-      {/* Pagination */}
-      <Pagination
-        total={total}
-        limit={limit}
-        offset={offset}
         onPageChange={handlePageChange}
       />
     </div>
