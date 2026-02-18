@@ -1,7 +1,15 @@
 /**
- * Formatting utilities for financial data display.
- * All functions handle null/undefined gracefully.
+ * Table/screener formatting utilities.
+ *
+ * This module provides formatters tailored for financial tables (screener,
+ * financial statements, heatmaps) — accounting-style negatives, "x" suffixed
+ * ratios, and configurable decimal precision.
+ *
+ * Shared functions (formatGrowth, getGrowthColor, formatNumber) are defined
+ * in formatters.ts and re-exported here.
  */
+
+export { formatGrowth, getGrowthColor, formatNumber } from './formatters';
 
 const THRESHOLDS = {
   TRILLION: 1e12,
@@ -11,10 +19,8 @@ const THRESHOLDS = {
 } as const;
 
 /**
- * Format currency with K/M/B/T suffixes.
+ * Format currency with K/M/B/T suffixes (accounting style: negatives in parens).
  * @example formatCurrency(350000000000) → "$350.0B"
- * @example formatCurrency(1200000) → "$1.2M"
- * @example formatCurrency(892000) → "$892K"
  * @example formatCurrency(-1200000000) → "($1.2B)"
  */
 export function formatCurrency(
@@ -60,50 +66,7 @@ export function formatPercent(
 }
 
 /**
- * Format growth/change with +/- prefix and color indication.
- * @example formatGrowth(13.9) → "+13.9%"
- * @example formatGrowth(-5.2) → "-5.2%"
- * @example formatGrowth(0) → "0.0%"
- */
-export function formatGrowth(
-  value: number | null | undefined,
-  decimals = 1
-): string {
-  if (value == null || isNaN(value)) return '—';
-
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${value.toFixed(decimals)}%`;
-}
-
-const NUMBER_FORMATTERS = new Map<number, Intl.NumberFormat>();
-
-function getNumberFormatter(decimals: number): Intl.NumberFormat {
-  let formatter = NUMBER_FORMATTERS.get(decimals);
-  if (!formatter) {
-    formatter = new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    });
-    NUMBER_FORMATTERS.set(decimals, formatter);
-  }
-  return formatter;
-}
-
-/**
- * Format number with thousands separators.
- * @example formatNumber(1234567) → "1,234,567"
- */
-export function formatNumber(
-  value: number | null | undefined,
-  decimals = 0
-): string {
-  if (value == null || isNaN(value)) return '—';
-
-  return getNumberFormatter(decimals).format(value);
-}
-
-/**
- * Format a ratio/multiple.
+ * Format a ratio/multiple with "x" suffix.
  * @example formatRatio(15.5) → "15.5x"
  * @example formatRatio(-2.3) → "-2.3x"
  */
@@ -114,16 +77,6 @@ export function formatRatio(
   if (value == null || isNaN(value)) return '—';
 
   return `${value.toFixed(decimals)}x`;
-}
-
-/**
- * Determine the color class for a growth/change value.
- */
-export function getGrowthColor(value: number | null | undefined): string {
-  if (value == null || isNaN(value)) return 'text-muted-foreground';
-  if (value > 0) return 'text-positive';
-  if (value < 0) return 'text-negative';
-  return 'text-muted-foreground';
 }
 
 const DEFAULT_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {

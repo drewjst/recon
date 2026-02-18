@@ -121,6 +121,46 @@ export function formatDecimal(value: number | null | undefined): string {
 }
 
 /**
+ * Format growth/change with +/- prefix.
+ * @example formatGrowth(13.9) → "+13.9%"
+ * @example formatGrowth(-5.2) → "-5.2%"
+ */
+export function formatGrowth(value: number | null | undefined, decimals = 1): string {
+  if (value === null || value === undefined) return NULL_DISPLAY;
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${value.toFixed(decimals)}%`;
+}
+
+/**
+ * Determine the Tailwind color class for a growth/change value.
+ */
+export function getGrowthColor(value: number | null | undefined): string {
+  if (value === null || value === undefined) return 'text-muted-foreground';
+  if (value > 0) return 'text-positive';
+  if (value < 0) return 'text-negative';
+  return 'text-muted-foreground';
+}
+
+const NUMBER_FORMATTERS = new Map<number, Intl.NumberFormat>();
+
+/**
+ * Format number with thousands separators.
+ * @example formatNumber(1234567) → "1,234,567"
+ */
+export function formatNumber(value: number | null | undefined, decimals = 0): string {
+  if (value === null || value === undefined) return NULL_DISPLAY;
+  let formatter = NUMBER_FORMATTERS.get(decimals);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+    NUMBER_FORMATTERS.set(decimals, formatter);
+  }
+  return formatter.format(value);
+}
+
+/**
  * Format a date string to a readable format.
  */
 export function formatDate(dateStr: string | null | undefined, options?: Intl.DateTimeFormatOptions): string {

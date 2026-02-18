@@ -4,20 +4,10 @@ import { memo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { MetricRow, type MetricFormat } from './metric-row';
+import { MetricRow, type Metric } from './metric-row';
 import { cn } from '@/lib/utils';
 
-export interface Metric {
-  key: string;
-  label: string;
-  value: number | null;
-  industryAverage: number | null;
-  percentile: number | null;
-  format: MetricFormat;
-  higherIsBetter: boolean;
-  info?: string;
-  learnMoreUrl?: string;
-}
+export type { Metric };
 
 interface CollapsibleMetricSectionProps {
   title: string;

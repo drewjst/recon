@@ -8,6 +8,27 @@ import { formatMetricValue, type MetricFormat } from '@/lib/formatters';
 
 export type { MetricFormat };
 
+export interface Metric {
+  /** Unique key for React */
+  key: string;
+  /** Display label */
+  label: string;
+  /** Stock's value */
+  value: number | null;
+  /** Industry average */
+  industryAverage: number | null;
+  /** Percentile (0-100) */
+  percentile: number | null;
+  /** Value format type */
+  format: MetricFormat;
+  /** Whether higher values are better */
+  higherIsBetter: boolean;
+  /** Optional tooltip info */
+  info?: string;
+  /** Optional learn more URL */
+  learnMoreUrl?: string;
+}
+
 export interface MetricRowProps {
   /** Metric display label */
   label: string;

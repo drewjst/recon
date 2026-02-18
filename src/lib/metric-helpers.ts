@@ -3,7 +3,7 @@
  * Consolidates duplicated metric conversion and formatting logic.
  */
 
-import type { Metric } from '@/components/dashboard/sections/metric-section';
+import type { Metric } from '@/components/dashboard/sections/metric-row';
 import type { ValuationMetric, SectorMetric } from '@recon/shared';
 
 /**

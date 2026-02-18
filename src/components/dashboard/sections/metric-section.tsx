@@ -3,28 +3,9 @@
 import { memo, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { SectionCard } from './section-card';
-import { MetricRow, type MetricFormat } from './metric-row';
+import { MetricRow, type Metric } from './metric-row';
 
-export interface Metric {
-  /** Unique key for React */
-  key: string;
-  /** Display label */
-  label: string;
-  /** Stock's value */
-  value: number | null;
-  /** Industry average */
-  industryAverage: number | null;
-  /** Percentile (0-100) */
-  percentile: number | null;
-  /** Value format type */
-  format: MetricFormat;
-  /** Whether higher values are better */
-  higherIsBetter: boolean;
-  /** Optional tooltip info */
-  info?: string;
-  /** Optional learn more URL */
-  learnMoreUrl?: string;
-}
+export type { Metric };
 
 interface MetricSectionProps {
   /** Section title */

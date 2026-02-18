@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Sparkles, Newspaper } from 'lucide-react';
+import { Sparkles, Newspaper, AlertCircle, RefreshCw } from 'lucide-react';
 import { fetchInsight, type InsightSection, type NewsSentiment, type NewsLink } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +46,7 @@ function getSentimentStyle(sentiment: string): { color: string; bg: string } {
 }
 
 export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps) {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['insight', ticker.toUpperCase(), section],
     queryFn: () => fetchInsight(ticker, section),
     staleTime: INSIGHT_STALE_TIME,
@@ -54,9 +54,34 @@ export function CruxAIInsight({ ticker, section, className }: CruxAIInsightProps
     enabled: Boolean(ticker),
   });
 
-  // Error state: fail silently
   if (error) {
-    return null;
+    return (
+      <div
+        className={cn(
+          'rounded-xl bg-card/50 backdrop-blur-sm',
+          'border border-border/50',
+          'p-5',
+          className
+        )}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              Unable to load {sectionLabels[section]?.toLowerCase() || 'insight'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Loading state

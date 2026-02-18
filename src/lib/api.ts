@@ -13,6 +13,8 @@ export class ApiError extends Error {
   }
 }
 
+const FETCH_TIMEOUT_MS = 15_000;
+
 async function fetchApi<T>(endpoint: string): Promise<T> {
   const headers: HeadersInit = {};
 
@@ -24,7 +26,10 @@ async function fetchApi<T>(endpoint: string): Promise<T> {
     }
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, { headers });
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    headers,
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  });
 
   if (!response.ok) {
     let errorData;
