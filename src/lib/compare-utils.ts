@@ -440,27 +440,27 @@ export function findWinner(
   });
 }
 
+const ALL_RANKING_METRICS = [
+  ...COMPARE_METRICS.scores,
+  ...COMPARE_METRICS.valuation,
+  ...COMPARE_METRICS.performance,
+  ...COMPARE_METRICS.profitability,
+  ...COMPARE_METRICS.financialHealth,
+  ...COMPARE_METRICS.growth,
+  ...COMPARE_METRICS.earningsQuality,
+  ...COMPARE_METRICS.smartMoney,
+  ...COMPARE_METRICS.analyst,
+  ...COMPARE_METRICS.shortInterest,
+  ...COMPARE_METRICS.dcfValuation,
+];
+
 /**
  * Calculate overall rankings based on metric wins.
  */
 export function calculateRankings(stocks: StockDetailResponse[]): RankingResult[] {
-  const allMetrics = [
-    ...COMPARE_METRICS.scores,
-    ...COMPARE_METRICS.valuation,
-    ...COMPARE_METRICS.performance,
-    ...COMPARE_METRICS.profitability,
-    ...COMPARE_METRICS.financialHealth,
-    ...COMPARE_METRICS.growth,
-    ...COMPARE_METRICS.earningsQuality,
-    ...COMPARE_METRICS.smartMoney,
-    ...COMPARE_METRICS.analyst,
-    ...COMPARE_METRICS.shortInterest,
-    ...COMPARE_METRICS.dcfValuation,
-  ];
-
   const wins: number[] = stocks.map(() => 0);
 
-  allMetrics.forEach((metric) => {
+  ALL_RANKING_METRICS.forEach((metric) => {
     const values = stocks.map((s) => getNestedValue(s, metric.path));
     const winner = findWinner(values, metric.higherIsBetter, metric.excludeNonPositive);
     if (winner !== null) {
