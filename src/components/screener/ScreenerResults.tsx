@@ -168,7 +168,7 @@ const COLUMNS: ColumnDef[] = [
     key: 'roe',
     label: 'ROE',
     sortKey: 'roe',
-    format: (s) => formatPercent(s.roe, 1, true),
+    format: (s) => s.roe == null ? 'N/M' : formatPercent(s.roe, 1, true),
     align: 'right',
     minWidth: 'min-w-[60px]',
   },
