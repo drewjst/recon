@@ -29,6 +29,8 @@ interface FilterField {
   maxKey?: keyof ScreenerFilters;
   step?: number;
   placeholder?: [string, string];
+  /** If true, input accepts percentage values (user types "20" for 20%) and converts to/from decimal (0.20) for the API. */
+  isPercent?: boolean;
 }
 
 interface FilterCategory {
@@ -51,19 +53,19 @@ const FILTER_CATEGORIES: FilterCategory[] = [
   {
     label: 'Growth',
     fields: [
-      { label: 'Revenue Growth', minKey: 'revenueGrowthMin', maxKey: 'revenueGrowthMax', step: 0.01 },
-      { label: 'EPS Growth', minKey: 'epsGrowthMin', maxKey: 'epsGrowthMax', step: 0.01 },
+      { label: 'Revenue Growth', minKey: 'revenueGrowthMin', maxKey: 'revenueGrowthMax', step: 1, isPercent: true },
+      { label: 'EPS Growth', minKey: 'epsGrowthMin', maxKey: 'epsGrowthMax', step: 1, isPercent: true },
     ],
   },
   {
     label: 'Profitability',
     fields: [
-      { label: 'Gross Margin', minKey: 'grossMarginMin', maxKey: 'grossMarginMax', step: 0.01 },
-      { label: 'Operating Margin', minKey: 'operatingMarginMin', maxKey: 'operatingMarginMax', step: 0.01 },
-      { label: 'Net Margin', minKey: 'netMarginMin', maxKey: 'netMarginMax', step: 0.01 },
-      { label: 'FCF Margin', minKey: 'fcfMarginMin', maxKey: 'fcfMarginMax', step: 0.01 },
-      { label: 'ROE', minKey: 'roeMin', maxKey: 'roeMax', step: 0.01 },
-      { label: 'ROIC', minKey: 'roicMin', maxKey: 'roicMax', step: 0.01 },
+      { label: 'Gross Margin', minKey: 'grossMarginMin', maxKey: 'grossMarginMax', step: 1, isPercent: true },
+      { label: 'Operating Margin', minKey: 'operatingMarginMin', maxKey: 'operatingMarginMax', step: 1, isPercent: true },
+      { label: 'Net Margin', minKey: 'netMarginMin', maxKey: 'netMarginMax', step: 1, isPercent: true },
+      { label: 'FCF Margin', minKey: 'fcfMarginMin', maxKey: 'fcfMarginMax', step: 1, isPercent: true },
+      { label: 'ROE', minKey: 'roeMin', maxKey: 'roeMax', step: 1, isPercent: true },
+      { label: 'ROIC', minKey: 'roicMin', maxKey: 'roicMax', step: 1, isPercent: true },
     ],
   },
   {
@@ -78,7 +80,7 @@ const FILTER_CATEGORIES: FilterCategory[] = [
   {
     label: 'Dividends',
     fields: [
-      { label: 'Dividend Yield', minKey: 'dividendYieldMin', maxKey: 'dividendYieldMax', step: 0.01 },
+      { label: 'Dividend Yield', minKey: 'dividendYieldMin', maxKey: 'dividendYieldMax', step: 0.1, isPercent: true },
     ],
   },
   {
@@ -168,6 +170,7 @@ function FilterPanel({
                     maxValue={field.maxKey ? (filters[field.maxKey] as number) ?? undefined : undefined}
                     step={field.step}
                     placeholder={field.placeholder}
+                    isPercent={field.isPercent}
                     onMinChange={(v) => onUpdate(field.minKey, v)}
                     onMaxChange={field.maxKey ? (v) => onUpdate(field.maxKey!, v) : undefined}
                   />
@@ -231,6 +234,7 @@ function RangeInput({
   maxValue,
   step,
   placeholder,
+  isPercent,
   onMinChange,
   onMaxChange,
 }: {
@@ -239,26 +243,36 @@ function RangeInput({
   maxValue?: number;
   step?: number;
   placeholder?: [string, string];
+  isPercent?: boolean;
   onMinChange: (v: number | undefined) => void;
   onMaxChange?: (v: number | undefined) => void;
 }) {
-  const parseInput = (raw: string): number | undefined => {
+  // For percent fields: display value * 100 (decimal → %), store input / 100 (% → decimal)
+  const toDisplay = (v: number | undefined) =>
+    v !== undefined && isPercent ? parseFloat((v * 100).toPrecision(10)) : v;
+
+  const fromInput = (raw: string): number | undefined => {
     if (raw === '') return undefined;
     const num = Number(raw);
-    return isNaN(num) ? undefined : num;
+    if (isNaN(num)) return undefined;
+    return isPercent ? num / 100 : num;
   };
+
+  const inputClass = "w-full rounded-md border bg-background px-2.5 py-1.5 text-xs tabular-nums placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary";
 
   return (
     <div className="space-y-1">
-      <label className="text-xs text-muted-foreground">{label}</label>
+      <label className="text-xs text-muted-foreground">
+        {label}{isPercent ? ' (%)' : ''}
+      </label>
       <div className="flex items-center gap-2">
         <input
           type="number"
           step={step || 'any'}
-          value={minValue ?? ''}
-          onChange={(e) => onMinChange(parseInput(e.target.value))}
+          value={toDisplay(minValue) ?? ''}
+          onChange={(e) => onMinChange(fromInput(e.target.value))}
           placeholder={placeholder?.[0] || 'Min'}
-          className="w-full rounded-md border bg-background px-2.5 py-1.5 text-xs tabular-nums placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
+          className={inputClass}
         />
         {onMaxChange && (
           <>
@@ -266,10 +280,10 @@ function RangeInput({
             <input
               type="number"
               step={step || 'any'}
-              value={maxValue ?? ''}
-              onChange={(e) => onMaxChange(parseInput(e.target.value))}
+              value={toDisplay(maxValue) ?? ''}
+              onChange={(e) => onMaxChange(fromInput(e.target.value))}
               placeholder={placeholder?.[1] || 'Max'}
-              className="w-full rounded-md border bg-background px-2.5 py-1.5 text-xs tabular-nums placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
+              className={inputClass}
             />
           </>
         )}
