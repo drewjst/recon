@@ -60,17 +60,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     metadataBase: new URL(BASE_URL),
     title,
     description,
+    alternates: {
+      canonical: `${BASE_URL}/stock/${ticker}`,
+    },
     openGraph: {
       title: `${ticker} Analysis | Crux`,
       description: `${companyName} fundamental analysis - Grade: ${grade}`,
       url: `${BASE_URL}/stock/${ticker}`,
       siteName: 'Crux',
       type: 'website',
+      images: [{ url: `${BASE_URL}/stock/${ticker}/opengraph-image`, width: 1200, height: 630 }],
     },
     twitter: {
       card: 'summary_large_image',
       title: `${ticker} Analysis | Crux`,
       description: `Piotroski: ${piotroski}/9 • Rule of 40: ${ruleOf40.toFixed(0)}% • Grade: ${grade}`,
+      images: [`${BASE_URL}/stock/${ticker}/opengraph-image`],
     },
   };
 }
@@ -80,8 +85,24 @@ export default async function StockPage({ params }: PageProps) {
   const ticker = rawTicker.toUpperCase();
   const data = await getStockData(ticker);
 
+  const companyName = data?.company.name ?? ticker;
+  const grade = getOverallGrade(data?.scores);
+
+  const stockJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: `${ticker} Stock Analysis`,
+    description: `${companyName} fundamental analysis - Grade: ${grade}`,
+    url: `${BASE_URL}/stock/${ticker}`,
+    isPartOf: { '@type': 'WebSite', name: 'Crux', url: BASE_URL },
+  };
+
   return (
     <div className="min-h-screen px-4 sm:px-6 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(stockJsonLd) }}
+      />
       <div className="flex flex-col min-h-screen">
         <div className="py-8 flex-1">
           <StockDashboard ticker={ticker} initialData={data} />

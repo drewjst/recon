@@ -36,6 +36,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Crux' }],
   creator: 'Crux',
   metadataBase: new URL(siteUrl),
+  alternates: { canonical: siteUrl },
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -64,9 +65,39 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Crux',
+  url: siteUrl,
+  description: 'Stock fundamental analysis and research dashboard.',
+};
+
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Crux',
+  url: siteUrl,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${siteUrl}/stock/{search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+      </head>
       <body className={`${inter.className} bg-background`}>
         <a
           href="#main-content"

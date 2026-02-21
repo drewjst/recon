@@ -1,16 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileSpreadsheet, TrendingUp, BarChart3, Wallet } from 'lucide-react';
 import { TickerSearch } from '@/components/search/ticker-search';
 
 export default function FinancialsLandingPage() {
   const router = useRouter();
-
-  useEffect(() => {
-    document.title = '10-K Financial Statements | Crux';
-  }, []);
 
   const handleTickerSelect = (ticker: string) => {
     router.push(`/stock/${ticker.toUpperCase()}/financials`);
