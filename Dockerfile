@@ -15,9 +15,11 @@ COPY packages/shared ./packages/shared
 COPY src ./src
 COPY next.config.js tsconfig.json postcss.config.js ./
 
-# Accept build-time env var for API URL
+# Accept build-time env vars
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SITE_URL=https://cruxit.finance
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
 RUN npm run build
 

@@ -29,7 +29,7 @@ async function getAllTickers(): Promise<string[]> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crux.finance';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cruxit.finance';
   const now = new Date();
   const tickers = await getAllTickers();
 

@@ -4,7 +4,7 @@ import { StockDetailResponse } from '@recon/shared';
 import { StockDashboard } from '@/components/dashboard/stock-dashboard';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://crux.finance';
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cruxit.finance';
 
 function getOverallGrade(scores: StockDetailResponse['scores']): string {
   if (!scores) return 'N/A';

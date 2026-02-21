@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://crux.finance';
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://cruxit.finance';
 
 export const metadata: Metadata = {
   title: '10-K Financial Statements',

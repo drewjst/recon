@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://crux.finance';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cruxit.finance';
 
 export const metadata: Metadata = {
   title: {
